@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #F6F4ED;
+    color: #1A1815;
+    font-family: 'Newsreader', Georgia, Cambria, serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Oswald', 'Cinzel', Impact, sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+.font-newspaper-title {
+  font-family: 'Oswald', 'Cinzel', Impact, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.font-headline {
+  font-family: 'Oswald', Impact, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.font-serif-headline {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.font-serif-body {
+  font-family: 'Newsreader', Georgia, serif;
+}
+
+.font-typewriter {
+  font-family: 'Space Mono', 'Courier New', monospace;
+}
+
+/* Classic Newspaper Rule Lines */
+.news-border-double {
+  border-top: 3px double #1A1815;
+  border-bottom: 3px double #1A1815;
+}
+
+.news-border-heavy {
+  border-top: 4px solid #1A1815;
+  border-bottom: 1px solid #1A1815;
+}
+
+.news-paper-sheet {
+  background-color: #FAF8F2;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+}
+
+.news-divider-v {
+  border-right: 1px solid #D6D0C4;
+}
+
+.news-divider-h {
+  border-bottom: 1px solid #D6D0C4;
+}
+
+.drop-cap::first-letter {
+  font-family: 'Playfair Display', Georgia, serif;
+  float: left;
+  font-size: 3.4rem;
+  line-height: 0.8;
+  padding-top: 4px;
+  padding-right: 8px;
+  padding-bottom: 2px;
+  font-weight: 900;
+  color: #1A1815;
+}
+
+/* Halftone / Grayscale image styling reminiscent of the uploaded sample */
+.news-photo {
+  filter: grayscale(100%) contrast(110%);
+  border: 1px solid #1A1815;
+}
+
+.news-photo:hover {
+  filter: grayscale(20%) contrast(105%);
+  transition: filter 0.3s ease;
+}

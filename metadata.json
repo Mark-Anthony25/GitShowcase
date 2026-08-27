@@ -1,0 +1,6 @@
+{
+  "name": "GitShowcase",
+  "description": "A student developer platform for Isabela State University - Cauayan Campus to connect GitHub, set up student profiles, curate capstone repositories, and display commit contribution activity.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
