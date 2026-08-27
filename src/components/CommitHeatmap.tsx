@@ -155,12 +155,12 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
   };
 
   return (
-    <div className={`p-4 sm:p-5 paper-card bg-[#FEFCF6] space-y-4 ${className}`}>
+    <div className={`w-full max-w-full overflow-hidden p-3 sm:p-5 paper-card bg-[#FEFCF6] space-y-3.5 sm:space-y-4 ${className}`}>
       {/* Header with Title & Stats */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-dashed border-[#212121] pb-3">
-        <div className="flex items-center space-x-2">
-          <GitCommit className="w-4 h-4 text-[#212121]" />
-          <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b-2 border-dashed border-[#212121] pb-3">
+        <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+          <GitCommit className="w-4 h-4 text-[#212121] flex-shrink-0" />
+          <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121]">
             GitHub Commit Activity
           </h3>
           <span className="paper-badge text-[10px] font-mono">
@@ -169,7 +169,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
         </div>
 
         {showStats && (
-          <div className="flex items-center space-x-4 text-xs font-mono text-[#212121]">
+          <div className="flex items-center space-x-3 sm:space-x-4 text-xs font-mono text-[#212121] flex-wrap gap-y-1">
             <div className="flex items-center space-x-1 font-bold">
               <span className="text-[#212121]">
                 {calendarData.totalContributions.toLocaleString()}
@@ -185,7 +185,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
       </div>
 
       {/* Heatmap Grid View */}
-      <div className="overflow-x-auto pb-1 relative">
+      <div className="w-full max-w-full overflow-x-auto pb-1 relative touch-pan-x">
         <div className="min-w-[680px]">
           {/* Month Headers */}
           <div className="flex text-[11px] font-sketch text-stone-700 mb-1 pl-8 font-bold">
@@ -244,6 +244,11 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
           </div>
         )}
       </div>
+
+      {/* Mobile swipe hint */}
+      <p className="md:hidden text-[10px] font-sketch text-stone-500 text-center -mt-1 pb-1">
+        ← Swipe to see full year →
+      </p>
 
       {/* Footer: Legend & Guidelines */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-[11px] font-sketch text-stone-700 pt-2 border-t-2 border-dashed border-[#212121] gap-2 font-bold">

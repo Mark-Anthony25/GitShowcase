@@ -15,33 +15,33 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate }) => {
   const { user, signInWithGitHub, signInAsDemoStudent } = useAuth();
 
   return (
-    <div className="space-y-8 pb-10 text-[#212121]">
+    <div className="space-y-6 sm:space-y-8 pb-8 sm:pb-10 text-[#212121] w-full max-w-full">
       {/* Hero Welcome Banner */}
-      <section className="paper-card p-6 sm:p-8 space-y-5 bg-[#FEFCF6]">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div className="space-y-3 max-w-2xl">
-            <span className="paper-badge text-[11px] font-sketch uppercase tracking-wider text-stone-800 font-bold bg-[#EFE9DB]">
+      <section className="paper-card p-4 sm:p-8 space-y-4 sm:space-y-5 bg-[#FEFCF6]">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 sm:gap-6">
+          <div className="space-y-2 sm:space-y-3 max-w-2xl min-w-0">
+            <span className="paper-badge text-[10px] sm:text-[11px] font-sketch uppercase tracking-wider text-stone-800 font-bold bg-[#EFE9DB]">
               ISU Cauayan Computing Registry &bull; GitShowcase
             </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-[900] uppercase font-newspaper-title tracking-tight text-[#212121] leading-tight">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-[900] uppercase font-newspaper-title tracking-tight text-[#212121] leading-tight break-words">
               Showcase Your Code, Repositories &amp; Commit History
             </h2>
-            <p className="text-sm sm:text-base font-serif-body text-stone-700 leading-relaxed">
+            <p className="text-xs sm:text-base font-serif-body text-stone-700 leading-relaxed">
               A portfolio platform for Isabela State University - Cauayan Campus. Sign in with your GitHub account, set up your developer headline and 50-character bio, pick which repositories to showcase, and display your GitHub commit boxes with an authentic PaperCSS theme.
             </p>
           </div>
 
           {/* Quick Action Button Box */}
-          <div className="flex flex-col sm:flex-row lg:flex-col gap-3 flex-shrink-0 min-w-[220px]">
+          <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 sm:gap-3 w-full lg:w-auto flex-shrink-0 min-w-0">
             {user ? (
               <button
                 id="hero-go-dashboard-btn"
                 onClick={() => navigate('/dashboard')}
-                className="paper-button paper-button-dark text-xs py-2.5 px-4 font-bold"
+                className="paper-button paper-button-dark text-xs sm:text-sm py-2.5 px-4 font-bold justify-center min-h-[46px]"
               >
-                <LayoutDashboard className="w-4 h-4 mr-2" />
+                <LayoutDashboard className="w-4.5 h-4.5 mr-2 flex-shrink-0" />
                 <span>Go to Project Desk</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-2" />
+                <ArrowRight className="w-4 h-4 ml-2 flex-shrink-0" />
               </button>
             ) : (
               <>
@@ -51,9 +51,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate }) => {
                     await signInWithGitHub();
                     navigate('/dashboard');
                   }}
-                  className="paper-button paper-button-dark text-xs py-2.5 px-4 font-bold"
+                  className="paper-button paper-button-dark text-xs sm:text-sm py-2.5 px-4 font-bold justify-center min-h-[46px]"
                 >
-                  <Github className="w-4 h-4 text-white mr-2" />
+                  <Github className="w-4.5 h-4.5 text-white mr-2 flex-shrink-0" />
                   <span>Sign In with GitHub</span>
                 </button>
 
@@ -63,9 +63,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate }) => {
                     signInAsDemoStudent();
                     navigate('/dashboard');
                   }}
-                  className="paper-button text-xs py-2 px-4"
+                  className="paper-button text-xs sm:text-sm py-2.5 px-4 justify-center min-h-[46px] font-bold"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-stone-700 mr-1.5" />
+                  <Sparkles className="w-4 h-4 text-stone-800 mr-2 flex-shrink-0" />
                   <span>Try Demo as Student</span>
                 </button>
               </>
@@ -73,9 +73,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate }) => {
 
             <button
               onClick={() => navigate('/explore')}
-              className="paper-button text-xs py-2 px-3 text-stone-700"
+              className="paper-button text-xs sm:text-sm py-2.5 px-4 text-[#212121] justify-center min-h-[46px] font-bold"
             >
-              <Compass className="w-3.5 h-3.5 mr-1.5" />
+              <Compass className="w-4.5 h-4.5 mr-2 flex-shrink-0" />
               <span>Browse Student Directory</span>
             </button>
           </div>
@@ -165,8 +165,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate }) => {
                   CAMPUS UTILITY
                 </span>
                 <div className="flex items-center space-x-2 font-mono text-[11px] text-stone-700">
-                  <span className="flex items-center"><Star className="w-3 h-3 text-stone-800 mr-1" /> 24</span>
-                  <span className="flex items-center"><GitFork className="w-3 h-3 text-stone-800 mr-1" /> 5</span>
+                  <span className="flex items-center"><Star className="w-3.5 h-3.5 text-stone-800 mr-1" /> 24</span>
+                  <span className="flex items-center"><GitFork className="w-3.5 h-3.5 text-stone-800 mr-1" /> 5</span>
                 </div>
               </div>
 
@@ -185,10 +185,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate }) => {
               </div>
               <button
                 onClick={() => navigate('/u/isabela-coder')}
-                className="text-stone-800 hover:text-black font-headline text-xs uppercase tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold"
+                className="text-stone-800 hover:text-black font-headline text-xs uppercase tracking-wider underline cursor-pointer flex items-center space-x-1.5 font-bold min-h-[36px] py-1 px-1.5"
               >
                 <span>By @isabela-coder</span>
-                <ArrowUpRight className="w-3 h-3" />
+                <ArrowUpRight className="w-3.5 h-3.5 flex-shrink-0" />
               </button>
             </div>
           </div>
@@ -201,8 +201,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate }) => {
                   CAPSTONE PROJECT
                 </span>
                 <div className="flex items-center space-x-2 font-mono text-[11px] text-stone-700">
-                  <span className="flex items-center"><Star className="w-3 h-3 text-stone-800 mr-1" /> 58</span>
-                  <span className="flex items-center"><GitFork className="w-3 h-3 text-stone-800 mr-1" /> 12</span>
+                  <span className="flex items-center"><Star className="w-3.5 h-3.5 text-stone-800 mr-1" /> 58</span>
+                  <span className="flex items-center"><GitFork className="w-3.5 h-3.5 text-stone-800 mr-1" /> 12</span>
                 </div>
               </div>
 
@@ -221,10 +221,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate }) => {
               </div>
               <button
                 onClick={() => navigate('/u/isabela-coder')}
-                className="text-stone-800 hover:text-black font-headline text-xs uppercase tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold"
+                className="text-stone-800 hover:text-black font-headline text-xs uppercase tracking-wider underline cursor-pointer flex items-center space-x-1.5 font-bold min-h-[36px] py-1 px-1.5"
               >
                 <span>By @isabela-coder</span>
-                <ArrowUpRight className="w-3 h-3" />
+                <ArrowUpRight className="w-3.5 h-3.5 flex-shrink-0" />
               </button>
             </div>
           </div>
@@ -245,9 +245,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate }) => {
 
           <button
             onClick={() => navigate('/explore')}
-            className="paper-button paper-button-dark text-xs py-2 px-4 self-start sm:self-auto flex-shrink-0 font-bold"
+            className="paper-button paper-button-dark text-xs py-2.5 px-4 self-start sm:self-auto flex-shrink-0 font-bold min-h-[44px]"
           >
-            <Compass className="w-4 h-4 mr-1.5" />
+            <Compass className="w-4.5 h-4.5 mr-2 flex-shrink-0" />
             <span>Open Classmate Directory</span>
           </button>
         </div>

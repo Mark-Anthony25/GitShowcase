@@ -1,17 +1,38 @@
 @import "tailwindcss";
-@import "papercss/dist/paper.min.css";
 
 @layer base {
-  body {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
     background-color: #F7F3E9;
     color: #212121;
     font-family: 'Neucha', 'Patrick Hand', 'Newsreader', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
+  }
+
+  #root {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Neucha', 'Oswald', sans-serif;
     font-weight: 700;
     letter-spacing: -0.01em;
+    overflow-wrap: break-word;
+  }
+
+  img, svg {
+    max-width: 100%;
   }
 }
 
@@ -51,15 +72,29 @@
   background-color: #FEFCF6;
   border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
   border: 2px solid #212121;
-  box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.85);
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.85);
+  max-width: 100%;
+}
+
+@media (min-width: 640px) {
+  .paper-sheet {
+    box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.85);
+  }
 }
 
 .paper-card {
-  background-color: #FFFFFF;
+  background-color: #FEFCF6;
   border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
   border: 2px solid #212121;
-  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.85);
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.85);
   transition: all 0.15s ease-in-out;
+  max-width: 100%;
+}
+
+@media (min-width: 640px) {
+  .paper-card {
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.85);
+  }
 }
 
 .paper-card:hover {
@@ -85,28 +120,87 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.35rem;
   font-family: 'Neucha', cursive, sans-serif;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0.5rem 1.1rem;
+  min-height: 38px;
   border: 2px solid #212121;
   border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
   background-color: #FEFCF6;
   color: #212121;
   box-shadow: 3px 3px 0px #212121;
   cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
   transition: all 0.12s ease-in-out;
 }
 
-.paper-button:hover {
+.paper-button:hover:not(:disabled) {
   transform: translate(-1px, -1px);
   box-shadow: 5px 5px 0px #212121;
 }
 
-.paper-button:active {
+.paper-button:active:not(:disabled) {
   transform: translate(2px, 2px);
   box-shadow: 1px 1px 0px #212121;
+}
+
+.paper-button:focus-visible {
+  outline: 3px solid #92400E;
+  outline-offset: 2px;
+}
+
+.paper-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: 1px 1px 0px #212121;
+  transform: none !important;
+}
+
+/* Dedicated icon-only button helper to avoid padding squashing & clipping */
+.paper-button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
+  border: 2px solid #212121;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  background-color: #FEFCF6;
+  color: #212121;
+  box-shadow: 3px 3px 0px #212121;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.12s ease-in-out;
+}
+
+.paper-button-icon:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0px #212121;
+}
+
+.paper-button-icon:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #212121;
+}
+
+.paper-button-icon:focus-visible {
+  outline: 3px solid #92400E;
+  outline-offset: 2px;
+}
+
+.paper-button-icon:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: 1px 1px 0px #212121;
+  transform: none !important;
 }
 
 .paper-button-dark {

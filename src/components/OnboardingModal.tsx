@@ -191,8 +191,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const selectedCount = Object.keys(selectedRepoMap).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs overflow-y-auto">
-      <div className="bg-[#FEFCF6] paper-card max-w-2xl w-full p-5 sm:p-7 shadow-[8px_8px_0px_#000] my-auto text-[#212121]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs overflow-y-auto">
+      <div className="bg-[#FEFCF6] paper-card max-w-2xl w-full p-4 sm:p-7 shadow-[4px_4px_0px_#000] sm:shadow-[8px_8px_0px_#000] my-auto text-[#212121] max-h-[90dvh] overflow-y-auto">
         
         {/* Step Indicator Header */}
         <div className="border-b-2 border-dashed border-[#212121] pb-4 mb-5">
@@ -291,7 +291,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     key={sugg}
                     type="button"
                     onClick={() => setHeadline(sugg)}
-                    className="paper-button text-[10px] font-mono py-0.5 px-2"
+                    className="paper-button text-[11px] font-mono py-1 px-2.5 min-h-[32px] cursor-pointer"
                   >
                     {sugg}
                   </button>
@@ -319,7 +319,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 value={aboutMe}
                 onChange={(e) => setAboutMe(e.target.value.slice(0, 50))}
                 placeholder="Crisp 50-character summary of your tech passion..."
-                className={`w-full px-3 py-2 paper-input text-xs font-serif-body ${
+                className={`w-full px-3 py-2 paper-input text-xs font-serif-body min-h-[44px] ${
                   aboutMe.length >= 50
                     ? 'border-amber-600 ring-2 ring-amber-600'
                     : ''
@@ -339,7 +339,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 <select
                   value={program}
                   onChange={(e) => setProgram(e.target.value)}
-                  className="w-full px-3 py-2 paper-input text-xs font-serif-body text-[#212121]"
+                  className="w-full px-3 py-2 paper-input text-xs font-serif-body text-[#212121] min-h-[44px] cursor-pointer"
                 >
                   {PROGRAM_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>{opt}</option>
@@ -354,7 +354,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 <select
                   value={yearLevel}
                   onChange={(e) => setYearLevel(e.target.value)}
-                  className="w-full px-3 py-2 paper-input text-xs font-serif-body text-[#212121]"
+                  className="w-full px-3 py-2 paper-input text-xs font-serif-body text-[#212121] min-h-[44px] cursor-pointer"
                 >
                   {YEAR_OPTIONS.map((yr) => (
                     <option key={yr} value={yr}>{yr}</option>
@@ -364,12 +364,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end space-x-3 pt-4 border-t-2 border-dashed border-[#212121]">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:space-x-3 pt-4 border-t-2 border-dashed border-[#212121]">
               {onCancel && (
                 <button
                   type="button"
                   onClick={onCancel}
-                  className="paper-button text-xs py-2 px-3.5"
+                  className="paper-button text-xs py-2 px-4 min-h-[44px] font-bold justify-center"
                 >
                   Skip for Now
                 </button>
@@ -377,10 +377,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               <button
                 type="submit"
                 id="onboarding-step1-next-btn"
-                className="paper-button paper-button-dark text-xs py-2 px-4 font-bold"
+                className="paper-button paper-button-dark text-xs py-2 px-5 font-bold min-h-[44px] justify-center"
               >
                 <span>Continue to Select Repositories</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1.5 inline-block" />
+                <ArrowRight className="w-4 h-4 ml-1.5 flex-shrink-0" />
               </button>
             </div>
           </form>
@@ -407,7 +407,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
 
             {/* Repos List */}
-            <div className="paper-card bg-white max-h-80 overflow-y-auto divide-y-2 divide-dashed divide-stone-300 p-2">
+            <div className="paper-card bg-[#FEFCF6] max-h-64 overflow-y-auto divide-y-2 divide-dashed divide-stone-300 p-2">
               {loadingRepos ? (
                 <div className="p-8 text-center space-y-2">
                   <div className="animate-spin w-6 h-6 border-2 border-black border-t-transparent mx-auto"></div>
@@ -466,18 +466,18 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                                 ...selectedRepoMap,
                                 [repo.full_name]: {
                                   ...meta,
-                                  isFeatured: !meta.isFeatured,
+                                  isFeatured: !meta?.isFeatured,
                                 },
                               });
                             }}
                             title="Pin as Lead Capstone Project"
-                            className={`paper-button text-[11px] font-mono py-1 px-2 flex-shrink-0 ${
+                            className={`paper-button text-xs py-1.5 px-2.5 min-h-[36px] font-bold flex-shrink-0 ${
                               meta?.isFeatured
                                 ? 'paper-button-dark'
                                 : ''
                             }`}
                           >
-                            <Star className={`w-3 h-3 mr-1 inline-block ${meta?.isFeatured ? 'fill-amber-300 text-amber-300' : ''}`} />
+                            <Star className={`w-3.5 h-3.5 mr-1 inline-block ${meta?.isFeatured ? 'fill-amber-300 text-amber-300' : ''}`} />
                             <span>{meta?.isFeatured ? 'Featured Pin' : 'Feature'}</span>
                           </button>
                         )}
@@ -489,13 +489,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-between pt-4 border-t-2 border-dashed border-[#212121]">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-4 border-t-2 border-dashed border-[#212121]">
               <button
                 type="button"
                 onClick={() => setCurrentStep(1)}
-                className="paper-button text-xs py-1.5 px-3"
+                className="paper-button text-xs py-2 px-4 min-h-[44px] font-bold justify-center"
               >
-                <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+                <ArrowLeft className="w-4 h-4 mr-1.5 flex-shrink-0" />
                 <span>Back to Profile</span>
               </button>
 
@@ -504,13 +504,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 id="complete-onboarding-btn"
                 disabled={savingRepos}
                 onClick={handleFinishOnboarding}
-                className="paper-button paper-button-dark text-xs py-2 px-4 font-bold disabled:opacity-50"
+                className="paper-button paper-button-dark text-xs py-2.5 px-5 font-bold disabled:opacity-50 min-h-[44px] justify-center"
               >
                 {savingRepos ? (
                   <span>Publishing Showcase...</span>
                 ) : (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400 mr-1 inline-block" />
+                    <Check className="w-4 h-4 text-emerald-400 mr-1.5 flex-shrink-0" />
                     <span>Complete Setup &amp; Launch Showcase</span>
                   </>
                 )}

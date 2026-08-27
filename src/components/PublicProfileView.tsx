@@ -95,28 +95,28 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   return (
     <div className="space-y-8 pb-12 text-[#212121]">
       {/* Top Action Bar */}
-      <div className="flex items-center justify-between border-b-2 border-dashed border-[#212121] pb-3">
+      <div className="flex items-center justify-between border-b-2 border-dashed border-[#212121] pb-3 gap-2">
         <button
           onClick={() => navigate('/explore')}
-          className="paper-button text-xs py-1.5 px-3 font-bold"
+          className="paper-button text-xs py-2 px-3 sm:px-4 font-bold min-h-[42px]"
         >
-          <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+          <ArrowLeft className="w-4 h-4 mr-1.5 flex-shrink-0" />
           <span>Back to Directory</span>
         </button>
 
         <button
           id="share-profile-btn"
           onClick={handleShare}
-          className="paper-button text-xs py-1.5 px-3.5 font-bold"
+          className="paper-button text-xs py-2 px-3.5 sm:px-4 font-bold min-h-[42px]"
         >
           {copiedLink ? (
             <>
-              <Check className="w-3.5 h-3.5 text-emerald-700 mr-1" />
+              <Check className="w-4 h-4 text-emerald-700 mr-1.5 flex-shrink-0" />
               <span>Link Copied!</span>
             </>
           ) : (
             <>
-              <Share2 className="w-3.5 h-3.5 mr-1" />
+              <Share2 className="w-4 h-4 mr-1.5 flex-shrink-0" />
               <span>Share Profile</span>
             </>
           )}
@@ -124,32 +124,32 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
       </div>
 
       {/* Profile Lead Story Masthead */}
-      <div className="bg-[#FAF6EC] paper-card p-6 space-y-4">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pb-4 border-b-2 border-dashed border-[#212121]">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="w-18 h-18 sm:w-20 sm:h-20 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[3px_3px_0px_#212121]">
+      <div className="bg-[#FAF6EC] paper-card p-4 sm:p-6 space-y-4 w-full max-w-full">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-5 pb-4 border-b-2 border-dashed border-[#212121]">
+          <div className="flex items-center space-x-3.5 sm:space-x-4 min-w-0">
+            <div className="w-14 h-14 sm:w-20 sm:h-20 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[2px_2px_0px_#212121] sm:shadow-[3px_3px_0px_#212121]">
               <img
                 src={profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'}
                 alt={profile.full_name || profile.github_username}
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="space-y-1">
-              <span className="text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
+            <div className="space-y-0.5 min-w-0">
+              <span className="text-[10px] sm:text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold truncate">
                 STUDENT DEVELOPER &bull; ISU CAUAYAN
               </span>
-              <h1 className="text-2xl sm:text-3xl font-[900] uppercase font-newspaper-title text-[#212121]">
+              <h1 className="text-xl sm:text-3xl font-[900] uppercase font-newspaper-title text-[#212121] truncate">
                 {profile.full_name || profile.github_username}
               </h1>
               {profile.headline && (
-                <p className="text-xs sm:text-sm font-headline uppercase tracking-wider text-stone-800 font-bold">
+                <p className="text-xs sm:text-sm font-headline uppercase tracking-wider text-stone-800 font-bold truncate">
                   {profile.headline}
                 </p>
               )}
-              <div className="flex items-center space-x-2 text-xs sm:text-sm font-serif-body text-stone-700 flex-wrap gap-y-1">
+              <div className="flex items-center space-x-1.5 sm:space-x-2 text-[11px] sm:text-sm font-serif-body text-stone-700 flex-wrap gap-y-0.5">
                 <span className="font-mono font-bold text-stone-900">@{profile.github_username}</span>
                 <span>&bull;</span>
-                <span>{profile.program || 'Student Developer'}</span>
+                <span className="truncate">{profile.program || 'Student'}</span>
                 {profile.year_level && (
                   <>
                     <span>&bull;</span>
@@ -164,18 +164,18 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             href={`https://github.com/${profile.github_username}`}
             target="_blank"
             rel="noreferrer"
-            className="paper-button paper-button-dark text-xs py-2 px-4 font-bold flex-shrink-0"
+            className="paper-button paper-button-dark text-xs py-2 px-4 font-bold flex-shrink-0 w-full sm:w-auto justify-center min-h-[44px]"
           >
-            <Github className="w-3.5 h-3.5 mr-1.5" />
+            <Github className="w-4 h-4 text-white mr-2 flex-shrink-0" />
             <span>GitHub Profile</span>
-            <ExternalLink className="w-3 h-3 ml-1" />
+            <ExternalLink className="w-3.5 h-3.5 ml-1.5 flex-shrink-0" />
           </a>
         </div>
 
         {profile.bio && (
-          <div className="bg-[#FEFCF6] p-4 paper-card border-dashed">
-            <span className="text-[11px] font-sketch uppercase text-stone-700 block mb-1 font-bold">About Me</span>
-            <p className="text-sm font-serif-body text-stone-900 leading-relaxed italic">
+          <div className="bg-[#FEFCF6] p-3 sm:p-4 paper-card border-dashed">
+            <span className="text-[10px] sm:text-[11px] font-sketch uppercase text-stone-700 block mb-0.5 sm:mb-1 font-bold">About Me</span>
+            <p className="text-xs sm:text-sm font-serif-body text-stone-900 leading-relaxed italic break-words">
               "{profile.bio}"
             </p>
           </div>
@@ -320,9 +320,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isFeatured = false }
               href={stats.homepage}
               target="_blank"
               rel="noreferrer"
-              className="text-stone-800 hover:text-black underline flex items-center space-x-1 font-bold"
+              className="text-stone-800 hover:text-black underline flex items-center space-x-1.5 font-bold min-h-[38px] py-1 px-1.5"
             >
-              <Globe className="w-3 h-3 mr-0.5" />
+              <Globe className="w-3.5 h-3.5 mr-0.5 flex-shrink-0" />
               <span>Live System</span>
             </a>
           )}
@@ -330,11 +330,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isFeatured = false }
             href={project.repo_url}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center space-x-1 text-stone-800 hover:text-black underline font-bold"
+            className="inline-flex items-center space-x-1.5 text-stone-800 hover:text-black underline font-bold min-h-[38px] py-1 px-1.5"
           >
-            <Github className="w-3.5 h-3.5 mr-0.5" />
+            <Github className="w-4 h-4 mr-0.5 flex-shrink-0" />
             <span>Source Code</span>
-            <ExternalLink className="w-3 h-3 ml-0.5" />
+            <ExternalLink className="w-3.5 h-3.5 ml-0.5 flex-shrink-0" />
           </a>
         </div>
       </div>

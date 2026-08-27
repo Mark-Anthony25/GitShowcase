@@ -121,10 +121,10 @@ create trigger on_auth_user_created
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-[#FEFCF6] paper-card max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-[8px_8px_0px_#000] text-[#212121]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-[#FEFCF6] paper-card max-w-3xl w-full max-h-[90dvh] flex flex-col overflow-hidden shadow-[4px_4px_0px_#000] sm:shadow-[8px_8px_0px_#000] text-[#212121]">
         {/* Header */}
-        <div className="p-6 border-b-2 border-dashed border-[#212121] flex items-center justify-between bg-[#FAF6EC]">
+        <div className="p-3.5 sm:p-6 border-b-2 border-dashed border-[#212121] flex items-center justify-between bg-[#FAF6EC]">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 paper-card bg-white text-black flex items-center justify-center">
               <Database className="w-5 h-5" />
@@ -140,18 +140,19 @@ create trigger on_auth_user_created
           </div>
           <button
             id="close-guide-btn"
+            aria-label="Close dialog"
             onClick={onClose}
-            className="paper-button p-2 text-stone-800"
+            className="paper-button-icon min-w-[44px] min-h-[44px] p-2 text-stone-800 flex items-center justify-center cursor-pointer flex-shrink-0"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex flex-wrap border-b-2 border-dashed border-[#212121] px-6 py-2 bg-stone-100 gap-2">
+        <div className="flex flex-wrap border-b-2 border-dashed border-[#212121] px-4 sm:px-6 py-2 bg-stone-100 gap-2">
           <button
             onClick={() => setActiveTab('quick')}
-            className={`paper-button text-xs font-bold uppercase tracking-wider py-1.5 px-3 ${
+            className={`paper-button text-xs font-bold uppercase tracking-wider py-2 px-3 min-h-[40px] ${
               activeTab === 'quick' ? 'paper-button-dark' : ''
             }`}
           >
@@ -159,7 +160,7 @@ create trigger on_auth_user_created
           </button>
           <button
             onClick={() => setActiveTab('sql')}
-            className={`paper-button text-xs font-bold uppercase tracking-wider py-1.5 px-3 ${
+            className={`paper-button text-xs font-bold uppercase tracking-wider py-2 px-3 min-h-[40px] ${
               activeTab === 'sql' ? 'paper-button-dark' : ''
             }`}
           >
@@ -167,7 +168,7 @@ create trigger on_auth_user_created
           </button>
           <button
             onClick={() => setActiveTab('oauth')}
-            className={`paper-button text-xs font-bold uppercase tracking-wider py-1.5 px-3 ${
+            className={`paper-button text-xs font-bold uppercase tracking-wider py-2 px-3 min-h-[40px] ${
               activeTab === 'oauth' ? 'paper-button-dark' : ''
             }`}
           >
@@ -238,7 +239,7 @@ create trigger on_auth_user_created
                       setInputKey('');
                       updateSupabaseConfig('', '');
                     }}
-                    className="text-xs font-headline uppercase text-rose-700 hover:underline cursor-pointer"
+                    className="text-xs font-headline uppercase text-rose-700 hover:underline cursor-pointer min-h-[36px] py-1"
                   >
                     Reset to Demo Sandbox
                   </button>
@@ -246,7 +247,7 @@ create trigger on_auth_user_created
                   <button
                     id="save-credentials-btn"
                     type="submit"
-                    className="paper-button paper-button-dark px-5 py-2.5 text-xs uppercase tracking-wider font-bold"
+                    className="paper-button paper-button-dark px-5 py-2.5 text-xs uppercase tracking-wider font-bold min-h-[44px]"
                   >
                     Save &amp; Reload Client
                   </button>
@@ -257,7 +258,7 @@ create trigger on_auth_user_created
 
           {activeTab === 'sql' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div>
                   <h3 className="text-sm font-newspaper-title font-[900] uppercase text-[#212121]">
                     Database Schema &amp; Row Level Security
@@ -269,16 +270,16 @@ create trigger on_auth_user_created
                 <button
                   id="copy-sql-btn"
                   onClick={copySql}
-                  className="paper-button flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider"
+                  className="paper-button flex items-center space-x-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wider min-h-[40px] flex-shrink-0"
                 >
                   {copiedSql ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                       <span>Copied!</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3.5 h-3.5" />
+                      <Copy className="w-4 h-4 flex-shrink-0" />
                       <span>Copy SQL</span>
                     </>
                   )}
@@ -330,12 +331,12 @@ create trigger on_auth_user_created
         {/* Footer */}
         <div className="p-4 border-t-2 border-dashed border-[#212121] bg-stone-100 flex items-center justify-between">
           <div className="flex items-center space-x-2 text-xs font-sketch font-bold uppercase text-stone-800">
-            <Sparkles className="w-4 h-4 text-amber-600" />
+            <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
             <span>Runs 100% on free-tier services ($0/mo)</span>
           </div>
           <button
             onClick={onClose}
-            className="paper-button paper-button-dark px-4 py-1.5 text-xs uppercase font-bold"
+            className="paper-button paper-button-dark px-5 py-2.5 text-xs uppercase font-bold min-h-[44px]"
           >
             Close
           </button>

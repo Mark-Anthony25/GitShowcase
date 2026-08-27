@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Github, Plus, Trash2, Edit3, Star, GitFork, ExternalLink, 
   Check, Sparkles, AlertCircle, RefreshCw, Eye, Pin, Bookmark, 
-  BookOpen, GraduationCap, User, ArrowUpRight, Search, CheckCircle2, Newspaper
+  BookOpen, GraduationCap, User, ArrowUpRight, Search, CheckCircle2, Newspaper, X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
@@ -224,25 +224,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
   const username = profile?.github_username || 'student';
 
   return (
-    <div className="space-y-6 pb-10 text-[#212121]">
+    <div className="space-y-5 sm:space-y-6 pb-10 text-[#212121] w-full max-w-full">
       {/* Top Student Card */}
-      <div className="paper-card bg-[#FAF6EC] p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center space-x-3.5">
-          <div className="w-13 h-13 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[2px_2px_0px_#212121]">
+      <div className="paper-card bg-[#FAF6EC] p-3.5 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 sm:gap-4">
+        <div className="flex items-center space-x-3 min-w-0">
+          <div className="w-12 h-12 sm:w-13 sm:h-13 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[2px_2px_0px_#212121]">
             <img
               src={profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80'}
               alt={profile?.github_username || 'Student'}
               className="w-full h-full object-cover"
             />
           </div>
-          <div>
-            <span className="text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
+          <div className="min-w-0">
+            <span className="text-[10px] sm:text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold truncate">
               STUDENT DESK &bull; ISU CAUAYAN
             </span>
-            <h1 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
+            <h1 className="text-lg sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121] truncate">
               {profile?.full_name || 'My Projects'}
             </h1>
-            <p className="text-xs sm:text-sm font-serif-body text-stone-700">
+            <p className="text-xs sm:text-sm font-serif-body text-stone-700 truncate">
               @{username} &bull; {profile?.program || 'BS Computer Science'} &bull; {profile?.year_level || '3rd Year'}
             </p>
           </div>
@@ -253,9 +253,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
             <button
               id="reopen-onboarding-btn"
               onClick={onOpenOnboarding}
-              className="paper-button text-xs py-1.5 px-3"
+              className="paper-button text-xs py-2 px-3.5 flex-1 sm:flex-initial justify-center min-h-[42px] sm:min-h-[38px] font-bold"
             >
-              <Sparkles className="w-3.5 h-3.5 text-stone-700 mr-1.5" />
+              <Sparkles className="w-4 h-4 text-stone-700 mr-1.5 flex-shrink-0" />
               <span>Setup Wizard</span>
             </button>
           )}
@@ -263,11 +263,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
           <button
             id="view-public-profile-btn"
             onClick={() => navigate(`/u/${username}`)}
-            className="flex-1 sm:flex-initial paper-button paper-button-dark text-xs py-1.5 px-3.5 font-bold"
+            className="flex-1 sm:flex-initial paper-button paper-button-dark text-xs py-2 px-4 font-bold justify-center min-h-[42px] sm:min-h-[38px]"
           >
-            <Eye className="w-3.5 h-3.5 mr-1.5" />
+            <Eye className="w-4 h-4 mr-1.5 flex-shrink-0" />
             <span>View Public Page</span>
-            <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+            <ArrowUpRight className="w-4 h-4 ml-1 flex-shrink-0" />
           </button>
         </div>
       </div>
@@ -276,11 +276,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
       <CommitHeatmap username={username} compact={false} />
 
       {isSchemaMissing && (
-        <div className="p-3.5 bg-amber-50 border-2 border-amber-500 paper-card text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div className="p-3 sm:p-3.5 bg-amber-50 border-2 border-amber-500 paper-card text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-start space-x-2">
-            <AlertCircle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
             <div className="space-y-0.5">
-              <p className="font-bold uppercase tracking-wider font-headline text-[11px]">
+              <p className="font-bold uppercase tracking-wider font-headline text-xs">
                 Supabase Tables Pending Creation
               </p>
               <p className="font-serif-body text-stone-800 text-xs">
@@ -291,7 +291,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
           {onOpenGuide && (
             <button
               onClick={onOpenGuide}
-              className="paper-button text-xs py-1 px-3 whitespace-nowrap font-bold flex-shrink-0"
+              className="paper-button text-xs py-2 px-3.5 whitespace-nowrap font-bold flex-shrink-0 min-h-[40px]"
             >
               Open SQL Setup Guide
             </button>
@@ -300,10 +300,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
       )}
 
       {isDemoMode && (
-        <div className="p-3 bg-[#EFE9DB] paper-card text-[#212121] flex items-center justify-between text-xs font-mono">
+        <div className="p-2.5 sm:p-3 bg-[#EFE9DB] paper-card text-[#212121] flex items-center justify-between text-xs font-mono">
           <div className="flex items-center space-x-2">
             <Sparkles className="w-4 h-4 text-stone-800 flex-shrink-0" />
-            <span>
+            <span className="text-[11px] sm:text-xs">
               <strong>DEMO MODE ACTIVE</strong>: You can test adding/editing repositories and updating your profile data.
             </span>
           </div>
@@ -315,40 +315,40 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
         <button
           id="tab-showcase-btn"
           onClick={() => setActiveTab('showcase')}
-          className={`paper-button text-xs py-1.5 px-3.5 font-bold ${
+          className={`paper-button text-xs py-2 px-3 sm:px-4 font-bold min-h-[42px] ${
             activeTab === 'showcase'
               ? 'paper-button-dark'
               : ''
           }`}
         >
-          <Bookmark className="w-3.5 h-3.5 mr-1.5 inline-block" />
-          <span>Published Projects ({showcased.length})</span>
+          <Bookmark className="w-4 h-4 mr-1.5 flex-shrink-0" />
+          <span>Published ({showcased.length})</span>
         </button>
 
         <button
           id="tab-add-repos-btn"
           onClick={() => setActiveTab('repos')}
-          className={`paper-button text-xs py-1.5 px-3.5 font-bold ${
+          className={`paper-button text-xs py-2 px-3 sm:px-4 font-bold min-h-[42px] ${
             activeTab === 'repos'
               ? 'paper-button-dark'
               : ''
           }`}
         >
-          <Plus className="w-3.5 h-3.5 mr-1.5 inline-block" />
-          <span>Import from GitHub</span>
+          <Plus className="w-4 h-4 mr-1.5 flex-shrink-0" />
+          <span>Import Repos</span>
         </button>
 
         <button
           id="tab-profile-btn"
           onClick={() => setActiveTab('profile')}
-          className={`paper-button text-xs py-1.5 px-3.5 font-bold ${
+          className={`paper-button text-xs py-2 px-3 sm:px-4 font-bold min-h-[42px] ${
             activeTab === 'profile'
               ? 'paper-button-dark'
               : ''
           }`}
         >
-          <User className="w-3.5 h-3.5 mr-1.5 inline-block" />
-          <span>Edit Profile &amp; Bio</span>
+          <User className="w-4 h-4 mr-1.5 flex-shrink-0" />
+          <span>Edit Profile</span>
         </button>
       </div>
 
@@ -367,9 +367,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
             <button
               onClick={() => setActiveTab('repos')}
-              className="paper-button text-xs py-1.5 px-3 font-bold"
+              className="paper-button text-xs py-2 px-4 font-bold min-h-[40px]"
             >
-              <Plus className="w-3.5 h-3.5 mr-1" />
+              <Plus className="w-4 h-4 mr-1.5 flex-shrink-0" />
               <span>Import More Repos</span>
             </button>
           </div>
@@ -390,9 +390,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
               </div>
               <button
                 onClick={() => setActiveTab('repos')}
-                className="paper-button paper-button-dark text-xs py-2 px-4 font-bold"
+                className="paper-button paper-button-dark text-xs py-2 px-4 font-bold min-h-[44px]"
               >
-                <Plus className="w-3.5 h-3.5 mr-1.5" />
+                <Plus className="w-4 h-4 mr-1.5 flex-shrink-0" />
                 <span>Browse GitHub Repositories</span>
               </button>
             </div>
@@ -407,12 +407,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                       : 'bg-[#FEFCF6]'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2 flex-wrap">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                         {proj.is_featured && (
                           <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[10px] font-bold">
-                            <Pin className="w-2.5 h-2.5 mr-1" />
+                            <Pin className="w-3 h-3 mr-1" />
                             LEAD DISPATCH
                           </span>
                         )}
@@ -420,36 +420,40 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                           {proj.repo_full_name}
                         </span>
                       </div>
-                      <h3 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
+                      <h3 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121] break-words">
                         {proj.custom_title || proj.repo_full_name.split('/')[1]}
                       </h3>
                     </div>
 
-                    <div className="flex items-center space-x-1.5">
+                    {/* Action button row with min 44x44px touch targets */}
+                    <div className="flex items-center space-x-2 flex-shrink-0 self-end sm:self-start">
                       <button
                         title={proj.is_featured ? 'Unpin from top' : 'Pin to top as lead dispatch'}
+                        aria-label={proj.is_featured ? 'Unpin lead project' : 'Pin as lead project'}
                         onClick={() => handleToggleFeatured(proj)}
-                        className={`paper-button p-1.5 ${
+                        className={`paper-button-icon min-w-[44px] min-h-[44px] ${
                           proj.is_featured ? 'paper-button-dark' : ''
                         }`}
                       >
-                        <Star className={`w-3.5 h-3.5 ${proj.is_featured ? 'fill-white' : ''}`} />
+                        <Star className={`w-4.5 h-4.5 ${proj.is_featured ? 'fill-amber-300 text-amber-300' : 'text-stone-800'}`} />
                       </button>
 
                       <button
-                        title="Edit title / context description"
+                        title="Edit title and context description"
+                        aria-label="Edit project details"
                         onClick={() => setEditingProject(proj)}
-                        className="paper-button p-1.5"
+                        className="paper-button-icon min-w-[44px] min-h-[44px] text-stone-800"
                       >
-                        <Edit3 className="w-3.5 h-3.5" />
+                        <Edit3 className="w-4.5 h-4.5" />
                       </button>
 
                       <button
                         title="Remove from publication"
+                        aria-label="Remove project from showcase"
                         onClick={() => handleRemoveProject(proj.id)}
-                        className="paper-button p-1.5 text-rose-800 hover:bg-rose-100"
+                        className="paper-button-icon min-w-[44px] min-h-[44px] text-rose-800 hover:bg-rose-100 hover:text-rose-950"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4.5 h-4.5" />
                       </button>
                     </div>
                   </div>
@@ -463,11 +467,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                       href={proj.repo_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-stone-900 hover:text-black underline flex items-center space-x-1 font-bold"
+                      className="text-stone-900 hover:text-black underline flex items-center space-x-1.5 font-bold min-h-[36px] py-1"
                     >
-                      <Github className="w-3.5 h-3.5" />
+                      <Github className="w-4 h-4 flex-shrink-0" />
                       <span>Inspect Repository</span>
-                      <ExternalLink className="w-3 h-3 ml-0.5" />
+                      <ExternalLink className="w-3.5 h-3.5 ml-0.5 flex-shrink-0" />
                     </a>
                   </div>
                 </div>
@@ -492,22 +496,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
             <div className="flex items-center space-x-2 w-full sm:w-auto">
               <div className="relative flex-1 sm:w-64">
-                <Search className="w-3.5 h-3.5 text-stone-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-stone-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Filter repositories..."
                   value={repoSearch}
                   onChange={(e) => setRepoSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 paper-input text-xs font-mono text-[#212121]"
+                  className="w-full pl-9 pr-3 py-2 paper-input text-xs font-mono text-[#212121] min-h-[44px]"
                 />
               </div>
 
               <button
                 onClick={loadGitHubRepos}
-                className="paper-button p-2"
+                className="paper-button-icon min-w-[44px] min-h-[44px] flex-shrink-0 cursor-pointer"
                 title="Refresh GitHub Repositories"
+                aria-label="Refresh GitHub Repositories"
               >
-                <RefreshCw className={`w-4 h-4 ${loadingRepos ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4.5 h-4.5 text-stone-800 ${loadingRepos ? 'animate-spin' : ''}`} />
               </button>
             </div>
           </div>
@@ -536,9 +541,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121]">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center space-x-2 flex-wrap">
+                          <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
                             {repo.name}
                           </h3>
                           {repo.fork && (
@@ -547,22 +552,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-stone-600 font-mono">
+                        <p className="text-xs text-stone-600 font-mono truncate">
                           {repo.full_name}
                         </p>
                       </div>
 
                       {isAlreadyShowcased ? (
-                        <span className="paper-badge text-[11px] font-bold bg-stone-200">
-                          <CheckCircle2 className="w-3 h-3 mr-1 inline-block" />
+                        <span className="paper-badge text-xs font-bold bg-stone-200 py-1 px-2.5 flex-shrink-0">
+                          <CheckCircle2 className="w-3.5 h-3.5 mr-1 inline-block text-emerald-700" />
                           Published
                         </span>
                       ) : (
                         <button
                           onClick={() => handleOpenAddModal(repo)}
-                          className="paper-button paper-button-dark text-xs py-1 px-3 font-bold"
+                          className="paper-button paper-button-dark text-xs py-1.5 px-3.5 font-bold min-h-[38px] flex-shrink-0"
                         >
-                          <Plus className="w-3 h-3 mr-1" />
+                          <Plus className="w-4 h-4 mr-1 flex-shrink-0" />
                           <span>Publish</span>
                         </button>
                       )}
@@ -581,11 +586,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                           </span>
                         )}
                         <span className="flex items-center space-x-1">
-                          <Star className="w-3 h-3 text-stone-700" />
+                          <Star className="w-3.5 h-3.5 text-stone-700" />
                           <span>{repo.stargazers_count}</span>
                         </span>
                         <span className="flex items-center space-x-1">
-                          <GitFork className="w-3 h-3 text-stone-700" />
+                          <GitFork className="w-3.5 h-3.5 text-stone-700" />
                           <span>{repo.forks_count}</span>
                         </span>
                       </div>
@@ -594,10 +599,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                         href={repo.html_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-stone-800 hover:text-black p-0.5"
+                        className="paper-button-icon min-w-[38px] min-h-[38px] p-1.5 text-stone-800 hover:text-black"
                         title="Open repo on GitHub"
+                        aria-label={`Open ${repo.name} on GitHub`}
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
+                        <ExternalLink className="w-4 h-4" />
                       </a>
                     </div>
                   </div>
@@ -720,8 +726,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
             <div className="pt-2 flex items-center justify-between">
               {profileSaved ? (
-                <span className="paper-badge bg-emerald-100 text-emerald-950 border-emerald-800 text-xs font-bold">
-                  <Check className="w-3.5 h-3.5 mr-1 inline-block" />
+                <span className="paper-badge bg-emerald-100 text-emerald-950 border-emerald-800 text-xs font-bold py-1 px-2.5">
+                  <Check className="w-4 h-4 mr-1 inline-block text-emerald-700" />
                   Profile Saved
                 </span>
               ) : (
@@ -732,7 +738,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 id="save-profile-btn"
                 type="submit"
                 disabled={profileSaving}
-                className="paper-button paper-button-dark text-xs py-2 px-4 font-bold disabled:opacity-50"
+                className="paper-button paper-button-dark text-xs py-2 px-5 font-bold disabled:opacity-50 min-h-[44px]"
               >
                 {profileSaving ? 'Saving...' : 'Save Profile'}
               </button>
@@ -743,25 +749,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
       {/* Modal: Add Project to Showcase */}
       {selectedRepoToAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-[#FEFCF6] paper-card max-w-lg w-full p-6 space-y-4 shadow-[8px_8px_0px_#000]">
-            <div className="flex items-start justify-between border-b-2 border-dashed border-[#212121] pb-3">
-              <div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-[#FEFCF6] paper-card max-w-lg w-full p-4 sm:p-6 space-y-4 shadow-[8px_8px_0px_#000] max-h-[90dvh] overflow-y-auto">
+            <div className="flex items-start justify-between border-b-2 border-dashed border-[#212121] pb-3 gap-2">
+              <div className="min-w-0 flex-1">
                 <span className="text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
                   SHOWCASE PROJECT
                 </span>
-                <h3 className="text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
+                <h3 className="text-lg font-[900] uppercase font-newspaper-title text-[#212121] truncate">
                   Publish to Student Showcase
                 </h3>
-                <p className="text-xs text-stone-700 font-mono">
+                <p className="text-xs text-stone-700 font-mono truncate">
                   {selectedRepoToAdd.full_name}
                 </p>
               </div>
               <button
+                id="close-add-modal-btn"
+                aria-label="Close dialog"
                 onClick={() => setSelectedRepoToAdd(null)}
-                className="paper-button w-7 h-7 flex items-center justify-center font-bold text-sm text-stone-800"
+                className="paper-button-icon min-w-[44px] min-h-[44px] p-2 flex items-center justify-center text-stone-800 cursor-pointer flex-shrink-0"
               >
-                &times;
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -775,7 +783,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   value={customTitle}
                   onChange={(e) => setCustomTitle(e.target.value)}
                   placeholder="e.g. Smart Campus Navigation App"
-                  className="w-full px-3 py-2 paper-input text-xs font-serif-body"
+                  className="w-full px-3 py-2 paper-input text-xs font-serif-body min-h-[44px]"
                 />
               </div>
 
@@ -792,7 +800,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 />
               </div>
 
-              <div className="flex items-center space-x-2 pt-1">
+              <div className="flex items-center space-x-2 pt-1 min-h-[36px]">
                 <input
                   type="checkbox"
                   id="featured-checkbox"
@@ -800,7 +808,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   onChange={(e) => setIsFeatured(e.target.checked)}
                   className="w-4 h-4 border-2 border-[#212121] rounded-xs cursor-pointer"
                 />
-                <label htmlFor="featured-checkbox" className="text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold">
+                <label htmlFor="featured-checkbox" className="text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold select-none">
                   Pin as Featured Project at Top of Page
                 </label>
               </div>
@@ -809,14 +817,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 <button
                   type="button"
                   onClick={() => setSelectedRepoToAdd(null)}
-                  className="paper-button text-xs py-1.5 px-3"
+                  className="paper-button text-xs py-2 px-4 min-h-[44px] font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={addingInProgress}
-                  className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold disabled:opacity-50"
+                  className="paper-button paper-button-dark text-xs py-2 px-5 font-bold disabled:opacity-50 min-h-[44px]"
                 >
                   {addingInProgress ? 'Publishing...' : 'Publish to Showcase'}
                 </button>
@@ -828,25 +836,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
       {/* Modal: Edit Existing Project */}
       {editingProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-[#FEFCF6] paper-card max-w-lg w-full p-6 space-y-4 shadow-[8px_8px_0px_#000]">
-            <div className="flex items-start justify-between border-b-2 border-dashed border-[#212121] pb-3">
-              <div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-[#FEFCF6] paper-card max-w-lg w-full p-4 sm:p-6 space-y-4 shadow-[8px_8px_0px_#000] max-h-[90dvh] overflow-y-auto">
+            <div className="flex items-start justify-between border-b-2 border-dashed border-[#212121] pb-3 gap-2">
+              <div className="min-w-0 flex-1">
                 <span className="text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
                   EDIT DETAILS
                 </span>
-                <h3 className="text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
+                <h3 className="text-lg font-[900] uppercase font-newspaper-title text-[#212121] truncate">
                   Edit Project Details
                 </h3>
-                <p className="text-xs text-stone-700 font-mono">
+                <p className="text-xs text-stone-700 font-mono truncate">
                   {editingProject.repo_full_name}
                 </p>
               </div>
               <button
+                id="close-edit-modal-btn"
+                aria-label="Close dialog"
                 onClick={() => setEditingProject(null)}
-                className="paper-button w-7 h-7 flex items-center justify-center font-bold text-sm text-stone-800"
+                className="paper-button-icon min-w-[44px] min-h-[44px] p-2 flex items-center justify-center text-stone-800 cursor-pointer flex-shrink-0"
               >
-                &times;
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -861,7 +871,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   onChange={(e) =>
                     setEditingProject({ ...editingProject, custom_title: e.target.value })
                   }
-                  className="w-full px-3 py-2 paper-input text-xs font-serif-body"
+                  className="w-full px-3 py-2 paper-input text-xs font-serif-body min-h-[44px]"
                 />
               </div>
 
@@ -879,7 +889,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 />
               </div>
 
-              <div className="flex items-center space-x-2 pt-1">
+              <div className="flex items-center space-x-2 pt-1 min-h-[36px]">
                 <input
                   type="checkbox"
                   id="edit-featured-checkbox"
@@ -889,7 +899,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   }
                   className="w-4 h-4 border-2 border-[#212121] rounded-xs cursor-pointer"
                 />
-                <label htmlFor="edit-featured-checkbox" className="text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold">
+                <label htmlFor="edit-featured-checkbox" className="text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold select-none">
                   Pin as Featured Project at Top of Page
                 </label>
               </div>
@@ -898,13 +908,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 <button
                   type="button"
                   onClick={() => setEditingProject(null)}
-                  className="paper-button text-xs py-1.5 px-3"
+                  className="paper-button text-xs py-2 px-4 min-h-[44px] font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold"
+                  className="paper-button paper-button-dark text-xs py-2 px-5 font-bold min-h-[44px]"
                 >
                   Save Changes
                 </button>

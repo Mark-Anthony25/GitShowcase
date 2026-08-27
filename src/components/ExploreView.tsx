@@ -77,7 +77,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             placeholder="Search by name, @username, project title, or technology..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3.5 py-2 paper-input text-xs font-mono text-[#212121] placeholder:text-stone-500"
+            className="w-full pl-9 pr-3.5 py-2 paper-input text-xs font-mono text-[#212121] placeholder:text-stone-500 min-h-[44px]"
           />
         </div>
 
@@ -86,7 +86,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             id="explore-program-filter"
             value={filterProgram}
             onChange={(e) => setFilterProgram(e.target.value)}
-            className="w-full sm:w-auto px-3.5 py-2 paper-input text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold"
+            className="w-full sm:w-auto px-3.5 py-2 paper-input text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold min-h-[44px]"
           >
             <option value="all">ALL DEGREES &bull; ALL STUDENTS</option>
             {programs.map(prog => (
@@ -113,12 +113,12 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             return (
               <div
                 key={profile.id}
-                className="paper-card bg-[#FEFCF6] p-4 flex flex-col justify-between space-y-4"
+                className="paper-card bg-[#FEFCF6] p-4 sm:p-5 flex flex-col justify-between space-y-4"
               >
                 <div className="space-y-3">
                   {/* Student Avatar & Basic Info */}
                   <div className="flex items-center space-x-3 pb-3 border-b-2 border-dashed border-[#212121]">
-                    <div className="w-12 h-12 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[2px_2px_0px_#212121]">
+                    <div className="w-12 h-12 sm:w-13 sm:h-13 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[2px_2px_0px_#212121]">
                       <img
                         src={profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80'}
                         alt={profile.github_username}
@@ -154,7 +154,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
 
                   {/* Bio */}
                   {profile.bio && (
-                    <p className="text-xs sm:text-sm font-serif-body text-stone-700 line-clamp-2 leading-relaxed italic bg-[#FAF6EC] p-2 border border-[#212121] rounded-xs">
+                    <p className="text-xs sm:text-sm font-serif-body text-stone-700 line-clamp-2 leading-relaxed italic bg-[#FAF6EC] p-2.5 border border-[#212121] rounded-xs">
                       "{profile.bio}"
                     </p>
                   )}
@@ -170,21 +170,21 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                       {projects.slice(0, 2).map((proj) => (
                         <div
                           key={proj.id}
-                          className="px-2 py-1 bg-[#FAF6EC] border border-[#212121] text-xs flex items-center justify-between font-serif-body"
+                          className="px-2.5 py-1.5 bg-[#FAF6EC] border border-[#212121] text-xs flex items-center justify-between font-serif-body"
                         >
                           <span className="text-[#212121] truncate max-w-[170px] text-xs font-bold">
                             {proj.custom_title || proj.repo_full_name.split('/')[1]}
                           </span>
                           {proj.is_featured && (
-                            <span className="paper-badge text-[9px] font-mono py-0 px-1 bg-amber-200 text-amber-900 border-amber-800 flex items-center">
-                              <Star className="w-2.5 h-2.5 fill-amber-900 text-amber-900 mr-0.5" />
+                            <span className="paper-badge text-[11px] font-mono py-0.5 px-1.5 bg-amber-200 text-amber-900 border-amber-800 flex items-center font-bold">
+                              <Star className="w-3 h-3 fill-amber-900 text-amber-900 mr-1" />
                               LEAD
                             </span>
                           )}
                         </div>
                       ))}
                       {projects.length > 2 && (
-                        <p className="text-[10px] font-sketch text-stone-600 text-right pr-1 font-bold">
+                        <p className="text-[11px] font-sketch text-stone-600 text-right pr-1 font-bold">
                           +{projects.length - 2} additional repos
                         </p>
                       )}
@@ -195,10 +195,10 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                 {/* View Showcase Button */}
                 <button
                   onClick={() => navigate(`/u/${profile.github_username}`)}
-                  className="w-full mt-2 paper-button paper-button-dark text-xs py-1.5 font-bold"
+                  className="w-full mt-2 paper-button paper-button-dark text-xs sm:text-sm py-2.5 px-3 font-bold min-h-[44px] justify-center"
                 >
                   <span>View Student Portfolio</span>
-                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                  <ArrowRight className="w-4 h-4 ml-1.5 flex-shrink-0" />
                 </button>
               </div>
             );
