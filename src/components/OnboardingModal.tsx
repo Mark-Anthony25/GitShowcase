@@ -192,30 +192,30 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs overflow-y-auto">
-      <div className="bg-[#FAF8F2] border-2 border-[#1A1815] max-w-2xl w-full p-5 sm:p-7 shadow-2xl my-auto text-[#1A1815]">
+      <div className="bg-[#FEFCF6] paper-card max-w-2xl w-full p-5 sm:p-7 shadow-[8px_8px_0px_#000] my-auto text-[#212121]">
         
         {/* Step Indicator Header */}
-        <div className="border-b border-[#D6D0C4] pb-4 mb-5">
+        <div className="border-b-2 border-dashed border-[#212121] pb-4 mb-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <span className="text-[10px] font-mono uppercase bg-[#1A1815] text-[#FAF8F2] px-2 py-0.5 font-bold">
+              <span className="paper-badge bg-[#212121] text-white text-[10px] font-bold">
                 GITSHOWCASE ONBOARDING
               </span>
-              <span className="text-xs font-mono text-stone-600">
+              <span className="text-xs font-sketch text-stone-700 font-bold">
                 ISU Cauayan Campus
               </span>
             </div>
-            <span className="text-xs font-mono font-bold text-stone-700">
+            <span className="text-xs font-mono font-bold text-stone-800">
               Step {currentStep} of 2
             </span>
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title mt-2 text-[#1A1815]">
+          <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title mt-2 text-[#212121]">
             {currentStep === 1 && 'Set Up Your Student Developer Profile'}
             {currentStep === 2 && 'Select Repositories to Showcase'}
             {currentStep === 3 && 'Publishing Your Portfolio...'}
           </h2>
-          <p className="text-xs font-serif-body text-stone-700 mt-0.5">
+          <p className="text-xs sm:text-sm font-serif-body text-stone-700 mt-0.5">
             {currentStep === 1 && 'Configure your developer headline, degree program, and a crisp 50-character bio.'}
             {currentStep === 2 && 'Pick your best capstones, assignments, and open-source projects from GitHub to showcase.'}
             {currentStep === 3 && 'Finalizing your GitShowcase page and synchronizing live GitHub activity.'}
@@ -226,7 +226,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         {currentStep === 1 && (
           <form onSubmit={handleStep1Submit} className="space-y-4">
             {step1Error && (
-              <div className="p-3 bg-red-100 border border-red-400 text-red-900 text-xs font-mono flex items-center space-x-2">
+              <div className="p-3 bg-red-100 border-2 border-red-500 text-red-950 text-xs font-mono flex items-center space-x-2 rounded-xs">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{step1Error}</span>
               </div>
@@ -235,26 +235,26 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* GitHub Username */}
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#1A1815] mb-1">
-                  GitHub Username <span className="text-stone-500">*</span>
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
+                  GitHub Username <span className="text-stone-600">*</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 font-mono text-xs">@</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-600 font-mono text-xs">@</span>
                   <input
                     type="text"
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="username"
-                    className="w-full pl-7 pr-3 py-2 border border-[#1A1815] bg-white text-xs font-mono text-[#1A1815] focus:outline-none focus:ring-1 focus:ring-black"
+                    className="w-full pl-7 pr-3 py-2 paper-input text-xs font-mono text-[#212121]"
                   />
                 </div>
               </div>
 
               {/* Full Name */}
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#1A1815] mb-1">
-                  Full Name <span className="text-stone-500">*</span>
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
+                  Full Name <span className="text-stone-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -262,7 +262,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="e.g. Mark Anthony Reyes"
-                  className="w-full px-3 py-2 border border-[#1A1815] bg-white text-xs font-serif-headline text-[#1A1815] focus:outline-none focus:ring-1 focus:ring-black"
+                  className="w-full px-3 py-2 paper-input text-xs font-serif-body text-[#212121]"
                 />
               </div>
             </div>
@@ -270,10 +270,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             {/* Headline */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#1A1815]">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
                   Professional / Student Headline
                 </label>
-                <span className="text-[10px] font-mono text-stone-500">e.g. Program &amp; Focus</span>
+                <span className="text-[10px] font-sketch text-stone-600 font-bold">e.g. Program &amp; Focus</span>
               </div>
               <input
                 type="text"
@@ -281,17 +281,17 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
                 placeholder="e.g. BS Computer Science • Full-Stack Developer"
-                className="w-full px-3 py-2 border border-[#1A1815] bg-white text-xs font-mono text-[#1A1815] focus:outline-none focus:ring-1 focus:ring-black"
+                className="w-full px-3 py-2 paper-input text-xs font-mono text-[#212121]"
               />
               {/* Quick Headline Suggestions */}
               <div className="flex flex-wrap gap-1.5 mt-2">
-                <span className="text-[10px] font-mono text-stone-600 self-center">Suggestions:</span>
+                <span className="text-[10px] font-sketch text-stone-700 self-center font-bold">Suggestions:</span>
                 {HEADLINE_SUGGESTIONS.map((sugg) => (
                   <button
                     key={sugg}
                     type="button"
                     onClick={() => setHeadline(sugg)}
-                    className="text-[10px] font-mono bg-[#EBE7DC] hover:bg-stone-300 border border-stone-300 px-2 py-0.5 text-stone-800 transition-colors cursor-pointer"
+                    className="paper-button text-[10px] font-mono py-0.5 px-2"
                   >
                     {sugg}
                   </button>
@@ -302,12 +302,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             {/* About Me (Bio) - STRICT 50 Characters MAX */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#1A1815]">
-                  About Me <span className="text-stone-500">(Max 50 Characters)</span>
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
+                  About Me <span className="text-stone-600 font-normal">(Max 50 Characters)</span>
                 </label>
                 <span
                   className={`text-xs font-mono font-bold ${
-                    aboutMe.length > 50 ? 'text-red-600' : aboutMe.length >= 45 ? 'text-amber-700' : 'text-stone-600'
+                    aboutMe.length > 50 ? 'text-red-600' : aboutMe.length >= 45 ? 'text-amber-800' : 'text-stone-700'
                   }`}
                 >
                   {aboutMe.length} / 50 characters
@@ -319,10 +319,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 value={aboutMe}
                 onChange={(e) => setAboutMe(e.target.value.slice(0, 50))}
                 placeholder="Crisp 50-character summary of your tech passion..."
-                className={`w-full px-3 py-2 border bg-white text-xs font-serif-body focus:outline-none ${
+                className={`w-full px-3 py-2 paper-input text-xs font-serif-body ${
                   aboutMe.length >= 50
-                    ? 'border-amber-600 ring-1 ring-amber-600'
-                    : 'border-[#1A1815] focus:ring-1 focus:ring-black'
+                    ? 'border-amber-600 ring-2 ring-amber-600'
+                    : ''
                 }`}
               />
               <p className="text-[11px] font-serif-body italic text-stone-600 mt-1">
@@ -333,13 +333,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             {/* Program & Year Level */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#1A1815] mb-1">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
                   Degree Program
                 </label>
                 <select
                   value={program}
                   onChange={(e) => setProgram(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#1A1815] bg-white text-xs font-headline uppercase tracking-wider text-[#1A1815] focus:outline-none cursor-pointer"
+                  className="w-full px-3 py-2 paper-input text-xs font-serif-body text-[#212121]"
                 >
                   {PROGRAM_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>{opt}</option>
@@ -348,13 +348,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#1A1815] mb-1">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
                   Year Level
                 </label>
                 <select
                   value={yearLevel}
                   onChange={(e) => setYearLevel(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#1A1815] bg-white text-xs font-headline uppercase tracking-wider text-[#1A1815] focus:outline-none cursor-pointer"
+                  className="w-full px-3 py-2 paper-input text-xs font-serif-body text-[#212121]"
                 >
                   {YEAR_OPTIONS.map((yr) => (
                     <option key={yr} value={yr}>{yr}</option>
@@ -364,12 +364,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-[#D6D0C4]">
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t-2 border-dashed border-[#212121]">
               {onCancel && (
                 <button
                   type="button"
                   onClick={onCancel}
-                  className="px-4 py-2 border border-stone-400 text-xs font-headline uppercase tracking-wider hover:bg-stone-200 transition-colors cursor-pointer"
+                  className="paper-button text-xs py-2 px-3.5"
                 >
                   Skip for Now
                 </button>
@@ -377,10 +377,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               <button
                 type="submit"
                 id="onboarding-step1-next-btn"
-                className="inline-flex items-center space-x-2 px-5 py-2.5 bg-[#1A1815] hover:bg-stone-800 text-[#FAF8F2] font-headline text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xs"
+                className="paper-button paper-button-dark text-xs py-2 px-4 font-bold"
               >
                 <span>Continue to Select Repositories</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 ml-1.5 inline-block" />
               </button>
             </div>
           </form>
@@ -396,22 +396,22 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   placeholder="Filter connected repositories by name or language..."
                   value={repoSearch}
                   onChange={(e) => setRepoSearch(e.target.value)}
-                  className="w-full px-3 py-1.5 border border-[#1A1815] bg-white text-xs font-mono focus:outline-none"
+                  className="w-full px-3 py-2 paper-input text-xs font-mono"
                 />
               </div>
               <div className="flex items-center space-x-2 font-mono text-xs text-stone-700">
-                <span className="bg-[#EBE7DC] px-2 py-1 border border-stone-300 font-bold text-[#1A1815]">
+                <span className="paper-badge bg-stone-200 text-[#212121] font-bold">
                   {selectedCount} Selected
                 </span>
               </div>
             </div>
 
             {/* Repos List */}
-            <div className="border border-[#1A1815] bg-white max-h-80 overflow-y-auto divide-y divide-[#EBE7DC]">
+            <div className="paper-card bg-white max-h-80 overflow-y-auto divide-y-2 divide-dashed divide-stone-300 p-2">
               {loadingRepos ? (
                 <div className="p-8 text-center space-y-2">
-                  <div className="animate-spin w-5 h-5 border-2 border-black border-t-transparent mx-auto"></div>
-                  <p className="text-xs font-mono text-stone-600">Connecting to GitHub repositories...</p>
+                  <div className="animate-spin w-6 h-6 border-2 border-black border-t-transparent mx-auto"></div>
+                  <p className="text-xs font-sketch uppercase text-stone-700 font-bold">Connecting to GitHub repositories...</p>
                 </div>
               ) : filteredRepos.length === 0 ? (
                 <div className="p-8 text-center text-xs font-mono text-stone-600">
@@ -425,8 +425,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   return (
                     <div
                       key={repo.id}
-                      className={`p-3 transition-colors ${
-                        isSelected ? 'bg-[#F9F7F1]' : 'hover:bg-stone-50'
+                      className={`p-3.5 transition-colors ${
+                        isSelected ? 'bg-[#FAF6EC]' : 'hover:bg-stone-50'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -435,24 +435,24 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => toggleRepoSelection(repo)}
-                            className="w-4 h-4 mt-0.5 border border-[#1A1815] accent-black cursor-pointer"
+                            className="w-4 h-4 mt-0.5 border-2 border-[#212121] rounded-xs accent-black cursor-pointer"
                           />
                           <div className="space-y-1">
                             <div className="flex items-center space-x-2 flex-wrap">
-                              <span className="font-headline font-bold text-xs text-[#1A1815]">
+                              <span className="font-newspaper-title font-[900] text-sm uppercase text-[#212121]">
                                 {repo.name}
                               </span>
                               {repo.language && (
-                                <span className="text-[10px] font-mono bg-[#EBE7DC] px-1.5 py-0.2 border border-stone-300 text-stone-700">
+                                <span className="paper-badge text-[10px] font-mono">
                                   {repo.language}
                                 </span>
                               )}
-                              <div className="flex items-center space-x-2 font-mono text-[10px] text-stone-600">
+                              <div className="flex items-center space-x-2 font-mono text-[10px] text-stone-700 font-bold">
                                 <span className="flex items-center"><Star className="w-2.5 h-2.5 mr-0.5" /> {repo.stargazers_count}</span>
                                 <span className="flex items-center"><GitFork className="w-2.5 h-2.5 mr-0.5" /> {repo.forks_count}</span>
                               </div>
                             </div>
-                            <p className="text-xs font-serif-body text-stone-600 line-clamp-1">
+                            <p className="text-xs font-serif-body text-stone-700 line-clamp-1">
                               {repo.description || 'No description provided on GitHub.'}
                             </p>
                           </div>
@@ -471,13 +471,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                               });
                             }}
                             title="Pin as Lead Capstone Project"
-                            className={`flex items-center space-x-1 text-[11px] font-mono px-2 py-1 border transition-colors cursor-pointer flex-shrink-0 ${
+                            className={`paper-button text-[11px] font-mono py-1 px-2 flex-shrink-0 ${
                               meta?.isFeatured
-                                ? 'bg-[#1A1815] text-amber-300 border-[#1A1815]'
-                                : 'bg-white text-stone-700 border-stone-300 hover:border-black'
+                                ? 'paper-button-dark'
+                                : ''
                             }`}
                           >
-                            <Star className={`w-3 h-3 ${meta?.isFeatured ? 'fill-amber-300' : ''}`} />
+                            <Star className={`w-3 h-3 mr-1 inline-block ${meta?.isFeatured ? 'fill-amber-300 text-amber-300' : ''}`} />
                             <span>{meta?.isFeatured ? 'Featured Pin' : 'Feature'}</span>
                           </button>
                         )}
@@ -489,13 +489,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-between pt-4 border-t border-[#D6D0C4]">
+            <div className="flex items-center justify-between pt-4 border-t-2 border-dashed border-[#212121]">
               <button
                 type="button"
                 onClick={() => setCurrentStep(1)}
-                className="inline-flex items-center space-x-1.5 px-3 py-2 border border-stone-400 text-xs font-headline uppercase tracking-wider hover:bg-stone-200 transition-colors cursor-pointer"
+                className="paper-button text-xs py-1.5 px-3"
               >
-                <ArrowLeft className="w-3.5 h-3.5" />
+                <ArrowLeft className="w-3.5 h-3.5 mr-1" />
                 <span>Back to Profile</span>
               </button>
 
@@ -504,13 +504,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 id="complete-onboarding-btn"
                 disabled={savingRepos}
                 onClick={handleFinishOnboarding}
-                className="inline-flex items-center space-x-2 px-5 py-2.5 bg-[#1A1815] hover:bg-stone-800 text-[#FAF8F2] font-headline text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                className="paper-button paper-button-dark text-xs py-2 px-4 font-bold disabled:opacity-50"
               >
                 {savingRepos ? (
                   <span>Publishing Showcase...</span>
                 ) : (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <Check className="w-3.5 h-3.5 text-emerald-400 mr-1 inline-block" />
                     <span>Complete Setup &amp; Launch Showcase</span>
                   </>
                 )}
@@ -522,13 +522,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         {/* STEP 3: Success Confirmation */}
         {currentStep === 3 && (
           <div className="py-12 text-center space-y-4">
-            <div className="w-12 h-12 bg-emerald-100 border border-emerald-500 rounded-full flex items-center justify-center mx-auto text-emerald-800">
-              <CheckCircle2 className="w-6 h-6" />
+            <div className="w-14 h-14 paper-card bg-emerald-100 border-emerald-600 flex items-center justify-center mx-auto text-emerald-800">
+              <CheckCircle2 className="w-7 h-7" />
             </div>
-            <h3 className="text-xl font-[900] uppercase font-newspaper-title text-[#1A1815]">
+            <h3 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
               GitShowcase Portfolio Created!
             </h3>
-            <p className="text-xs font-serif-body text-stone-700 max-w-sm mx-auto">
+            <p className="text-xs sm:text-sm font-serif-body text-stone-700 max-w-sm mx-auto">
               Your student profile, curated repositories, and GitHub commit boxes are now published and live.
             </p>
           </div>

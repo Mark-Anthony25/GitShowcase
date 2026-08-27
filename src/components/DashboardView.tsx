@@ -13,16 +13,18 @@ import {
   getStudentShowcasedProjects, 
   addProjectToShowcase, 
   removeProjectFromShowcase, 
-  updateShowcaseProject 
+  updateShowcaseProject,
+  subscribeSchemaStatus 
 } from '../lib/showcaseStore';
 
 interface DashboardViewProps {
   navigate: (route: string) => void;
   onOpenOnboarding?: () => void;
+  onOpenGuide?: () => void;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOnboarding }) => {
-  const { user, profile, githubToken, updateProfileData, isDemoMode } = useAuth();
+export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOnboarding, onOpenGuide }) => {
+  const { user, profile, githubToken, updateProfileData, isDemoMode, isConfigured } = useAuth();
 
   // State
   const [showcased, setShowcased] = useState<ShowcasedProject[]>([]);
@@ -31,6 +33,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
   const [loadingShowcase, setLoadingShowcase] = useState(true);
   const [activeTab, setActiveTab] = useState<'showcase' | 'repos' | 'profile'>('showcase');
   const [repoSearch, setRepoSearch] = useState('');
+  const [isSchemaMissing, setIsSchemaMissing] = useState(false);
   
   // Profile edit state
   const [fullName, setFullName] = useState(profile?.full_name || '');
@@ -50,6 +53,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
   // Editing existing showcase project
   const [editingProject, setEditingProject] = useState<ShowcasedProject | null>(null);
+
+  // Subscribe to schema missing alerts
+  useEffect(() => {
+    const unsub = subscribeSchemaStatus((missing) => {
+      setIsSchemaMissing(missing);
+    });
+    return unsub;
+  }, []);
 
   // Load showcase projects
   useEffect(() => {
@@ -213,25 +224,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
   const username = profile?.github_username || 'student';
 
   return (
-    <div className="space-y-6 pb-12 text-[#1A1815]">
+    <div className="space-y-6 pb-10 text-[#212121]">
       {/* Top Student Card */}
-      <div className="border border-[#1A1815] bg-[#F4F0E6] p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="paper-card bg-[#FAF6EC] p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 border border-[#1A1815] overflow-hidden bg-stone-300 flex-shrink-0">
+          <div className="w-13 h-13 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[2px_2px_0px_#212121]">
             <img
               src={profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80'}
               alt={profile?.github_username || 'Student'}
-              className="w-full h-full object-cover news-photo"
+              className="w-full h-full object-cover"
             />
           </div>
           <div>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-stone-600 block">
+            <span className="text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
               STUDENT DESK &bull; ISU CAUAYAN
             </span>
-            <h1 className="text-lg sm:text-xl font-[900] uppercase font-newspaper-title text-[#1A1815]">
+            <h1 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
               {profile?.full_name || 'My Projects'}
             </h1>
-            <p className="text-xs font-serif-headline italic text-stone-700">
+            <p className="text-xs sm:text-sm font-serif-body text-stone-700">
               @{username} &bull; {profile?.program || 'BS Computer Science'} &bull; {profile?.year_level || '3rd Year'}
             </p>
           </div>
@@ -242,9 +253,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
             <button
               id="reopen-onboarding-btn"
               onClick={onOpenOnboarding}
-              className="inline-flex items-center justify-center space-x-1 px-3 py-1.5 bg-[#FAF8F2] hover:bg-[#EBE7DC] text-[#1A1815] text-xs font-headline uppercase tracking-wider transition-all border border-[#1A1815] cursor-pointer"
+              className="paper-button text-xs py-1.5 px-3"
             >
-              <Sparkles className="w-3.5 h-3.5 text-stone-700" />
+              <Sparkles className="w-3.5 h-3.5 text-stone-700 mr-1.5" />
               <span>Setup Wizard</span>
             </button>
           )}
@@ -252,11 +263,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
           <button
             id="view-public-profile-btn"
             onClick={() => navigate(`/u/${username}`)}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center space-x-1.5 px-3.5 py-1.5 bg-[#1A1815] hover:bg-stone-800 text-[#FAF8F2] text-xs font-headline uppercase tracking-wider transition-all cursor-pointer"
+            className="flex-1 sm:flex-initial paper-button paper-button-dark text-xs py-1.5 px-3.5 font-bold"
           >
-            <Eye className="w-3.5 h-3.5" />
+            <Eye className="w-3.5 h-3.5 mr-1.5" />
             <span>View Public Page</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
+            <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
           </button>
         </div>
       </div>
@@ -264,10 +275,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
       {/* GitHub Commit Heatmap on Desk */}
       <CommitHeatmap username={username} compact={false} />
 
+      {isSchemaMissing && (
+        <div className="p-3.5 bg-amber-50 border-2 border-amber-500 paper-card text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-start space-x-2">
+            <AlertCircle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <p className="font-bold uppercase tracking-wider font-headline text-[11px]">
+                Supabase Tables Pending Creation
+              </p>
+              <p className="font-serif-body text-stone-800 text-xs">
+                Your database URL is connected, but the tables (<code>showcased_projects</code>, <code>profiles</code>) haven't been run yet in the Supabase SQL editor. The app is running smoothly using client-side offline storage.
+              </p>
+            </div>
+          </div>
+          {onOpenGuide && (
+            <button
+              onClick={onOpenGuide}
+              className="paper-button text-xs py-1 px-3 whitespace-nowrap font-bold flex-shrink-0"
+            >
+              Open SQL Setup Guide
+            </button>
+          )}
+        </div>
+      )}
+
       {isDemoMode && (
-        <div className="p-2.5 bg-[#EBE7DC] border border-[#1A1815] text-[#1A1815] flex items-center justify-between text-xs font-mono">
+        <div className="p-3 bg-[#EFE9DB] paper-card text-[#212121] flex items-center justify-between text-xs font-mono">
           <div className="flex items-center space-x-2">
-            <Sparkles className="w-3.5 h-3.5 text-stone-700 flex-shrink-0" />
+            <Sparkles className="w-4 h-4 text-stone-800 flex-shrink-0" />
             <span>
               <strong>DEMO MODE ACTIVE</strong>: You can test adding/editing repositories and updating your profile data.
             </span>
@@ -276,126 +311,126 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
       )}
 
       {/* Tabs */}
-      <div className="border-b border-[#1A1815] flex flex-wrap gap-1">
+      <div className="border-b-2 border-dashed border-[#212121] flex flex-wrap gap-2 pb-1">
         <button
           id="tab-showcase-btn"
           onClick={() => setActiveTab('showcase')}
-          className={`px-3.5 py-1.5 text-xs font-headline font-bold uppercase tracking-wider transition-all flex items-center space-x-1.5 border-t border-x cursor-pointer ${
+          className={`paper-button text-xs py-1.5 px-3.5 font-bold ${
             activeTab === 'showcase'
-              ? 'bg-[#1A1815] text-[#FAF8F2] border-[#1A1815]'
-              : 'bg-[#FAF8F2] text-stone-700 hover:bg-[#F4F0E6] border-transparent'
+              ? 'paper-button-dark'
+              : ''
           }`}
         >
-          <Bookmark className="w-3 h-3" />
+          <Bookmark className="w-3.5 h-3.5 mr-1.5 inline-block" />
           <span>Published Projects ({showcased.length})</span>
         </button>
 
         <button
           id="tab-add-repos-btn"
           onClick={() => setActiveTab('repos')}
-          className={`px-3.5 py-1.5 text-xs font-headline font-bold uppercase tracking-wider transition-all flex items-center space-x-1.5 border-t border-x cursor-pointer ${
+          className={`paper-button text-xs py-1.5 px-3.5 font-bold ${
             activeTab === 'repos'
-              ? 'bg-[#1A1815] text-[#FAF8F2] border-[#1A1815]'
-              : 'bg-[#FAF8F2] text-stone-700 hover:bg-[#F4F0E6] border-transparent'
+              ? 'paper-button-dark'
+              : ''
           }`}
         >
-          <Plus className="w-3 h-3" />
+          <Plus className="w-3.5 h-3.5 mr-1.5 inline-block" />
           <span>Import from GitHub</span>
         </button>
 
         <button
           id="tab-profile-btn"
           onClick={() => setActiveTab('profile')}
-          className={`px-3.5 py-1.5 text-xs font-headline font-bold uppercase tracking-wider transition-all flex items-center space-x-1.5 border-t border-x cursor-pointer ${
+          className={`paper-button text-xs py-1.5 px-3.5 font-bold ${
             activeTab === 'profile'
-              ? 'bg-[#1A1815] text-[#FAF8F2] border-[#1A1815]'
-              : 'bg-[#FAF8F2] text-stone-700 hover:bg-[#F4F0E6] border-transparent'
+              ? 'paper-button-dark'
+              : ''
           }`}
         >
-          <User className="w-3 h-3" />
+          <User className="w-3.5 h-3.5 mr-1.5 inline-block" />
           <span>Edit Profile &amp; Bio</span>
         </button>
       </div>
 
       {/* TAB 1: Showcased Projects */}
       {activeTab === 'showcase' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[#D6D0C4] pb-3">
+        <div className="space-y-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b-2 border-dashed border-[#212121] pb-3">
             <div>
-              <h2 className="text-xl font-[900] uppercase font-newspaper-title text-[#1A1815]">
+              <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
                 Published Work &bull; {showcased.length} Repositories
               </h2>
-              <p className="text-xs font-serif-body text-stone-600">
-                These dispatches appear on your public showcase page at <code className="bg-stone-200 px-1 py-0.5 font-mono text-[11px]">/u/{username}</code>.
+              <p className="text-xs sm:text-sm font-serif-body text-stone-700">
+                These dispatches appear on your public showcase page at <code className="bg-stone-200 px-1 py-0.5 font-mono text-[11px] border border-stone-400 rounded-xs">/u/{username}</code>.
               </p>
             </div>
 
             <button
               onClick={() => setActiveTab('repos')}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#FAF8F2] text-[#1A1815] border border-[#1A1815] text-xs font-headline uppercase tracking-wider hover:bg-stone-200 transition-all cursor-pointer"
+              className="paper-button text-xs py-1.5 px-3 font-bold"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5 mr-1" />
               <span>Import More Repos</span>
             </button>
           </div>
 
           {loadingShowcase ? (
-            <div className="text-center py-12 border border-[#1A1815] bg-[#FAF8F2]">
+            <div className="text-center py-12 paper-card bg-[#FEFCF6]">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto text-stone-700" />
-              <p className="text-xs font-mono uppercase tracking-wider text-stone-700 mt-2">Loading dispatches...</p>
+              <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 mt-2 font-bold">Loading dispatches...</p>
             </div>
           ) : showcased.length === 0 ? (
-            <div className="text-center py-12 px-4 border border-dashed border-[#1A1815] bg-[#FAF8F2] space-y-3">
-              <Newspaper className="w-8 h-8 text-stone-500 mx-auto" />
+            <div className="text-center py-12 px-4 paper-card bg-[#FEFCF6] space-y-3 border-dashed">
+              <Newspaper className="w-8 h-8 text-stone-600 mx-auto" />
               <div className="space-y-1">
-                <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#1A1815]">No projects published yet</h3>
-                <p className="text-xs font-serif-body text-stone-600 max-w-sm mx-auto">
+                <h3 className="text-lg font-[900] uppercase font-newspaper-title text-[#212121]">No projects published yet</h3>
+                <p className="text-xs sm:text-sm font-serif-body text-stone-700 max-w-sm mx-auto">
                   Pick your best repositories from GitHub to display them on your public profile.
                 </p>
               </div>
               <button
                 onClick={() => setActiveTab('repos')}
-                className="inline-flex items-center space-x-2 px-4 py-2 bg-[#1A1815] text-[#FAF8F2] text-xs font-headline uppercase tracking-wider hover:bg-stone-800 transition-all cursor-pointer"
+                className="paper-button paper-button-dark text-xs py-2 px-4 font-bold"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-3.5 h-3.5 mr-1.5" />
                 <span>Browse GitHub Repositories</span>
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {showcased.map((proj) => (
                 <div
                   key={proj.id}
-                  className={`p-4 border transition-all ${
+                  className={`p-5 paper-card transition-all ${
                     proj.is_featured
-                      ? 'bg-[#F4F0E6] border-[#1A1815] border-2 shadow-xs'
-                      : 'bg-[#FAF8F2] border-[#1A1815]'
+                      ? 'bg-[#FAF6EC]'
+                      : 'bg-[#FEFCF6]'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2 flex-wrap">
                         {proj.is_featured && (
-                          <span className="inline-flex items-center text-[10px] font-headline font-bold uppercase tracking-wider text-stone-900 bg-stone-300 border border-stone-500 px-1.5 py-0.5">
+                          <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[10px] font-bold">
                             <Pin className="w-2.5 h-2.5 mr-1" />
                             LEAD DISPATCH
                           </span>
                         )}
-                        <span className="text-xs font-mono text-stone-600 truncate max-w-[200px]">
+                        <span className="text-xs font-mono text-stone-700 truncate max-w-[200px]">
                           {proj.repo_full_name}
                         </span>
                       </div>
-                      <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#1A1815]">
+                      <h3 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
                         {proj.custom_title || proj.repo_full_name.split('/')[1]}
                       </h3>
                     </div>
 
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center space-x-1.5">
                       <button
                         title={proj.is_featured ? 'Unpin from top' : 'Pin to top as lead dispatch'}
                         onClick={() => handleToggleFeatured(proj)}
-                        className={`p-1 border border-[#1A1815] transition-colors cursor-pointer ${
-                          proj.is_featured ? 'bg-[#1A1815] text-[#FAF8F2]' : 'bg-[#FAF8F2] text-[#1A1815] hover:bg-stone-200'
+                        className={`paper-button p-1.5 ${
+                          proj.is_featured ? 'paper-button-dark' : ''
                         }`}
                       >
                         <Star className={`w-3.5 h-3.5 ${proj.is_featured ? 'fill-white' : ''}`} />
@@ -404,7 +439,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                       <button
                         title="Edit title / context description"
                         onClick={() => setEditingProject(proj)}
-                        className="p-1 border border-[#1A1815] bg-[#FAF8F2] text-[#1A1815] hover:bg-stone-200 transition-colors cursor-pointer"
+                        className="paper-button p-1.5"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
@@ -412,23 +447,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                       <button
                         title="Remove from publication"
                         onClick={() => handleRemoveProject(proj.id)}
-                        className="p-1 border border-[#1A1815] bg-[#FAF8F2] text-rose-800 hover:bg-rose-100 transition-colors cursor-pointer"
+                        className="paper-button p-1.5 text-rose-800 hover:bg-rose-100"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
 
-                  <p className="text-xs font-serif-body text-stone-700 mt-2 line-clamp-3 leading-relaxed">
+                  <p className="text-xs sm:text-sm font-serif-body text-stone-700 mt-2 line-clamp-3 leading-relaxed">
                     {proj.custom_description || 'No custom context notes provided.'}
                   </p>
 
-                  <div className="pt-3 mt-3 border-t border-[#D6D0C4] flex items-center justify-between text-xs font-mono">
+                  <div className="pt-3 mt-3 border-t-2 border-dashed border-[#212121] flex items-center justify-between text-xs font-mono">
                     <a
                       href={proj.repo_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-stone-800 hover:text-black underline flex items-center space-x-1"
+                      className="text-stone-900 hover:text-black underline flex items-center space-x-1 font-bold"
                     >
                       <Github className="w-3.5 h-3.5" />
                       <span>Inspect Repository</span>
@@ -444,13 +479,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
       {/* TAB 2: Add from GitHub Repos */}
       {activeTab === 'repos' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[#D6D0C4] pb-3">
+        <div className="space-y-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b-2 border-dashed border-[#212121] pb-3">
             <div>
-              <h2 className="text-xl font-[900] uppercase font-newspaper-title text-[#1A1815]">
+              <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
                 Available Repositories from GitHub
               </h2>
-              <p className="text-xs font-serif-body text-stone-600">
+              <p className="text-xs sm:text-sm font-serif-body text-stone-700">
                 Select any repository to draft an article and publish it to your classmate showcase.
               </p>
             </div>
@@ -463,13 +498,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   placeholder="Filter repositories..."
                   value={repoSearch}
                   onChange={(e) => setRepoSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 border border-[#1A1815] bg-[#FAF8F2] text-xs font-mono text-[#1A1815] focus:outline-none"
+                  className="w-full pl-8 pr-3 py-1.5 paper-input text-xs font-mono text-[#212121]"
                 />
               </div>
 
               <button
                 onClick={loadGitHubRepos}
-                className="p-1.5 border border-[#1A1815] bg-[#FAF8F2] hover:bg-stone-200 text-[#1A1815] transition-colors cursor-pointer"
+                className="paper-button p-2"
                 title="Refresh GitHub Repositories"
               >
                 <RefreshCw className={`w-4 h-4 ${loadingRepos ? 'animate-spin' : ''}`} />
@@ -478,36 +513,36 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
           </div>
 
           {loadingRepos ? (
-            <div className="text-center py-12 border border-[#1A1815] bg-[#FAF8F2]">
+            <div className="text-center py-12 paper-card bg-[#FEFCF6]">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto text-stone-700" />
-              <p className="text-xs font-mono uppercase tracking-wider text-stone-700 mt-2">Fetching live from GitHub API...</p>
+              <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 mt-2 font-bold">Fetching live from GitHub API...</p>
             </div>
           ) : filteredAvailableRepos.length === 0 ? (
-            <div className="text-center py-10 px-4 border border-[#1A1815] bg-[#FAF8F2]">
-              <p className="text-xs font-serif-body text-stone-700">No repositories found matching "{repoSearch}".</p>
+            <div className="text-center py-10 px-4 paper-card bg-[#FEFCF6]">
+              <p className="text-xs sm:text-sm font-serif-body text-stone-700">No repositories found matching "{repoSearch}".</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {filteredAvailableRepos.map((repo) => {
                 const isAlreadyShowcased = showcasedRepoNames.has(repo.full_name);
 
                 return (
                   <div
                     key={repo.id}
-                    className={`p-4 border transition-all ${
+                    className={`p-5 paper-card transition-all ${
                       isAlreadyShowcased
-                        ? 'bg-[#F4F0E6] border-stone-400 opacity-90'
-                        : 'bg-[#FAF8F2] border-[#1A1815]'
+                        ? 'bg-[#FAF6EC] opacity-90'
+                        : 'bg-[#FEFCF6]'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2">
-                          <h3 className="text-sm font-[900] uppercase font-newspaper-title text-[#1A1815]">
+                          <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121]">
                             {repo.name}
                           </h3>
                           {repo.fork && (
-                            <span className="text-[10px] font-mono uppercase bg-stone-300 border border-stone-500 px-1">
+                            <span className="paper-badge text-[10px] font-mono">
                               Fork
                             </span>
                           )}
@@ -518,26 +553,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                       </div>
 
                       {isAlreadyShowcased ? (
-                        <span className="inline-flex items-center text-[11px] font-headline uppercase tracking-wider text-stone-700 bg-stone-200 border border-stone-400 px-2 py-0.5">
-                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                        <span className="paper-badge text-[11px] font-bold bg-stone-200">
+                          <CheckCircle2 className="w-3 h-3 mr-1 inline-block" />
                           Published
                         </span>
                       ) : (
                         <button
                           onClick={() => handleOpenAddModal(repo)}
-                          className="inline-flex items-center space-x-1 px-3 py-1 bg-[#1A1815] hover:bg-stone-800 text-[#FAF8F2] text-xs font-headline uppercase tracking-wider transition-all cursor-pointer"
+                          className="paper-button paper-button-dark text-xs py-1 px-3 font-bold"
                         >
-                          <Plus className="w-3 h-3" />
+                          <Plus className="w-3 h-3 mr-1" />
                           <span>Publish</span>
                         </button>
                       )}
                     </div>
 
-                    <p className="text-xs font-serif-body text-stone-700 mt-2 line-clamp-2 leading-relaxed">
+                    <p className="text-xs sm:text-sm font-serif-body text-stone-700 mt-2 line-clamp-2 leading-relaxed">
                       {repo.description || 'No description provided on GitHub.'}
                     </p>
 
-                    <div className="pt-3 mt-3 border-t border-[#D6D0C4] flex items-center justify-between text-xs font-mono text-stone-600">
+                    <div className="pt-3 mt-3 border-t-2 border-dashed border-[#212121] flex items-center justify-between text-xs font-mono text-stone-700 font-bold">
                       <div className="flex items-center space-x-3">
                         {repo.language && (
                           <span className="flex items-center space-x-1">
@@ -562,7 +597,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                         className="text-stone-800 hover:text-black p-0.5"
                         title="Open repo on GitHub"
                       >
-                        <ExternalLink className="w-3 h-3" />
+                        <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     </div>
                   </div>
@@ -575,22 +610,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
       {/* TAB 3: Edit Profile & Bio */}
       {activeTab === 'profile' && (
-        <div className="max-w-2xl bg-[#FAF8F2] border border-[#1A1815] p-6 space-y-5">
-          <div className="border-b border-[#D6D0C4] pb-3">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-stone-600 block">
+        <div className="max-w-2xl bg-[#FEFCF6] paper-card p-6 space-y-5">
+          <div className="border-b-2 border-dashed border-[#212121] pb-3">
+            <span className="text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
               STUDENT PROFILE
             </span>
-            <h2 className="text-xl font-[900] uppercase font-newspaper-title text-[#1A1815]">
+            <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
               Author Credentials &amp; Bio
             </h2>
-            <p className="text-xs font-serif-body text-stone-600">
+            <p className="text-xs sm:text-sm font-serif-body text-stone-700">
               Customize how your headline, degree, and 50-character bio appear across GitShowcase.
             </p>
           </div>
 
           <form onSubmit={handleSaveProfile} className="space-y-4">
             <div>
-              <label className="block text-xs font-headline uppercase tracking-wider text-[#1A1815] mb-1">
+              <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
                 Full Student Name
               </label>
               <input
@@ -599,16 +634,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="e.g. Mark Anthony Reyes"
-                className="w-full px-3 py-2 border border-[#1A1815] bg-white text-[#1A1815] text-xs font-serif-headline focus:outline-none"
+                className="w-full px-3 py-2 paper-input text-[#212121] text-xs font-serif-body"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#1A1815]">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
                   Student / Professional Headline
                 </label>
-                <span className="text-[10px] font-mono text-stone-500">e.g. Program &amp; Tech Focus</span>
+                <span className="text-[10px] font-sketch text-stone-600 font-bold">e.g. Program &amp; Tech Focus</span>
               </div>
               <input
                 id="edit-headline-input"
@@ -616,13 +651,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
                 placeholder="e.g. BS Computer Science • Full-Stack Developer"
-                className="w-full px-3 py-2 border border-[#1A1815] bg-white text-[#1A1815] text-xs font-mono focus:outline-none"
+                className="w-full px-3 py-2 paper-input text-[#212121] text-xs font-mono"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#1A1815] mb-1">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
                   Degree / Academic Program
                 </label>
                 <input
@@ -631,19 +666,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   value={program}
                   onChange={(e) => setProgram(e.target.value)}
                   placeholder="e.g. BS Computer Science"
-                  className="w-full px-3 py-2 border border-[#1A1815] bg-white text-[#1A1815] text-xs font-serif-headline focus:outline-none"
+                  className="w-full px-3 py-2 paper-input text-[#212121] text-xs font-serif-body"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#1A1815] mb-1">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
                   Year Level
                 </label>
                 <select
                   id="edit-year-select"
                   value={yearLevel}
                   onChange={(e) => setYearLevel(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#1A1815] bg-white text-[#1A1815] text-xs font-serif-headline focus:outline-none"
+                  className="w-full px-3 py-2 paper-input text-[#212121] text-xs font-serif-body"
                 >
                   <option value="1st Year">1st Year</option>
                   <option value="2nd Year">2nd Year</option>
@@ -656,12 +691,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#1A1815]">
-                  About Me <span className="text-stone-500">(Max 50 Characters)</span>
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
+                  About Me <span className="text-stone-600 font-normal">(Max 50 Characters)</span>
                 </label>
                 <span
                   className={`text-xs font-mono font-bold ${
-                    bio.length > 50 ? 'text-red-600' : bio.length >= 45 ? 'text-amber-700' : 'text-stone-600'
+                    bio.length > 50 ? 'text-red-600' : bio.length >= 45 ? 'text-amber-800' : 'text-stone-700'
                   }`}
                 >
                   {bio.length} / 50 characters
@@ -674,8 +709,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 value={bio}
                 onChange={(e) => setBio(e.target.value.slice(0, 50))}
                 placeholder="Crisp 50-character summary of your tech passion..."
-                className={`w-full px-3 py-2 border bg-white text-[#1A1815] text-xs font-serif-body focus:outline-none ${
-                  bio.length >= 50 ? 'border-amber-600 ring-1 ring-amber-600' : 'border-[#1A1815]'
+                className={`w-full px-3 py-2 paper-input text-[#212121] text-xs font-serif-body ${
+                  bio.length >= 50 ? 'border-amber-600 ring-2 ring-amber-600' : ''
                 }`}
               />
               <p className="text-[11px] font-serif-body italic text-stone-600 mt-1">
@@ -685,8 +720,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
             <div className="pt-2 flex items-center justify-between">
               {profileSaved ? (
-                <span className="inline-flex items-center text-xs font-headline uppercase text-stone-900 bg-[#F4F0E6] border border-[#1A1815] px-2 py-1">
-                  <Check className="w-3.5 h-3.5 mr-1" />
+                <span className="paper-badge bg-emerald-100 text-emerald-950 border-emerald-800 text-xs font-bold">
+                  <Check className="w-3.5 h-3.5 mr-1 inline-block" />
                   Profile Saved
                 </span>
               ) : (
@@ -697,7 +732,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 id="save-profile-btn"
                 type="submit"
                 disabled={profileSaving}
-                className="px-4 py-2 bg-[#1A1815] hover:bg-stone-800 text-[#FAF8F2] text-xs font-headline uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer"
+                className="paper-button paper-button-dark text-xs py-2 px-4 font-bold disabled:opacity-50"
               >
                 {profileSaving ? 'Saving...' : 'Save Profile'}
               </button>
@@ -709,22 +744,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
       {/* Modal: Add Project to Showcase */}
       {selectedRepoToAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-[#FAF8F2] border-2 border-[#1A1815] max-w-lg w-full p-5 space-y-4 shadow-xl">
-            <div className="flex items-start justify-between border-b border-[#D6D0C4] pb-2.5">
+          <div className="bg-[#FEFCF6] paper-card max-w-lg w-full p-6 space-y-4 shadow-[8px_8px_0px_#000]">
+            <div className="flex items-start justify-between border-b-2 border-dashed border-[#212121] pb-3">
               <div>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-stone-600 block">
+                <span className="text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
                   SHOWCASE PROJECT
                 </span>
-                <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#1A1815]">
+                <h3 className="text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
                   Publish to Student Showcase
                 </h3>
-                <p className="text-xs text-stone-600 font-mono">
+                <p className="text-xs text-stone-700 font-mono">
                   {selectedRepoToAdd.full_name}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedRepoToAdd(null)}
-                className="w-6 h-6 border border-[#1A1815] bg-[#F4F0E6] flex items-center justify-center font-bold text-xs text-stone-800 hover:bg-stone-300 cursor-pointer"
+                className="paper-button w-7 h-7 flex items-center justify-center font-bold text-sm text-stone-800"
               >
                 &times;
               </button>
@@ -732,7 +767,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
             <form onSubmit={handleConfirmAdd} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#1A1815] mb-1">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
                   Project Title
                 </label>
                 <input
@@ -740,12 +775,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   value={customTitle}
                   onChange={(e) => setCustomTitle(e.target.value)}
                   placeholder="e.g. Smart Campus Navigation App"
-                  className="w-full px-3 py-1.5 border border-[#1A1815] bg-white text-xs font-serif-headline focus:outline-none"
+                  className="w-full px-3 py-2 paper-input text-xs font-serif-body"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#1A1815] mb-1">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
                   Description &amp; Key Features
                 </label>
                 <textarea
@@ -753,7 +788,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   value={customDescription}
                   onChange={(e) => setCustomDescription(e.target.value)}
                   placeholder="Summarize the project's purpose, technologies used, and your role..."
-                  className="w-full px-3 py-1.5 border border-[#1A1815] bg-white text-xs font-serif-body focus:outline-none"
+                  className="w-full px-3 py-2 paper-input text-xs font-serif-body"
                 />
               </div>
 
@@ -763,25 +798,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   id="featured-checkbox"
                   checked={isFeatured}
                   onChange={(e) => setIsFeatured(e.target.checked)}
-                  className="w-4 h-4 border border-[#1A1815]"
+                  className="w-4 h-4 border-2 border-[#212121] rounded-xs cursor-pointer"
                 />
-                <label htmlFor="featured-checkbox" className="text-xs font-headline uppercase tracking-wider text-[#1A1815] cursor-pointer">
+                <label htmlFor="featured-checkbox" className="text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold">
                   Pin as Featured Project at Top of Page
                 </label>
               </div>
 
-              <div className="flex items-center justify-end space-x-2.5 pt-3 border-t border-[#D6D0C4]">
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t-2 border-dashed border-[#212121]">
                 <button
                   type="button"
                   onClick={() => setSelectedRepoToAdd(null)}
-                  className="px-3 py-1.5 text-xs font-headline uppercase tracking-wider text-stone-700 hover:text-black cursor-pointer"
+                  className="paper-button text-xs py-1.5 px-3"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={addingInProgress}
-                  className="px-3.5 py-1.5 bg-[#1A1815] hover:bg-stone-800 text-[#FAF8F2] text-xs font-headline uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer"
+                  className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold disabled:opacity-50"
                 >
                   {addingInProgress ? 'Publishing...' : 'Publish to Showcase'}
                 </button>
@@ -794,22 +829,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
       {/* Modal: Edit Existing Project */}
       {editingProject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-[#FAF8F2] border-2 border-[#1A1815] max-w-lg w-full p-5 space-y-4 shadow-xl">
-            <div className="flex items-start justify-between border-b border-[#D6D0C4] pb-2.5">
+          <div className="bg-[#FEFCF6] paper-card max-w-lg w-full p-6 space-y-4 shadow-[8px_8px_0px_#000]">
+            <div className="flex items-start justify-between border-b-2 border-dashed border-[#212121] pb-3">
               <div>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-stone-600 block">
+                <span className="text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
                   EDIT DETAILS
                 </span>
-                <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#1A1815]">
+                <h3 className="text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
                   Edit Project Details
                 </h3>
-                <p className="text-xs text-stone-600 font-mono">
+                <p className="text-xs text-stone-700 font-mono">
                   {editingProject.repo_full_name}
                 </p>
               </div>
               <button
                 onClick={() => setEditingProject(null)}
-                className="w-6 h-6 border border-[#1A1815] bg-[#F4F0E6] flex items-center justify-center font-bold text-xs text-stone-800 hover:bg-stone-300 cursor-pointer"
+                className="paper-button w-7 h-7 flex items-center justify-center font-bold text-sm text-stone-800"
               >
                 &times;
               </button>
@@ -817,7 +852,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
             <form onSubmit={handleSaveProjectEdit} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#1A1815] mb-1">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
                   Project Title
                 </label>
                 <input
@@ -826,12 +861,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   onChange={(e) =>
                     setEditingProject({ ...editingProject, custom_title: e.target.value })
                   }
-                  className="w-full px-3 py-1.5 border border-[#1A1815] bg-white text-xs font-serif-headline focus:outline-none"
+                  className="w-full px-3 py-2 paper-input text-xs font-serif-body"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#1A1815] mb-1">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
                   Description &amp; Key Features
                 </label>
                 <textarea
@@ -840,7 +875,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   onChange={(e) =>
                     setEditingProject({ ...editingProject, custom_description: e.target.value })
                   }
-                  className="w-full px-3 py-1.5 border border-[#1A1815] bg-white text-xs font-serif-body focus:outline-none"
+                  className="w-full px-3 py-2 paper-input text-xs font-serif-body"
                 />
               </div>
 
@@ -852,24 +887,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   onChange={(e) =>
                     setEditingProject({ ...editingProject, is_featured: e.target.checked })
                   }
-                  className="w-4 h-4 border border-[#1A1815]"
+                  className="w-4 h-4 border-2 border-[#212121] rounded-xs cursor-pointer"
                 />
-                <label htmlFor="edit-featured-checkbox" className="text-xs font-headline uppercase tracking-wider text-[#1A1815] cursor-pointer">
+                <label htmlFor="edit-featured-checkbox" className="text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold">
                   Pin as Featured Project at Top of Page
                 </label>
               </div>
 
-              <div className="flex items-center justify-end space-x-2.5 pt-3 border-t border-[#D6D0C4]">
+              <div className="flex items-center justify-end space-x-3 pt-3 border-t-2 border-dashed border-[#212121]">
                 <button
                   type="button"
                   onClick={() => setEditingProject(null)}
-                  className="px-3 py-1.5 text-xs font-headline uppercase tracking-wider text-stone-700 hover:text-black cursor-pointer"
+                  className="paper-button text-xs py-1.5 px-3"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-3.5 py-1.5 bg-[#1A1815] hover:bg-stone-800 text-[#FAF8F2] text-xs font-headline uppercase tracking-wider transition-all cursor-pointer"
+                  className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold"
                 >
                   Save Changes
                 </button>

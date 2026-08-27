@@ -5,6 +5,45 @@ import { fetchLiveRepoStats } from './github';
 const LOCAL_STORAGE_KEY_PROFILES = 'showcase_demo_profiles';
 const LOCAL_STORAGE_KEY_PROJECTS = 'showcase_demo_projects';
 
+// Observable state for when Supabase credentials exist but database tables are not yet created in SQL editor
+let schemaMissingDetected = false;
+const schemaListeners: Array<(missing: boolean) => void> = [];
+
+export function subscribeSchemaStatus(fn: (missing: boolean) => void) {
+  schemaListeners.push(fn);
+  fn(schemaMissingDetected);
+  return () => {
+    const idx = schemaListeners.indexOf(fn);
+    if (idx >= 0) schemaListeners.splice(idx, 1);
+  };
+}
+
+export function reportSchemaMissing() {
+  if (!schemaMissingDetected) {
+    schemaMissingDetected = true;
+    schemaListeners.forEach(fn => fn(true));
+  }
+}
+
+export function isSchemaError(err: any): boolean {
+  if (!err) return false;
+  const msg = (typeof err === 'string' ? err : err.message || '').toLowerCase();
+  const isErr = (
+    msg.includes('schema cache') ||
+    msg.includes('does not exist') ||
+    msg.includes('relation') ||
+    msg.includes('pgrst204') ||
+    msg.includes('pgrst205') ||
+    msg.includes('42p01') ||
+    msg.includes('not found') ||
+    msg.includes('could not find the table')
+  );
+  if (isErr) {
+    reportSchemaMissing();
+  }
+  return isErr;
+}
+
 // Initial demo profile for preview testability
 const defaultDemoProfile: Profile = {
   id: 'demo-student-uuid-001',
@@ -110,17 +149,28 @@ function saveLocalDemoData(profiles: Record<string, Profile>, projects: Showcase
  */
 export async function getProfileById(userId: string): Promise<Profile | null> {
   if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    if (error) {
-      console.warn('Error fetching profile from Supabase:', error.message);
-      return null;
+      if (!error && data) {
+        return data as Profile;
+      }
+
+      if (error) {
+        if (isSchemaError(error)) {
+          console.warn('Supabase profiles table not found. Using local fallback.');
+        } else {
+          console.warn('Error fetching profile from Supabase:', error.message);
+        }
+      }
+    } catch (err) {
+      isSchemaError(err);
+      console.warn('Exception querying Supabase profile:', err);
     }
-    return data as Profile;
   }
 
   const { profiles } = getLocalDemoData();
@@ -135,53 +185,61 @@ export async function getStudentShowcaseByUsername(username: string): Promise<St
   const normalizedUsername = username.trim().toLowerCase();
 
   if (isSupabaseConfigured && supabase) {
-    // 1. Fetch Profile
-    const { data: profileData, error: profileErr } = await supabase
-      .from('profiles')
-      .select('*')
-      .ilike('github_username', normalizedUsername)
-      .maybeSingle();
+    try {
+      // 1. Fetch Profile
+      const { data: profileData, error: profileErr } = await supabase
+        .from('profiles')
+        .select('*')
+        .ilike('github_username', normalizedUsername)
+        .maybeSingle();
 
-    if (profileErr || !profileData) {
-      console.warn(`Profile not found for ${username} in Supabase:`, profileErr?.message);
-      return null;
-    }
+      if (!profileErr && profileData) {
+        // 2. Fetch Showcased Projects
+        const { data: projectsData, error: projErr } = await supabase
+          .from('showcased_projects')
+          .select('*')
+          .eq('profile_id', profileData.id)
+          .order('is_featured', { ascending: false })
+          .order('display_order', { ascending: true })
+          .order('added_at', { ascending: false });
 
-    // 2. Fetch Showcased Projects
-    const { data: projectsData, error: projErr } = await supabase
-      .from('showcased_projects')
-      .select('*')
-      .eq('profile_id', profileData.id)
-      .order('is_featured', { ascending: false })
-      .order('display_order', { ascending: true })
-      .order('added_at', { ascending: false });
+        if (projErr) {
+          isSchemaError(projErr);
+          console.warn('Error fetching showcase projects from Supabase:', projErr.message);
+        }
 
-    if (projErr) {
-      console.error('Error fetching showcase projects:', projErr.message);
-    }
+        const rawProjects = (projectsData || []) as ShowcasedProject[];
 
-    const rawProjects = (projectsData || []) as ShowcasedProject[];
+        // 3. Enrich projects with live GitHub stats
+        const enrichedProjects = await Promise.all(
+          rawProjects.map(async (p) => {
+            const stats = await fetchLiveRepoStats(p.repo_full_name);
+            return {
+              ...p,
+              live_stats: stats || undefined,
+            };
+          })
+        );
 
-    // 3. Enrich projects with live GitHub stats
-    const enrichedProjects = await Promise.all(
-      rawProjects.map(async (p) => {
-        const stats = await fetchLiveRepoStats(p.repo_full_name);
         return {
-          ...p,
-          live_stats: stats || undefined,
+          profile: profileData as Profile,
+          projects: enrichedProjects,
         };
-      })
-    );
+      }
 
-    return {
-      profile: profileData as Profile,
-      projects: enrichedProjects,
-    };
+      if (profileErr) {
+        isSchemaError(profileErr);
+      }
+    } catch (err) {
+      isSchemaError(err);
+      console.warn('Exception querying student showcase from Supabase:', err);
+    }
   }
 
   // Fallback demo local store
   const { profiles, projects } = getLocalDemoData();
-  const profile = profiles[normalizedUsername];
+  const profile = profiles[normalizedUsername] || 
+    (normalizedUsername === defaultDemoProfile.github_username.toLowerCase() ? defaultDemoProfile : null);
 
   if (!profile) {
     return null;
@@ -211,32 +269,39 @@ export async function getStudentShowcaseByUsername(username: string): Promise<St
  */
 export async function getAllStudentsShowcase(): Promise<StudentShowcaseData[]> {
   if (isSupabaseConfigured && supabase) {
-    const { data: profiles, error } = await supabase
-      .from('profiles')
-      .select('*, showcased_projects(*)')
-      .order('created_at', { ascending: false });
+    try {
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('*, showcased_projects(*)')
+        .order('created_at', { ascending: false });
 
-    if (error || !profiles) {
-      console.error('Error fetching all showcases from Supabase:', error?.message);
-      return [];
+      if (!error && profiles && profiles.length > 0) {
+        return profiles.map((p: any) => ({
+          profile: {
+            id: p.id,
+            github_username: p.github_username,
+            full_name: p.full_name,
+            headline: p.headline || null,
+            avatar_url: p.avatar_url,
+            bio: p.bio,
+            program: p.program,
+            year_level: p.year_level,
+            is_onboarded: Boolean(p.is_onboarded),
+            created_at: p.created_at,
+            updated_at: p.updated_at,
+          },
+          projects: p.showcased_projects || [],
+        }));
+      }
+
+      if (error) {
+        isSchemaError(error);
+        console.warn('Error fetching all showcases from Supabase, using demo directory:', error.message);
+      }
+    } catch (err) {
+      isSchemaError(err);
+      console.warn('Exception fetching showcases from Supabase:', err);
     }
-
-    return profiles.map((p: any) => ({
-      profile: {
-        id: p.id,
-        github_username: p.github_username,
-        full_name: p.full_name,
-        headline: p.headline || null,
-        avatar_url: p.avatar_url,
-        bio: p.bio,
-        program: p.program,
-        year_level: p.year_level,
-        is_onboarded: Boolean(p.is_onboarded),
-        created_at: p.created_at,
-        updated_at: p.updated_at,
-      },
-      projects: p.showcased_projects || [],
-    }));
   }
 
   // Fallback local demo directory
@@ -252,19 +317,27 @@ export async function getAllStudentsShowcase(): Promise<StudentShowcaseData[]> {
  */
 export async function getStudentShowcasedProjects(profileId: string): Promise<ShowcasedProject[]> {
   if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase
-      .from('showcased_projects')
-      .select('*')
-      .eq('profile_id', profileId)
-      .order('is_featured', { ascending: false })
-      .order('display_order', { ascending: true })
-      .order('added_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('showcased_projects')
+        .select('*')
+        .eq('profile_id', profileId)
+        .order('is_featured', { ascending: false })
+        .order('display_order', { ascending: true })
+        .order('added_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching showcased projects:', error.message);
-      return [];
+      if (!error && data) {
+        return data as ShowcasedProject[];
+      }
+
+      if (error) {
+        isSchemaError(error);
+        console.warn('Notice: Falling back to local storage for showcased projects (Supabase table not found or unavailable):', error.message);
+      }
+    } catch (err) {
+      isSchemaError(err);
+      console.warn('Exception fetching student projects from Supabase:', err);
     }
-    return data as ShowcasedProject[];
   }
 
   const { projects } = getLocalDemoData();
@@ -283,33 +356,41 @@ export async function addProjectToShowcase(params: {
   isFeatured?: boolean;
 }): Promise<ShowcasedProject | null> {
   if (isSupabaseConfigured && supabase) {
-    const newRow = {
-      profile_id: params.profileId,
-      repo_full_name: params.repoFullName,
-      repo_url: params.repoUrl,
-      custom_title: params.customTitle || null,
-      custom_description: params.customDescription || null,
-      is_featured: Boolean(params.isFeatured),
-      display_order: 0,
-    };
+    try {
+      const newRow = {
+        profile_id: params.profileId,
+        repo_full_name: params.repoFullName,
+        repo_url: params.repoUrl,
+        custom_title: params.customTitle || null,
+        custom_description: params.customDescription || null,
+        is_featured: Boolean(params.isFeatured),
+        display_order: 0,
+      };
 
-    const { data, error } = await supabase
-      .from('showcased_projects')
-      .insert(newRow)
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from('showcased_projects')
+        .insert(newRow)
+        .select()
+        .single();
 
-    if (error) {
-      console.error('Error adding project to Supabase:', error.message);
-      throw error;
+      if (!error && data) {
+        return data as ShowcasedProject;
+      }
+
+      if (error) {
+        isSchemaError(error);
+        console.warn('Error adding project to Supabase, saving locally instead:', error.message);
+      }
+    } catch (err) {
+      isSchemaError(err);
+      console.warn('Exception inserting project to Supabase:', err);
     }
-    return data as ShowcasedProject;
   }
 
   // Local demo fallback
   const { profiles, projects } = getLocalDemoData();
   const newProj: ShowcasedProject = {
-    id: `local-proj-${Date.now()}`,
+    id: `local-proj-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
     profile_id: params.profileId,
     repo_full_name: params.repoFullName,
     repo_url: params.repoUrl,
@@ -330,16 +411,21 @@ export async function addProjectToShowcase(params: {
  */
 export async function removeProjectFromShowcase(projectId: string): Promise<boolean> {
   if (isSupabaseConfigured && supabase) {
-    const { error } = await supabase
-      .from('showcased_projects')
-      .delete()
-      .eq('id', projectId);
+    try {
+      const { error } = await supabase
+        .from('showcased_projects')
+        .delete()
+        .eq('id', projectId);
 
-    if (error) {
-      console.error('Error deleting project:', error.message);
-      throw error;
+      if (!error) {
+        return true;
+      }
+      isSchemaError(error);
+      console.warn('Error deleting project in Supabase, removing locally:', error.message);
+    } catch (err) {
+      isSchemaError(err);
+      console.warn('Exception deleting project in Supabase:', err);
     }
-    return true;
   }
 
   const { profiles, projects } = getLocalDemoData();
@@ -356,18 +442,23 @@ export async function updateShowcaseProject(
   updates: Partial<ShowcasedProject>
 ): Promise<ShowcasedProject | null> {
   if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase
-      .from('showcased_projects')
-      .update(updates)
-      .eq('id', projectId)
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('showcased_projects')
+        .update(updates)
+        .eq('id', projectId)
+        .select()
+        .single();
 
-    if (error) {
-      console.error('Error updating project in Supabase:', error.message);
-      throw error;
+      if (!error && data) {
+        return data as ShowcasedProject;
+      }
+      isSchemaError(error);
+      console.warn('Error updating project in Supabase, updating locally:', error?.message);
+    } catch (err) {
+      isSchemaError(err);
+      console.warn('Exception updating project in Supabase:', err);
     }
-    return data as ShowcasedProject;
   }
 
   const { profiles, projects } = getLocalDemoData();
@@ -388,29 +479,48 @@ export async function updateStudentProfile(
   updates: Partial<Profile>
 ): Promise<Profile | null> {
   if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', profileId)
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', profileId)
+        .select()
+        .single();
 
-    if (error) {
-      console.error('Error updating profile in Supabase:', error.message);
-      throw error;
+      if (!error && data) {
+        return data as Profile;
+      }
+      isSchemaError(error);
+      console.warn('Error updating profile in Supabase, updating locally:', error?.message);
+    } catch (err) {
+      isSchemaError(err);
+      console.warn('Exception updating profile in Supabase:', err);
     }
-    return data as Profile;
   }
 
   const { profiles, projects } = getLocalDemoData();
-  const username = Object.keys(profiles).find(key => profiles[key].id === profileId);
-  if (username && profiles[username]) {
-    profiles[username] = { ...profiles[username], ...updates, updated_at: new Date().toISOString() };
-    saveLocalDemoData(profiles, projects);
-    return profiles[username];
+  let foundKey = Object.keys(profiles).find(key => profiles[key].id === profileId);
+  if (!foundKey && updates.github_username) {
+    foundKey = updates.github_username.toLowerCase();
   }
-  return null;
+
+  if (foundKey && profiles[foundKey]) {
+    profiles[foundKey] = { ...profiles[foundKey], ...updates, updated_at: new Date().toISOString() };
+    saveLocalDemoData(profiles, projects);
+    return profiles[foundKey];
+  } else {
+    const newProfile: Profile = {
+      ...defaultDemoProfile,
+      id: profileId,
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+    profiles[(newProfile.github_username || 'isabela-coder').toLowerCase()] = newProfile;
+    saveLocalDemoData(profiles, projects);
+    return newProfile;
+  }
 }
+

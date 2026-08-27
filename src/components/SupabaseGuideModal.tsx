@@ -122,18 +122,18 @@ create trigger on_auth_user_created
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] border-[4px] border-black max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-[#FEFCF6] paper-card max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-[8px_8px_0px_#000] text-[#212121]">
         {/* Header */}
-        <div className="p-6 border-b-2 border-black flex items-center justify-between bg-[#FDE047]">
+        <div className="p-6 border-b-2 border-dashed border-[#212121] flex items-center justify-between bg-[#FAF6EC]">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <div className="w-10 h-10 paper-card bg-white text-black flex items-center justify-center">
               <Database className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-[900] uppercase text-black">
+              <h2 className="text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
                 Supabase &amp; GitHub OAuth Setup
               </h2>
-              <p className="text-xs font-bold text-black/80">
+              <p className="text-xs font-serif-body text-stone-700">
                 Setup guide &amp; quick connection for your free Student Showcase database
               </p>
             </div>
@@ -141,40 +141,34 @@ create trigger on_auth_user_created
           <button
             id="close-guide-btn"
             onClick={onClose}
-            className="w-8 h-8 rounded-full border-2 border-black bg-white flex items-center justify-center font-black text-sm text-black hover:bg-[#FFD5E5] transition-colors"
+            className="paper-button p-2 text-stone-800"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex flex-wrap border-b-2 border-black px-6 py-2 bg-slate-50 gap-2">
+        <div className="flex flex-wrap border-b-2 border-dashed border-[#212121] px-6 py-2 bg-stone-100 gap-2">
           <button
             onClick={() => setActiveTab('quick')}
-            className={`py-2 px-3.5 text-xs font-black uppercase tracking-wider rounded-xl border-2 border-black transition-all ${
-              activeTab === 'quick'
-                ? 'bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
-                : 'bg-white text-black hover:bg-[#FDE047]'
+            className={`paper-button text-xs font-bold uppercase tracking-wider py-1.5 px-3 ${
+              activeTab === 'quick' ? 'paper-button-dark' : ''
             }`}
           >
             1. Connect Credentials
           </button>
           <button
             onClick={() => setActiveTab('sql')}
-            className={`py-2 px-3.5 text-xs font-black uppercase tracking-wider rounded-xl border-2 border-black transition-all ${
-              activeTab === 'sql'
-                ? 'bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
-                : 'bg-white text-black hover:bg-[#FDE047]'
+            className={`paper-button text-xs font-bold uppercase tracking-wider py-1.5 px-3 ${
+              activeTab === 'sql' ? 'paper-button-dark' : ''
             }`}
           >
             2. SQL Schema &amp; RLS
           </button>
           <button
             onClick={() => setActiveTab('oauth')}
-            className={`py-2 px-3.5 text-xs font-black uppercase tracking-wider rounded-xl border-2 border-black transition-all ${
-              activeTab === 'oauth'
-                ? 'bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
-                : 'bg-white text-black hover:bg-[#FDE047]'
+            className={`paper-button text-xs font-bold uppercase tracking-wider py-1.5 px-3 ${
+              activeTab === 'oauth' ? 'paper-button-dark' : ''
             }`}
           >
             3. GitHub OAuth Setup
@@ -182,21 +176,21 @@ create trigger on_auth_user_created
         </div>
 
         {/* Content Area */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1 text-black font-bold">
+        <div className="p-6 overflow-y-auto space-y-6 flex-1 text-[#212121]">
           {activeTab === 'quick' && (
             <div className="space-y-6">
-              <div className={`p-4 rounded-2xl border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] ${
+              <div className={`paper-card p-4 ${
                 isSupabaseConfigured
-                  ? 'bg-[#DCFCE7] text-black'
-                  : 'bg-[#FFD5E5] text-black'
+                  ? 'bg-emerald-50 border-emerald-600'
+                  : 'bg-amber-50 border-amber-600'
               }`}>
                 <div className="flex items-start space-x-3">
-                  <ShieldCheck className={`w-5 h-5 mt-0.5 flex-shrink-0 ${isSupabaseConfigured ? 'text-emerald-700' : 'text-rose-700'}`} />
+                  <ShieldCheck className={`w-5 h-5 mt-0.5 flex-shrink-0 ${isSupabaseConfigured ? 'text-emerald-700' : 'text-amber-800'}`} />
                   <div>
-                    <h4 className="font-black uppercase text-sm">
+                    <h4 className="font-headline font-bold uppercase text-sm text-[#212121]">
                       {isSupabaseConfigured ? 'Supabase Connected' : 'Supabase Not Configured Yet (Using Demo Showcase Sandbox)'}
                     </h4>
-                    <p className="text-xs mt-1 font-bold leading-relaxed">
+                    <p className="text-xs mt-1 font-serif-body leading-relaxed text-stone-800">
                       {isSupabaseConfigured
                         ? 'Your Supabase client is active. Students can log in with GitHub, save showcased projects, and persist public profiles in Postgres.'
                         : 'You can explore all dashboard and showcase features right now in Sandbox mode! To connect your real live Supabase Postgres database, enter your credentials below or configure environment variables in .env.'}
@@ -207,7 +201,7 @@ create trigger on_auth_user_created
 
               <form onSubmit={handleSaveCredentials} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-black mb-1">
+                  <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
                     Supabase Project URL
                   </label>
                   <input
@@ -216,13 +210,13 @@ create trigger on_auth_user_created
                     placeholder="https://xyzcompany.supabase.co"
                     value={inputUrl}
                     onChange={(e) => setInputUrl(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border-2 border-black bg-white text-black font-bold text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:ring-2 focus:ring-[#6366F1]"
+                    className="w-full px-3.5 py-2.5 paper-input text-[#212121] text-sm"
                   />
-                  <p className="text-[11px] font-bold text-slate-600 mt-1">Found in Supabase Dashboard &gt; Project Settings &gt; API</p>
+                  <p className="text-[11px] font-mono text-stone-600 mt-1">Found in Supabase Dashboard &gt; Project Settings &gt; API</p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-black mb-1">
+                  <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
                     Supabase Anon Public API Key
                   </label>
                   <input
@@ -231,9 +225,9 @@ create trigger on_auth_user_created
                     placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                     value={inputKey}
                     onChange={(e) => setInputKey(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border-2 border-black bg-white text-black font-mono font-bold text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:ring-2 focus:ring-[#6366F1]"
+                    className="w-full px-3.5 py-2.5 paper-input text-[#212121] font-mono text-sm"
                   />
-                  <p className="text-[11px] font-bold text-slate-600 mt-1">Project API key with `anon` `public` role.</p>
+                  <p className="text-[11px] font-mono text-stone-600 mt-1">Project API key with `anon` `public` role.</p>
                 </div>
 
                 <div className="flex items-center justify-between pt-2">
@@ -244,7 +238,7 @@ create trigger on_auth_user_created
                       setInputKey('');
                       updateSupabaseConfig('', '');
                     }}
-                    className="text-xs font-black uppercase text-rose-600 hover:underline"
+                    className="text-xs font-headline uppercase text-rose-700 hover:underline cursor-pointer"
                   >
                     Reset to Demo Sandbox
                   </button>
@@ -252,7 +246,7 @@ create trigger on_auth_user_created
                   <button
                     id="save-credentials-btn"
                     type="submit"
-                    className="px-5 py-2.5 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] text-white text-xs font-black uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all"
+                    className="paper-button paper-button-dark px-5 py-2.5 text-xs uppercase tracking-wider font-bold"
                   >
                     Save &amp; Reload Client
                   </button>
@@ -265,21 +259,21 @@ create trigger on_auth_user_created
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-black uppercase text-black">
+                  <h3 className="text-sm font-newspaper-title font-[900] uppercase text-[#212121]">
                     Database Schema &amp; Row Level Security
                   </h3>
-                  <p className="text-xs font-bold text-slate-700">
+                  <p className="text-xs font-serif-body text-stone-700">
                     Run this in your Supabase SQL Editor to create tables, RLS policies, and the OAuth user trigger.
                   </p>
                 </div>
                 <button
                   id="copy-sql-btn"
                   onClick={copySql}
-                  className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#FDE047] text-xs font-black uppercase tracking-wider text-black border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-colors"
+                  className="paper-button flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider"
                 >
                   {copiedSql ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-[#22C55E]" />
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Copied!</span>
                     </>
                   ) : (
@@ -291,7 +285,7 @@ create trigger on_auth_user_created
                 </button>
               </div>
 
-              <div className="relative rounded-2xl bg-black border-2 border-black p-4 max-h-72 overflow-y-auto shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <div className="relative paper-card bg-[#1E1E1E] p-4 max-h-72 overflow-y-auto">
                 <pre className="text-xs font-mono font-bold text-emerald-400 whitespace-pre leading-relaxed">
                   {sqlSchemaCode}
                 </pre>
@@ -300,22 +294,22 @@ create trigger on_auth_user_created
           )}
 
           {activeTab === 'oauth' && (
-            <div className="space-y-4 text-sm">
-              <h3 className="font-black uppercase text-black flex items-center space-x-2">
+            <div className="space-y-4 text-sm font-serif-body">
+              <h3 className="font-newspaper-title font-[900] uppercase text-[#212121] flex items-center space-x-2">
                 <Github className="w-4 h-4" />
                 <span>GitHub OAuth Provider Configuration</span>
               </h3>
 
-              <ol className="list-decimal list-inside space-y-3 text-xs leading-relaxed font-bold text-slate-800">
+              <ol className="list-decimal list-inside space-y-3 text-xs leading-relaxed text-stone-800">
                 <li>
-                  Go to <a href="https://github.com/settings/developers" target="_blank" rel="noreferrer" className="text-[#6366F1] underline inline-flex items-center">GitHub Developer Settings &gt; OAuth Apps <ExternalLink className="w-3 h-3 ml-1" /></a> and click <strong>New OAuth App</strong>.
+                  Go to <a href="https://github.com/settings/developers" target="_blank" rel="noreferrer" className="text-blue-800 underline font-bold inline-flex items-center">GitHub Developer Settings &gt; OAuth Apps <ExternalLink className="w-3 h-3 ml-1" /></a> and click <strong>New OAuth App</strong>.
                 </li>
                 <li>
-                  Set <strong>Homepage URL</strong> to: <code className="bg-[#FDE047] text-black px-1.5 py-0.5 rounded border border-black font-mono">{typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.app'}</code>
+                  Set <strong>Homepage URL</strong> to: <code className="bg-[#FAF6EC] text-black px-1.5 py-0.5 border border-black font-mono">{typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.app'}</code>
                 </li>
                 <li>
                   Set <strong>Authorization callback URL</strong> to your Supabase Auth callback URL:
-                  <div className="mt-1 p-2 bg-white rounded-xl border border-black font-mono text-black break-all select-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="mt-1 p-2 bg-white paper-card font-mono text-black break-all select-all text-xs">
                     {supabaseUrl ? `${supabaseUrl}/auth/v1/callback` : 'https://<your-project-ref>.supabase.co/auth/v1/callback'}
                   </div>
                 </li>
@@ -324,7 +318,7 @@ create trigger on_auth_user_created
                 </li>
                 <li>
                   Under <strong>Authentication &gt; URL Configuration</strong> in Supabase, add your app origin as a <strong>Redirect URL</strong>:
-                  <div className="mt-1 p-2 bg-white rounded-xl border border-black font-mono text-black break-all select-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="mt-1 p-2 bg-white paper-card font-mono text-black break-all select-all text-xs">
                     {typeof window !== 'undefined' ? `${window.location.origin}/**` : 'https://your-app.run.app/**'}
                   </div>
                 </li>
@@ -334,14 +328,14 @@ create trigger on_auth_user_created
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t-2 border-black bg-slate-50 flex items-center justify-between">
-          <div className="flex items-center space-x-2 text-xs font-black uppercase text-black">
-            <Sparkles className="w-4 h-4 text-amber-500" />
+        <div className="p-4 border-t-2 border-dashed border-[#212121] bg-stone-100 flex items-center justify-between">
+          <div className="flex items-center space-x-2 text-xs font-sketch font-bold uppercase text-stone-800">
+            <Sparkles className="w-4 h-4 text-amber-600" />
             <span>Runs 100% on free-tier services ($0/mo)</span>
           </div>
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-black hover:bg-slate-800 text-white border-2 border-black rounded-xl text-xs font-black uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-colors"
+            className="paper-button paper-button-dark px-4 py-1.5 text-xs uppercase font-bold"
           >
             Close
           </button>

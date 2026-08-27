@@ -64,6 +64,7 @@ function AppContent() {
         <DashboardView 
           navigate={navigate} 
           onOpenOnboarding={() => setManualOnboardOpen(true)} 
+          onOpenGuide={() => setIsGuideOpen(true)}
         />
       );
     }
@@ -96,10 +97,10 @@ function AppContent() {
   );
 
   return (
-    <div className="min-h-screen bg-[#EBE7DC] text-[#1A1815] flex flex-col justify-between p-2 sm:p-4 md:p-6 lg:p-8 selection:bg-[#1A1815] selection:text-[#FAF8F2]">
-      {/* Central Newspaper Sheet */}
-      <div className="max-w-6xl mx-auto w-full bg-[#FAF8F2] border-x border-[#D6D0C4] shadow-md px-4 sm:px-8 md:px-12 py-6 flex-1 flex flex-col space-y-6">
-        {/* Newspaper Masthead */}
+    <div className="min-h-screen bg-[#F0EBE1] text-[#212121] flex flex-col justify-between p-2 sm:p-4 md:p-6 lg:p-8 font-serif-body selection:bg-[#212121] selection:text-[#FEFCF6]">
+      {/* Central Paper Sheet Container */}
+      <div className="max-w-6xl mx-auto w-full paper-sheet px-4 sm:px-8 md:px-10 py-6 flex-1 flex flex-col space-y-6 my-2 sm:my-4">
+        {/* Newspaper / Paper Masthead */}
         <Header
           currentRoute={currentPath}
           navigate={navigate}
@@ -111,7 +112,7 @@ function AppContent() {
           {renderCurrentView()}
         </main>
 
-        {/* Onboarding Setup Modal (Step 1: Profile & 50-char bio -> Step 2: Choose Repos) */}
+        {/* Onboarding Setup Modal */}
         {profile && (
           <OnboardingModal
             isOpen={showOnboarding}
@@ -128,26 +129,26 @@ function AppContent() {
           onClose={() => setIsGuideOpen(false)}
         />
 
-        {/* Newspaper Colophon & Editorial Footer */}
-        <footer className="border-t-2 border-b border-[#1A1815] py-4 mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-serif-body text-stone-700 bg-[#F4F0E6] px-4">
+        {/* Paper Footer */}
+        <footer className="border-t-2 border-[#212121] py-4 mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-serif-body text-[#3B3A36] bg-[#F7F3E9] px-4 paper-card">
           <div className="flex items-center space-x-2">
-            <Github className="w-4 h-4 text-stone-800" />
-            <span className="font-headline font-bold uppercase tracking-wider text-[#1A1815]">
+            <Github className="w-4 h-4 text-[#212121]" />
+            <span className="font-headline font-bold uppercase tracking-wider text-[#212121]">
               GitShowcase &bull; Isabela State University - Cauayan Campus
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 font-mono text-[11px] uppercase tracking-wider text-stone-600">
+          <div className="flex flex-wrap items-center justify-center gap-4 font-mono text-[11px] uppercase tracking-wider text-stone-700">
             <button
               onClick={() => navigate('/')}
-              className="hover:text-black underline cursor-pointer"
+              className="hover:text-black underline cursor-pointer font-bold"
             >
               Front Page
             </button>
             <span>&bull;</span>
             <button
               onClick={() => navigate('/explore')}
-              className="hover:text-black underline cursor-pointer"
+              className="hover:text-black underline cursor-pointer font-bold"
             >
               Directory
             </button>
@@ -156,7 +157,7 @@ function AppContent() {
               href="https://github.com"
               target="_blank"
               rel="noreferrer"
-              className="hover:text-black underline flex items-center space-x-1"
+              className="hover:text-black underline flex items-center space-x-1 font-bold"
             >
               <Github className="w-3 h-3" />
               <span>GitHub</span>
@@ -164,8 +165,8 @@ function AppContent() {
           </div>
         </footer>
 
-        <div className="text-center text-[10px] font-mono text-stone-500 pb-2">
-          GitShowcase &bull; Isabela State University - Cauayan Campus &bull; Computing Student Portfolio Hub
+        <div className="text-center text-[11px] font-sketch text-stone-600 pb-2">
+          GitShowcase &bull; Isabela State University - Cauayan Campus &bull; Crafted with PaperCSS
         </div>
       </div>
     </div>

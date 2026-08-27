@@ -35,32 +35,32 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
   };
 
   return (
-    <header className="w-full bg-[#FAF8F2] border-b border-[#1A1815] text-[#1A1815] select-none">
+    <header className="w-full bg-[#FEFCF6] border-2 border-[#212121] text-[#212121] select-none paper-card p-2 sm:p-3 mb-4">
       {/* Top Utility Bar */}
-      <div className="flex flex-wrap items-center justify-between border-b border-[#D6D0C4] px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider text-stone-600 bg-[#F4F0E6]">
+      <div className="flex flex-wrap items-center justify-between border-b-2 border-dashed border-[#212121] px-2 py-1 text-[11px] font-sketch uppercase tracking-wider text-stone-700 bg-[#FAF6EC]">
         <span>Isabela State University &bull; Cauayan Campus</span>
-        <span className="hidden md:inline font-semibold">{getFormattedDate()}</span>
-        <span className="font-semibold">Student Project Showcase</span>
+        <span className="hidden md:inline font-bold">{getFormattedDate()}</span>
+        <span className="font-bold">Student Project Showcase</span>
       </div>
 
       {/* Main Brand Title & Nav Bar */}
-      <div className="py-3 sm:py-4 px-3 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
+      <div className="py-2.5 px-2 sm:px-4 flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
         {/* Brand / Logo */}
         <button
           id="masthead-home-btn"
           onClick={() => navigate('/')}
           className="text-left group cursor-pointer flex items-center space-x-3"
         >
-          <div className="w-9 h-9 border border-[#1A1815] bg-[#1A1815] text-[#FAF8F2] flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 border-2 border-[#212121] bg-[#212121] text-[#FAF8F2] flex items-center justify-center flex-shrink-0 shadow-[2px_2px_0px_#212121] rounded-sm">
             <Github className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h1 className="text-xl sm:text-2xl font-[900] tracking-tight uppercase font-newspaper-title text-[#1A1815] leading-none group-hover:opacity-80 transition-opacity">
+              <h1 className="text-2xl sm:text-3xl font-[900] tracking-tight uppercase font-newspaper-title text-[#212121] leading-none group-hover:opacity-80 transition-opacity">
                 GITSHOWCASE
               </h1>
             </div>
-            <p className="text-[11px] font-serif-headline italic text-stone-600">
+            <p className="text-[12px] font-sketch text-stone-700 font-semibold">
               ISU Cauayan Campus &bull; Student Developer &amp; Repository Hub
             </p>
           </div>
@@ -69,14 +69,14 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
         {/* Navigation & User Auth */}
         <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-3 w-full md:w-auto">
           {/* Main Navigation Links */}
-          <nav className="flex items-center space-x-1 text-xs font-headline font-bold uppercase tracking-wider">
+          <nav className="flex items-center space-x-1.5 text-xs font-headline font-bold uppercase tracking-wider">
             <button
               id="nav-front-page-btn"
               onClick={() => navigate('/')}
-              className={`px-2.5 py-1.5 rounded-none transition-colors cursor-pointer ${
+              className={`px-3 py-1 border-2 border-[#212121] transition-all cursor-pointer font-bold ${
                 currentRoute === '/' 
-                  ? 'bg-[#1A1815] text-[#FAF8F2]' 
-                  : 'text-stone-700 hover:bg-[#EBE7DC]'
+                  ? 'bg-[#212121] text-[#FEFCF6] shadow-[2px_2px_0px_#000]' 
+                  : 'bg-[#FEFCF6] text-[#212121] hover:bg-[#EBE7DC] shadow-[1px_1px_0px_#212121]'
               }`}
             >
               Front Page
@@ -85,10 +85,10 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
             <button
               id="nav-explore-btn"
               onClick={() => navigate('/explore')}
-              className={`px-2.5 py-1.5 rounded-none transition-colors cursor-pointer flex items-center space-x-1.5 ${
+              className={`px-3 py-1 border-2 border-[#212121] transition-all cursor-pointer flex items-center space-x-1.5 font-bold ${
                 currentRoute === '/explore' 
-                  ? 'bg-[#1A1815] text-[#FAF8F2]' 
-                  : 'text-stone-700 hover:bg-[#EBE7DC]'
+                  ? 'bg-[#212121] text-[#FEFCF6] shadow-[2px_2px_0px_#000]' 
+                  : 'bg-[#FEFCF6] text-[#212121] hover:bg-[#EBE7DC] shadow-[1px_1px_0px_#212121]'
               }`}
             >
               <Compass className="w-3.5 h-3.5" />
@@ -99,10 +99,10 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
               <button
                 id="nav-dashboard-btn"
                 onClick={() => navigate('/dashboard')}
-                className={`px-2.5 py-1.5 rounded-none transition-colors cursor-pointer flex items-center space-x-1.5 ${
+                className={`px-3 py-1 border-2 border-[#212121] transition-all cursor-pointer flex items-center space-x-1.5 font-bold ${
                   currentRoute === '/dashboard' 
-                    ? 'bg-[#1A1815] text-[#FAF8F2]' 
-                    : 'text-stone-700 hover:bg-[#EBE7DC]'
+                    ? 'bg-[#212121] text-[#FEFCF6] shadow-[2px_2px_0px_#000]' 
+                    : 'bg-[#FEFCF6] text-[#212121] hover:bg-[#EBE7DC] shadow-[1px_1px_0px_#212121]'
                 }`}
               >
                 <LayoutDashboard className="w-3.5 h-3.5" />
@@ -114,10 +114,10 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
               <button
                 id="nav-my-profile-btn"
                 onClick={() => navigate(`/u/${profile.github_username}`)}
-                className={`px-2.5 py-1.5 rounded-none transition-colors cursor-pointer flex items-center space-x-1.5 ${
+                className={`px-3 py-1 border-2 border-[#212121] transition-all cursor-pointer flex items-center space-x-1.5 font-bold ${
                   currentRoute === `/u/${profile.github_username}` 
-                    ? 'bg-[#1A1815] text-[#FAF8F2]' 
-                    : 'text-stone-700 hover:bg-[#EBE7DC]'
+                    ? 'bg-[#212121] text-[#FEFCF6] shadow-[2px_2px_0px_#000]' 
+                    : 'bg-[#FEFCF6] text-[#212121] hover:bg-[#EBE7DC] shadow-[1px_1px_0px_#212121]'
                 }`}
               >
                 <User className="w-3.5 h-3.5" />
@@ -126,7 +126,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
             )}
           </nav>
 
-          <div className="h-4 w-px bg-[#D6D0C4] hidden sm:block"></div>
+          <div className="h-5 w-0.5 bg-[#212121] hidden sm:block"></div>
 
           {/* User Actions */}
           <div className="flex items-center space-x-2">
@@ -135,9 +135,9 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
                 <button
                   id="user-menu-btn"
                   onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center space-x-2 bg-[#FAF8F2] text-[#1A1815] px-2.5 py-1 border border-[#1A1815] hover:bg-[#EBE7DC] transition-all font-headline text-xs uppercase tracking-wider cursor-pointer"
+                  className="paper-button flex items-center space-x-2 py-1 px-2.5 text-xs font-bold uppercase cursor-pointer"
                 >
-                  <div className="w-4 h-4 border border-[#1A1815] bg-stone-300 overflow-hidden flex-shrink-0">
+                  <div className="w-5 h-5 border border-[#212121] bg-stone-300 overflow-hidden flex-shrink-0 rounded-xs">
                     <img
                       src={profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
                       alt={profile?.github_username || 'Student Avatar'}
@@ -150,16 +150,16 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
                 </button>
 
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-1.5 w-52 bg-[#FAF8F2] border border-[#1A1815] shadow-md p-1.5 z-50 animate-in fade-in duration-100">
-                    <div className="p-2 border-b border-[#D6D0C4] mb-1 bg-[#F4F0E6]">
-                      <p className="text-xs font-bold font-headline uppercase text-[#1A1815] truncate">
+                  <div className="absolute right-0 mt-1.5 w-56 bg-[#FEFCF6] border-2 border-[#212121] shadow-[4px_4px_0px_#212121] p-2 z-50 animate-in fade-in duration-100 paper-card">
+                    <div className="p-2 border-b-2 border-dashed border-[#212121] mb-1 bg-[#FAF6EC]">
+                      <p className="text-xs font-bold font-headline uppercase text-[#212121] truncate">
                         {profile?.full_name || 'Student Author'}
                       </p>
-                      <p className="text-[10px] font-mono text-stone-600 truncate">
+                      <p className="text-[11px] font-mono text-stone-700 truncate">
                         @{profile?.github_username || 'isabela-coder'}
                       </p>
                       {isDemoMode && (
-                        <span className="inline-block mt-1 text-[9px] font-mono bg-stone-200 border border-stone-400 px-1 py-0.2 uppercase">
+                        <span className="paper-badge mt-1 text-[10px]">
                           Guest Mode
                         </span>
                       )}
@@ -170,7 +170,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
                         setDropdownOpen(false);
                         navigate('/dashboard');
                       }}
-                      className="w-full text-left px-2 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] flex items-center space-x-2 uppercase cursor-pointer"
+                      className="w-full text-left px-2 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] flex items-center space-x-2 uppercase cursor-pointer font-bold"
                     >
                       <LayoutDashboard className="w-3.5 h-3.5" />
                       <span>Project Desk</span>
@@ -181,7 +181,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
                         setDropdownOpen(false);
                         navigate(`/u/${myUsername}`);
                       }}
-                      className="w-full text-left px-2 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] flex items-center space-x-2 uppercase cursor-pointer"
+                      className="w-full text-left px-2 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] flex items-center space-x-2 uppercase cursor-pointer font-bold"
                     >
                       <User className="w-3.5 h-3.5" />
                       <span>View Public Page</span>
@@ -192,13 +192,13 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
                         setDropdownOpen(false);
                         navigate('/explore');
                       }}
-                      className="w-full text-left px-2 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] flex items-center space-x-2 uppercase cursor-pointer"
+                      className="w-full text-left px-2 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] flex items-center space-x-2 uppercase cursor-pointer font-bold"
                     >
                       <Compass className="w-3.5 h-3.5" />
                       <span>Classmate Directory</span>
                     </button>
 
-                    <div className="border-t border-[#D6D0C4] my-1"></div>
+                    <div className="border-t-2 border-dashed border-[#212121] my-1"></div>
 
                     <button
                       id="signout-btn"
@@ -207,7 +207,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
                         signOut();
                         navigate('/');
                       }}
-                      className="w-full text-left px-2 py-1.5 text-xs font-headline text-stone-700 hover:bg-stone-200 flex items-center space-x-2 uppercase cursor-pointer"
+                      className="w-full text-left px-2 py-1.5 text-xs font-headline text-red-700 hover:bg-red-50 flex items-center space-x-2 uppercase cursor-pointer font-bold"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>Sign Out</span>
@@ -223,9 +223,9 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
                     signInAsDemoStudent();
                     navigate('/dashboard');
                   }}
-                  className="inline-flex items-center space-x-1 px-2.5 py-1.5 bg-[#FAF8F2] hover:bg-stone-200 text-[#1A1815] border border-[#1A1815] font-headline text-xs uppercase tracking-wider transition-all cursor-pointer"
+                  className="paper-button text-xs py-1.5 px-3 cursor-pointer"
                 >
-                  <Sparkles className="w-3 h-3 text-stone-600" />
+                  <Sparkles className="w-3 h-3 text-stone-700 mr-1" />
                   <span>Guest Demo</span>
                 </button>
 
@@ -235,9 +235,9 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
                     await signInWithGitHub();
                     navigate('/dashboard');
                   }}
-                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#1A1815] hover:bg-stone-800 text-[#FAF8F2] font-headline text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                  className="paper-button paper-button-dark text-xs py-1.5 px-3.5 font-bold cursor-pointer"
                 >
-                  <Github className="w-3.5 h-3.5 text-white" />
+                  <Github className="w-3.5 h-3.5 text-white mr-1.5" />
                   <span>GitHub Sign In</span>
                 </button>
               </div>
