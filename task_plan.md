@@ -1,15 +1,16 @@
-# Responsive Fix Plan — GitShowcase
-Goal: Complete responsive compatibility for mobile and tablet devices while preserving PaperCSS hand-drawn branding.
+# Task Plan: Resolve GitHub OAuth 404 & Vercel Demo Mode Fallback
 
-## Status: COMPLETED
-- [x] Phase 1: src/index.css - Fixed .paper-card bg to #FEFCF6 and added :focus-visible ring
-- [x] Phase 2: src/components/Header.tsx - Mobile hamburger navigation drawer, dropdown outside-click dismiss, and compact layout
-- [x] Phase 3: src/components/CommitHeatmap.tsx - Added mobile swipe indicator hint and fixed tooltip clipping
-- [x] Phase 4: src/components/DashboardView.tsx - Expanded touch targets (min 36x36px) for action buttons
-- [x] Phase 5: src/components/ExploreView.tsx - Raised badge text sizes from 9px to readable 11px
-- [x] Phase 6: src/components/OnboardingModal.tsx - Added max-h-[90dvh] and scroll viewport container
-- [x] Phase 7: src/components/SupabaseGuideModal.tsx - Updated to dynamic viewport units (90dvh)
+## Goal
+Diagnose and resolve:
+1. GitHub 404 ('This is not the web page you are looking for') during OAuth authorization on localhost.
+2. Vercel falling back to demo mode instead of running live Supabase GitHub OAuth.
 
-## Verification
-- TypeScript type-check: passed (0 errors)
-- Production build (vite build): passed (0 errors)
+## Phases
+- [ ] Phase 1: Investigate GitHub OAuth 404 root cause (Client ID / OAuth App type vs GitHub App / Callback URL)
+- [ ] Phase 2: Investigate Vercel environment variable injection and build baking
+- [ ] Phase 3: Enhance codebase to display exact configuration status & auth errors in UI
+- [ ] Phase 4: Verification and step-by-step resolution guide for user
+
+## Errors & Observations
+- Error 1: Localhost GitHub Sign in leads to '404 this is not the web page you are looking for' on GitHub. Cause: Incorrect/mismatched GitHub OAuth App Client ID in Supabase or GitHub App instead of OAuth App.
+- Error 2: Vercel defaults to Demo Mode. Cause: Vercel build did not have VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY defined during build time, so isSupabaseConfigured is false in the bundle.

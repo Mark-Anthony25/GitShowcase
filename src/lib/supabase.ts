@@ -1,8 +1,15 @@
 import { createClient, SupabaseClient, User, Session } from '@supabase/supabase-js';
 
-// Read env variables (supporting Vite and Next.js public conventions)
-const envSupabaseUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const envSupabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Read env variables (supporting Vite, standard, and Next.js conventions)
+const envSupabaseUrl = 
+  import.meta.env.VITE_SUPABASE_URL || 
+  import.meta.env.SUPABASE_URL || 
+  import.meta.env.NEXT_PUBLIC_SUPABASE_URL || '';
+
+const envSupabaseAnonKey = 
+  import.meta.env.VITE_SUPABASE_ANON_KEY || 
+  import.meta.env.SUPABASE_ANON_KEY || 
+  import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Allow local overrides if user enters them in the UI config drawer
 const storedUrl = typeof window !== 'undefined' ? localStorage.getItem('custom_supabase_url') : null;
