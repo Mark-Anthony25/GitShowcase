@@ -96,9 +96,9 @@ function AppContent() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F0EBE1] text-[#212121] flex flex-col p-1.5 xs:p-2 sm:p-4 md:p-6 lg:p-8 xl:p-10 font-serif-body selection:bg-[#212121] selection:text-[#FEFCF6] w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-[#F0EBE1] text-[#212121] flex flex-col p-1.5 xs:p-2 sm:p-3.5 md:p-5 lg:p-7 font-serif-body selection:bg-[#212121] selection:text-[#FEFCF6] w-full max-w-full overflow-x-hidden">
       {/* Central Paper Sheet Container */}
-      <div className="max-w-full lg:max-w-[1400px] xl:max-w-[1560px] mx-auto w-full paper-sheet px-2.5 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-2 sm:py-5 md:py-6 flex-1 flex flex-col space-y-3 sm:space-y-5 lg:space-y-6 my-0.5 sm:my-2.5">
+      <div className="max-w-full lg:max-w-[1380px] xl:max-w-[1440px] mx-auto w-full paper-sheet px-2.5 sm:px-5 md:px-7 lg:px-8 py-2 sm:py-4 md:py-4.5 flex-1 flex flex-col space-y-3 sm:space-y-4 lg:space-y-5 my-0.5 sm:my-1.5">
         {/* Newspaper / Paper Masthead */}
         <Header
           currentRoute={currentPath}

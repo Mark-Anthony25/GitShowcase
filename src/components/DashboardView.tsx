@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Github, Plus, Trash2, Edit3, Star, GitFork, ExternalLink, 
-  Check, Sparkles, AlertCircle, RefreshCw, Eye, Pin, Bookmark, 
-  BookOpen, GraduationCap, User, ArrowUpRight, Search, CheckCircle2, Newspaper, X
+  RefreshCw, Eye, Pin, Search, CheckCircle2, FolderGit2, 
+  ArrowUpRight, X, Globe, Sparkles, AlertCircle, Layers
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
 import { GitHubRepoItem, ShowcasedProject } from '../types';
 import { fetchUserRepos } from '../lib/github';
-import { CommitHeatmap } from './CommitHeatmap';
 import { 
   getStudentShowcasedProjects, 
   addProjectToShowcase, 
@@ -23,26 +22,17 @@ interface DashboardViewProps {
   onOpenGuide?: () => void;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOnboarding, onOpenGuide }) => {
-  const { user, profile, githubToken, updateProfileData, isDemoMode, isConfigured } = useAuth();
+export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGuide }) => {
+  const { user, profile, githubToken, isDemoMode } = useAuth();
 
   // State
   const [showcased, setShowcased] = useState<ShowcasedProject[]>([]);
   const [availableRepos, setAvailableRepos] = useState<GitHubRepoItem[]>([]);
   const [loadingRepos, setLoadingRepos] = useState(false);
   const [loadingShowcase, setLoadingShowcase] = useState(true);
-  const [activeTab, setActiveTab] = useState<'showcase' | 'repos' | 'profile'>('showcase');
-  const [repoSearch, setRepoSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<'showcase' | 'repos'>('showcase');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isSchemaMissing, setIsSchemaMissing] = useState(false);
-  
-  // Profile edit state
-  const [fullName, setFullName] = useState(profile?.full_name || '');
-  const [headline, setHeadline] = useState(profile?.headline || '');
-  const [bio, setBio] = useState(profile?.bio || '');
-  const [program, setProgram] = useState(profile?.program || 'BS Computer Science');
-  const [yearLevel, setYearLevel] = useState(profile?.year_level || '3rd Year');
-  const [profileSaving, setProfileSaving] = useState(false);
-  const [profileSaved, setProfileSaved] = useState(false);
 
   // Modal for adding repo with custom metadata
   const [selectedRepoToAdd, setSelectedRepoToAdd] = useState<GitHubRepoItem | null>(null);
@@ -53,6 +43,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
   // Editing existing showcase project
   const [editingProject, setEditingProject] = useState<ShowcasedProject | null>(null);
+
+  // Previewing project detail
+  const [previewProject, setPreviewProject] = useState<ShowcasedProject | null>(null);
 
   // Subscribe to schema missing alerts
   useEffect(() => {
@@ -68,20 +61,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
     loadShowcasedProjects();
   }, [user]);
 
-  // Sync profile fields if profile changes
+  // Load GitHub repos when switching to 'repos' tab or initial mount
   useEffect(() => {
-    if (profile) {
-      setFullName(profile.full_name || '');
-      setHeadline(profile.headline || '');
-      setBio(profile.bio || '');
-      setProgram(profile.program || 'BS Computer Science');
-      setYearLevel(profile.year_level || '3rd Year');
-    }
-  }, [profile]);
-
-  // Load GitHub repos when switching to 'repos' tab
-  useEffect(() => {
-    if (user && activeTab === 'repos' && availableRepos.length === 0) {
+    if (user && availableRepos.length === 0) {
       loadGitHubRepos();
     }
   }, [user, activeTab]);
@@ -138,7 +120,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
         setSelectedRepoToAdd(null);
         setActiveTab('showcase');
         try {
-          confetti({ particleCount: 50, spread: 50, origin: { y: 0.8 } });
+          confetti({ particleCount: 40, spread: 45, origin: { y: 0.8 } });
         } catch {
           // confetti optional
         }
@@ -151,7 +133,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
   };
 
   const handleRemoveProject = async (projectId: string) => {
-    if (!confirm('Are you sure you want to remove this project from your publication?')) return;
+    if (!confirm('Are you sure you want to unpublish this project from your showcase?')) return;
     try {
       await removeProjectFromShowcase(projectId);
       setShowcased(prev => prev.filter(p => p.id !== projectId));
@@ -191,29 +173,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
     }
   };
 
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setProfileSaving(true);
-    try {
-      await updateProfileData({
-        full_name: fullName.trim() || null,
-        headline: headline.trim() || null,
-        bio: bio.trim().slice(0, 50) || null,
-        program: program.trim() || null,
-        year_level: yearLevel.trim() || null,
-      });
-      setProfileSaved(true);
-      setTimeout(() => setProfileSaved(false), 2500);
-    } catch (err) {
-      console.error('Failed to save profile:', err);
-    } finally {
-      setProfileSaving(false);
-    }
-  };
-
   const showcasedRepoNames = new Set(showcased.map(p => p.repo_full_name));
+
+  // Filtered showcased projects
+  const filteredShowcased = showcased.filter(p => {
+    const term = searchQuery.toLowerCase();
+    const title = (p.custom_title || p.repo_full_name).toLowerCase();
+    const desc = (p.custom_description || '').toLowerCase();
+    const repo = p.repo_full_name.toLowerCase();
+    return title.includes(term) || desc.includes(term) || repo.includes(term);
+  });
+
+  // Filtered available GitHub repositories
   const filteredAvailableRepos = availableRepos.filter(repo => {
-    const term = repoSearch.toLowerCase();
+    const term = searchQuery.toLowerCase();
     return (
       repo.name.toLowerCase().includes(term) ||
       (repo.description && repo.description.toLowerCase().includes(term)) ||
@@ -221,299 +194,350 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
     );
   });
 
-  const username = profile?.github_username || 'student';
+  const username = profile?.github_username || 'isabela-coder';
+  const featuredCount = showcased.filter(p => p.is_featured).length;
 
   return (
     <div className="space-y-4 sm:space-y-5 pb-8 text-[#212121] w-full max-w-full">
-      {/* Responsive Two-Column Dashboard Layout at Desktop Breakpoints */}
-      <div className="flex flex-col lg:flex-row items-start gap-4 sm:gap-5 lg:gap-6 w-full">
-        {/* Left Column: Sidebar (Profile, Stats, Streak, Quick Actions, Nav) */}
-        <aside className="w-full lg:w-80 xl:w-96 flex-shrink-0 space-y-3.5 sm:space-y-4 lg:sticky lg:top-4">
-          {/* Profile Identity Card */}
-          <div className="paper-card bg-[#FAF6EC] p-3.5 sm:p-5 space-y-3.5">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[2px_2px_0px_#212121]">
+      {/* Alert Notices */}
+      {isSchemaMissing && (
+        <div className="p-2.5 sm:p-3 bg-amber-50 border border-amber-500 paper-card text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs">
+          <div className="flex items-start space-x-2">
+            <AlertCircle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <p className="font-bold uppercase tracking-wider font-headline text-xs">
+                Supabase Tables Pending Creation
+              </p>
+              <p className="font-serif-body text-stone-800 text-xs">
+                Database tables haven't been run yet in the Supabase SQL editor. The app is running smoothly using client-side offline storage.
+              </p>
+            </div>
+          </div>
+          {onOpenGuide && (
+            <button
+              onClick={onOpenGuide}
+              className="paper-button text-xs py-1.5 px-3 whitespace-nowrap font-bold flex-shrink-0 min-h-[34px]"
+            >
+              Open SQL Setup Guide
+            </button>
+          )}
+        </div>
+      )}
+
+      {isDemoMode && (
+        <div className="p-2 sm:p-2.5 bg-[#EFE9DB] paper-card text-[#212121] flex items-center justify-between text-xs font-mono">
+          <div className="flex items-center space-x-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-stone-800 flex-shrink-0" />
+            <span className="text-[10px] sm:text-xs">
+              <strong>DEMO MODE ACTIVE</strong>: You can test adding, editing, pinning, and unpublishing showcase projects.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Project Workbench Masthead Banner */}
+      <section className="paper-card bg-[#FEFCF6] p-3.5 sm:p-5 space-y-3.5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 border-b border-dashed border-[#212121] pb-3.5">
+          <div className="space-y-1 min-w-0">
+            <div className="flex items-center space-x-2">
+              <div className="w-7 h-7 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center shadow-[1.5px_1.5px_0px_#212121] flex-shrink-0">
+                <FolderGit2 className="w-4 h-4 text-[#212121] stroke-[2]" />
+              </div>
+              <span className="text-[10px] sm:text-xs font-sketch uppercase tracking-widest text-stone-700 font-bold">
+                PROJECT WORKBENCH
+              </span>
+            </div>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-[900] uppercase font-newspaper-title text-[#212121] leading-tight">
+              My Projects
+            </h1>
+            <p className="text-xs sm:text-sm font-serif-body text-stone-700 max-w-2xl leading-relaxed">
+              Manage, publish, edit, and curate your projects and GitHub repositories displayed across GitShowcase.
+            </p>
+          </div>
+
+          {/* Context & Cross-Navigation Link to "My Profile" */}
+          <div className="flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end gap-2 shrink-0">
+            <div className="flex items-center space-x-2 px-2.5 py-1 bg-[#FAF6EC] border border-[#212121] rounded-xs text-xs font-mono">
+              <div className="w-4 h-4 border border-[#212121] rounded-xs overflow-hidden bg-stone-300 flex-shrink-0">
                 <img
-                  src={profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop&q=80'}
+                  src={profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
                   alt={profile?.github_username || 'Student'}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="min-w-0 flex-1">
-                <span className="text-[9px] sm:text-[10px] font-sketch uppercase tracking-widest text-stone-700 block font-bold truncate">
-                  STUDENT AUTHOR
-                </span>
-                <h1 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121] truncate leading-tight">
-                  {profile?.full_name || 'My Projects'}
-                </h1>
-                <p className="text-xs font-mono text-stone-700 truncate">
-                  @{username}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 pt-2 border-t border-dashed border-[#212121]">
-              {profile?.headline && (
-                <p className="text-xs font-headline uppercase tracking-wider text-stone-800 font-bold truncate">
-                  {profile.headline}
-                </p>
-              )}
-              <div className="flex items-center space-x-1.5 text-xs font-serif-body text-stone-700 flex-wrap gap-y-1">
-                <span className="paper-badge font-bold bg-[#EFE9DB]">
-                  {profile?.program || 'BS Computer Science'}
-                </span>
-                <span className="paper-badge bg-stone-200 font-mono font-bold">
-                  {profile?.year_level || '3rd Year'}
-                </span>
-              </div>
-              {profile?.bio && (
-                <p className="text-xs font-serif-body text-stone-800 italic bg-[#FEFCF6] p-2.5 border border-[#212121] paper-card shadow-[1px_1px_0px_rgba(0,0,0,0.15)] mt-1 leading-relaxed">
-                  "{profile.bio}"
-                </p>
-              )}
-            </div>
-
-            {/* Live Stats Counters */}
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-dashed border-[#212121] text-center">
-              <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121] shadow-[1.5px_1.5px_0px_#212121]">
-                <span className="text-[9px] font-sketch uppercase text-stone-600 block font-bold">Published</span>
-                <span className="text-base font-[900] font-newspaper-title text-[#212121]">{showcased.length}</span>
-              </div>
-              <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121] shadow-[1.5px_1.5px_0px_#212121]">
-                <span className="text-[9px] font-sketch uppercase text-stone-600 block font-bold">Featured</span>
-                <span className="text-base font-[900] font-newspaper-title text-[#212121]">
-                  {showcased.filter(p => p.is_featured).length}
-                </span>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="space-y-1.5 pt-2 border-t border-dashed border-[#212121]">
-              <button
-                id="view-public-profile-btn"
-                onClick={() => navigate(`/u/${username}`)}
-                className="w-full paper-button paper-button-dark text-xs py-2 px-3 font-bold justify-center min-h-[36px]"
-              >
-                <Eye className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                <span>View Public Profile</span>
-                <ArrowUpRight className="w-3.5 h-3.5 ml-1 flex-shrink-0" />
-              </button>
-
-              {onOpenOnboarding && (
-                <button
-                  id="reopen-onboarding-btn"
-                  onClick={onOpenOnboarding}
-                  className="w-full paper-button text-xs py-2 px-3 justify-center min-h-[36px] font-bold text-stone-800"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-stone-700 mr-1.5 flex-shrink-0" />
-                  <span>Edit Setup Guide</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Section Navigation Tabs */}
-          <div className="paper-card bg-[#FEFCF6] p-2.5 sm:p-3 space-y-1.5">
-            <span className="text-[9px] sm:text-[10px] font-sketch uppercase tracking-wider text-stone-700 font-bold block px-1">
-              DASHBOARD SECTIONS
-            </span>
-            <div className="flex flex-row lg:flex-col gap-1.5">
-              <button
-                id="tab-showcase-btn"
-                onClick={() => setActiveTab('showcase')}
-                className={`paper-button text-xs py-2 px-3 font-bold flex-1 lg:flex-none justify-start min-h-[36px] ${
-                  activeTab === 'showcase' ? 'paper-button-dark' : 'bg-[#FEFCF6]'
-                }`}
-              >
-                <Bookmark className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                <span>My Projects ({showcased.length})</span>
-              </button>
-
-              <button
-                id="tab-add-repos-btn"
-                onClick={() => setActiveTab('repos')}
-                className={`paper-button text-xs py-2 px-3 font-bold flex-1 lg:flex-none justify-start min-h-[36px] ${
-                  activeTab === 'repos' ? 'paper-button-dark' : 'bg-[#FEFCF6]'
-                }`}
-              >
-                <Plus className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                <span>Add Projects</span>
-              </button>
-
-              <button
-                id="tab-profile-btn"
-                onClick={() => setActiveTab('profile')}
-                className={`paper-button text-xs py-2 px-3 font-bold flex-1 lg:flex-none justify-start min-h-[36px] ${
-                  activeTab === 'profile' ? 'paper-button-dark' : 'bg-[#FEFCF6]'
-                }`}
-              >
-                <User className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                <span>Edit Profile</span>
-              </button>
-            </div>
-          </div>
-        </aside>
-
-        {/* Right Column: Main Content Area */}
-        <main className="flex-1 min-w-0 space-y-4 sm:space-y-5 w-full">
-          {/* GitHub Commit Heatmap on Desk */}
-          <CommitHeatmap username={username} compact={false} />
-
-          {isSchemaMissing && (
-            <div className="p-2.5 sm:p-3 bg-amber-50 border border-amber-500 paper-card text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs">
-              <div className="flex items-start space-x-2">
-                <AlertCircle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <p className="font-bold uppercase tracking-wider font-headline text-xs">
-                    Supabase Tables Pending Creation
-                  </p>
-                  <p className="font-serif-body text-stone-800 text-xs">
-                    Your database URL is connected, but the tables (<code>showcased_projects</code>, <code>profiles</code>) haven't been run yet in the Supabase SQL editor. The app is running smoothly using client-side offline storage.
-                  </p>
-                </div>
-              </div>
-              {onOpenGuide && (
-                <button
-                  onClick={onOpenGuide}
-                  className="paper-button text-xs py-1.5 px-3 whitespace-nowrap font-bold flex-shrink-0 min-h-[34px]"
-                >
-                  Open SQL Setup Guide
-                </button>
-              )}
-            </div>
-          )}
-
-          {isDemoMode && (
-            <div className="p-2 sm:p-2.5 bg-[#EFE9DB] paper-card text-[#212121] flex items-center justify-between text-xs font-mono">
-              <div className="flex items-center space-x-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-stone-800 flex-shrink-0" />
-                <span className="text-[10px] sm:text-xs">
-                  <strong>DEMO MODE ACTIVE</strong>: You can test adding/editing repositories and updating your profile data.
-                </span>
-              </div>
-            </div>
-          )}
-
-      {/* TAB 1: Showcased Projects */}
-      {activeTab === 'showcase' && (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 border-b border-dashed border-[#212121] pb-2">
-            <div>
-              <h2 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
-                My Projects
-              </h2>
-              <p className="text-xs font-serif-body text-stone-700">
-                These projects appear on your public profile at <code className="bg-stone-200 px-1 py-0.5 font-mono text-[10px] border border-stone-400 rounded-xs">/u/{username}</code>.
-              </p>
+              <span className="text-stone-800 font-bold truncate max-w-[140px]">@{username}</span>
             </div>
 
             <button
-              onClick={() => setActiveTab('repos')}
-              className="paper-button text-xs py-1.5 px-3 font-bold min-h-[34px]"
+              id="workbench-view-profile-btn"
+              onClick={() => navigate(`/u/${username}`)}
+              className="paper-button paper-button-dark text-xs py-1.5 px-3 font-bold min-h-[34px] flex items-center space-x-1.5"
+              title="View your public profile and personal identity"
             >
-              <Plus className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
-              <span>Add More Projects</span>
+              <Eye className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>View Profile</span>
+              <ArrowUpRight className="w-3.5 h-3.5 ml-0.5 flex-shrink-0" />
             </button>
           </div>
+        </div>
 
+        {/* Project Telemetry Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-0.5">
+          <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+            <div className="flex items-center justify-between text-stone-700">
+              <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Published Projects</span>
+              <FolderGit2 className="w-3.5 h-3.5 text-stone-600" />
+            </div>
+            <div className="mt-1">
+              <span className="text-lg sm:text-xl font-[900] font-newspaper-title text-[#212121] leading-none block">
+                {showcased.length}
+              </span>
+              <span className="text-[10px] font-serif-body text-stone-600">
+                Live on public profile
+              </span>
+            </div>
+          </div>
+
+          <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+            <div className="flex items-center justify-between text-amber-900">
+              <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Featured Spotlight</span>
+              <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-700" />
+            </div>
+            <div className="mt-1">
+              <span className="text-lg sm:text-xl font-[900] font-newspaper-title text-[#212121] leading-none block">
+                {featuredCount}
+              </span>
+              <span className="text-[10px] font-serif-body text-stone-600">
+                Pinned at top of showcase
+              </span>
+            </div>
+          </div>
+
+          <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121] col-span-2 sm:col-span-1">
+            <div className="flex items-center justify-between text-stone-700">
+              <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">GitHub Repositories</span>
+              <Github className="w-3.5 h-3.5 text-stone-600" />
+            </div>
+            <div className="mt-1">
+              <span className="text-lg sm:text-xl font-[900] font-newspaper-title text-[#212121] leading-none block">
+                {availableRepos.length}
+              </span>
+              <span className="text-[10px] font-serif-body text-stone-600">
+                Available to publish
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Tabs Navigation & Action Toolbar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 border-b border-dashed border-[#212121] pb-2.5">
+        {/* Work Sub-Tabs */}
+        <div className="flex items-center space-x-2">
+          <button
+            id="tab-published-projects-btn"
+            onClick={() => setActiveTab('showcase')}
+            className={`paper-button text-xs py-1.5 px-3.5 font-bold min-h-[36px] flex items-center space-x-1.5 cursor-pointer ${
+              activeTab === 'showcase' ? 'paper-button-dark' : 'bg-[#FEFCF6]'
+            }`}
+          >
+            <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Published Projects ({showcased.length})</span>
+          </button>
+
+          <button
+            id="tab-import-repos-btn"
+            onClick={() => setActiveTab('repos')}
+            className={`paper-button text-xs py-1.5 px-3.5 font-bold min-h-[36px] flex items-center space-x-1.5 cursor-pointer ${
+              activeTab === 'repos' ? 'paper-button-dark' : 'bg-[#FEFCF6]'
+            }`}
+          >
+            <Plus className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Add from GitHub ({availableRepos.length})</span>
+          </button>
+        </div>
+
+        {/* Search & Refresh Toolbar */}
+        <div className="flex items-center space-x-2">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="w-3.5 h-3.5 text-stone-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder={activeTab === 'showcase' ? 'Filter published projects...' : 'Search GitHub repositories...'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-2.5 py-1.5 paper-input text-xs font-mono text-[#212121] min-h-[34px]"
+            />
+          </div>
+
+          <button
+            onClick={() => {
+              if (activeTab === 'showcase') loadShowcasedProjects();
+              else loadGitHubRepos();
+            }}
+            className="paper-button-icon min-w-[34px] min-h-[34px] p-1.5 flex-shrink-0 cursor-pointer"
+            title="Refresh List"
+            aria-label="Refresh List"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-stone-800 ${(loadingShowcase || loadingRepos) ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* TAB 1: Published / Showcased Projects */}
+      {activeTab === 'showcase' && (
+        <div className="space-y-4">
           {loadingShowcase ? (
-            <div className="text-center py-10 paper-card bg-[#FEFCF6]">
-              <RefreshCw className="w-5 h-5 animate-spin mx-auto text-stone-700" />
-              <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 mt-1.5 font-bold">Loading projects...</p>
+            <div className="text-center py-12 paper-card bg-[#FEFCF6]">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-stone-700" />
+              <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 mt-2 font-bold">
+                Loading published projects...
+              </p>
             </div>
           ) : showcased.length === 0 ? (
-            <div className="text-center py-10 px-4 paper-card bg-[#FEFCF6] space-y-2.5 border-dashed">
-              <Newspaper className="w-7 h-7 text-stone-600 mx-auto" />
-              <div className="space-y-0.5">
-                <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121]">No projects published yet</h3>
-                <p className="text-xs font-serif-body text-stone-700 max-w-sm mx-auto">
-                  Pick your best repositories from GitHub to display them on your public profile.
+            <div className="text-center py-12 px-4 paper-card bg-[#FEFCF6] space-y-3 border-dashed">
+              <FolderGit2 className="w-8 h-8 text-stone-600 mx-auto" />
+              <div className="space-y-1">
+                <h3 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
+                  No projects published yet
+                </h3>
+                <p className="text-xs sm:text-sm font-serif-body text-stone-700 max-w-md mx-auto leading-relaxed">
+                  You haven't added any repositories to your public showcase yet. Select repositories from your GitHub account to publish them.
                 </p>
               </div>
               <button
                 onClick={() => setActiveTab('repos')}
-                className="paper-button paper-button-dark text-xs py-1.5 px-3.5 font-bold min-h-[34px]"
+                className="paper-button paper-button-dark text-xs py-2 px-4 font-bold min-h-[36px] inline-flex items-center space-x-1.5"
               >
-                <Plus className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
+                <Plus className="w-4 h-4 flex-shrink-0" />
                 <span>Add Projects from GitHub</span>
               </button>
             </div>
+          ) : filteredShowcased.length === 0 ? (
+            <div className="text-center py-10 px-4 paper-card bg-[#FEFCF6]">
+              <p className="text-xs font-serif-body text-stone-700">
+                No published projects matching "{searchQuery}".
+              </p>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
-              {showcased.map((proj) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4">
+              {filteredShowcased.map((proj) => (
                 <div
                   key={proj.id}
-                  className={`p-3.5 sm:p-4 paper-card transition-all ${
+                  className={`p-3.5 sm:p-4 paper-card flex flex-col justify-between space-y-3 transition-all ${
                     proj.is_featured
-                      ? 'bg-[#FAF6EC]'
+                      ? 'bg-[#FAF6EC] shadow-[3px_3px_0px_#212121]'
                       : 'bg-[#FEFCF6]'
                   }`}
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5">
-                    <div className="space-y-0.5 min-w-0 flex-1">
-                      <div className="flex items-center space-x-1.5 flex-wrap gap-y-0.5">
-                        {proj.is_featured && (
+                  <div className="space-y-2">
+                    {/* Status Badges & Controls Header */}
+                    <div className="flex items-start justify-between gap-2 border-b border-dashed border-[#212121] pb-2">
+                      <div className="flex items-center space-x-1.5 flex-wrap gap-y-1 min-w-0">
+                        {proj.is_featured ? (
                           <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold">
+                            <Pin className="w-2.5 h-2.5 mr-0.5 inline-block" />
                             FEATURED
                           </span>
+                        ) : (
+                          <span className="paper-badge bg-stone-200 text-stone-800 text-[9px] font-bold">
+                            PUBLISHED
+                          </span>
                         )}
-                        <span className="text-xs font-mono text-stone-700 truncate max-w-[180px]">
+                        <span className="text-[10px] font-mono text-stone-700 truncate max-w-[130px]">
                           {proj.repo_full_name}
                         </span>
                       </div>
-                      <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] break-words">
-                        {proj.custom_title || proj.repo_full_name.split('/')[1]}
-                      </h3>
+
+                      {/* Quick Action Icons */}
+                      <div className="flex items-center space-x-1 flex-shrink-0">
+                        <button
+                          title={proj.is_featured ? 'Unpin from featured spotlight' : 'Pin to top as featured spotlight'}
+                          aria-label={proj.is_featured ? 'Unpin featured project' : 'Pin as featured project'}
+                          onClick={() => handleToggleFeatured(proj)}
+                          className={`paper-button-icon min-w-[28px] min-h-[28px] p-1 cursor-pointer ${
+                            proj.is_featured ? 'paper-button-dark' : ''
+                          }`}
+                        >
+                          <Star className={`w-3 h-3 ${proj.is_featured ? 'fill-amber-300 text-amber-300' : 'text-stone-800'}`} />
+                        </button>
+
+                        <button
+                          title="Edit project details"
+                          aria-label="Edit project details"
+                          onClick={() => setEditingProject(proj)}
+                          className="paper-button-icon min-w-[28px] min-h-[28px] p-1 text-stone-800 cursor-pointer hover:bg-stone-200"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </button>
+
+                        <button
+                          title="Unpublish from showcase"
+                          aria-label="Unpublish project"
+                          onClick={() => handleRemoveProject(proj.id)}
+                          className="paper-button-icon min-w-[28px] min-h-[28px] p-1 text-rose-800 hover:bg-rose-100 cursor-pointer"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Proportional Action Button Row */}
-                    <div className="flex items-center space-x-1.5 flex-shrink-0 self-end sm:self-start">
-                      <button
-                        title={proj.is_featured ? 'Unpin from top' : 'Pin to top as lead dispatch'}
-                        aria-label={proj.is_featured ? 'Unpin lead project' : 'Pin as lead project'}
-                        onClick={() => handleToggleFeatured(proj)}
-                        className={`paper-button-icon min-w-[32px] min-h-[32px] p-1 ${
-                          proj.is_featured ? 'paper-button-dark' : ''
-                        }`}
-                      >
-                        <Star className={`w-3.5 h-3.5 ${proj.is_featured ? 'fill-amber-300 text-amber-300' : 'text-stone-800'}`} />
-                      </button>
+                    {/* Title */}
+                    <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] leading-snug line-clamp-2">
+                      {proj.custom_title || proj.repo_full_name.split('/')[1]}
+                    </h3>
 
-                      <button
-                        title="Edit title and context description"
-                        aria-label="Edit project details"
-                        onClick={() => setEditingProject(proj)}
-                        className="paper-button-icon min-w-[32px] min-h-[32px] p-1 text-stone-800"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </button>
+                    {/* Description */}
+                    <p className="text-xs font-serif-body text-stone-700 line-clamp-2 leading-relaxed">
+                      {proj.custom_description || 'No custom description provided.'}
+                    </p>
 
-                      <button
-                        title="Remove from publication"
-                        aria-label="Remove project from showcase"
-                        onClick={() => handleRemoveProject(proj.id)}
-                        className="paper-button-icon min-w-[32px] min-h-[32px] p-1 text-rose-800 hover:bg-rose-100 hover:text-rose-950"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    {/* Live Tags if available */}
+                    {proj.live_stats?.topics && proj.live_stats.topics.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {proj.live_stats.topics.slice(0, 3).map((topic, i) => (
+                          <span key={i} className="paper-badge text-[9px] font-mono">
+                            #{topic}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  <p className="text-xs font-serif-body text-stone-700 mt-1.5 line-clamp-2 leading-relaxed">
-                    {proj.custom_description || 'No custom context notes provided.'}
-                  </p>
-
-                  <div className="pt-2 mt-2 border-t border-dashed border-[#212121] flex items-center justify-between text-xs font-mono">
-                    <a
-                      href={proj.repo_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-stone-900 hover:text-black underline flex items-center space-x-1 font-bold min-h-[30px] py-0.5"
+                  {/* Footer & Links */}
+                  <div className="pt-2 border-t border-dashed border-[#212121] flex items-center justify-between text-xs font-mono">
+                    <button
+                      onClick={() => setPreviewProject(proj)}
+                      className="text-stone-800 hover:text-black font-bold flex items-center space-x-1 py-0.5 underline cursor-pointer"
                     >
-                      <Github className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span>View on GitHub</span>
-                      <ExternalLink className="w-3 h-3 ml-0.5 flex-shrink-0" />
-                    </a>
+                      <Eye className="w-3 h-3" />
+                      <span>Preview</span>
+                    </button>
+
+                    <div className="flex items-center space-x-2">
+                      {proj.live_stats?.homepage && (
+                        <a
+                          href={proj.live_stats.homepage}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-stone-800 hover:text-black underline flex items-center space-x-0.5 font-bold"
+                          title="Visit live project URL"
+                        >
+                          <Globe className="w-3 h-3" />
+                          <span>Live</span>
+                        </a>
+                      )}
+                      <a
+                        href={proj.repo_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-stone-900 hover:text-black underline flex items-center space-x-0.5 font-bold"
+                        title="Open on GitHub"
+                      >
+                        <Github className="w-3.5 h-3.5" />
+                        <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
+                      </a>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -522,130 +546,116 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
         </div>
       )}
 
-      {/* TAB 2: Add from GitHub Repos */}
+      {/* TAB 2: Add from GitHub Repositories */}
       {activeTab === 'repos' && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 border-b border-dashed border-[#212121] pb-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-dashed border-[#212121] pb-2">
             <div>
               <h2 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
-                Your GitHub Projects
+                Your Connected GitHub Repositories
               </h2>
               <p className="text-xs font-serif-body text-stone-700">
-                Select projects from your GitHub to add to your showcase.
+                Choose repositories to publish onto your showcase. You can customize title and description before publishing.
               </p>
             </div>
 
-            <div className="flex items-center space-x-1.5 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-56">
-                <Search className="w-3.5 h-3.5 text-stone-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Filter repositories..."
-                  value={repoSearch}
-                  onChange={(e) => setRepoSearch(e.target.value)}
-                  className="w-full pl-8 pr-2.5 py-1.5 paper-input text-xs font-mono text-[#212121] min-h-[34px]"
-                />
-              </div>
-
-              <button
-                onClick={loadGitHubRepos}
-                className="paper-button-icon min-w-[34px] min-h-[34px] p-1.5 flex-shrink-0 cursor-pointer"
-                title="Refresh GitHub Repositories"
-                aria-label="Refresh GitHub Repositories"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 text-stone-800 ${loadingRepos ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
+            <span className="paper-badge bg-stone-200 text-stone-800 font-mono text-[10px] font-bold self-start sm:self-auto">
+              {availableRepos.length} Repositories Found
+            </span>
           </div>
 
           {loadingRepos ? (
-            <div className="text-center py-10 paper-card bg-[#FEFCF6]">
-              <RefreshCw className="w-5 h-5 animate-spin mx-auto text-stone-700" />
-              <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 mt-1.5 font-bold">Fetching live from GitHub API...</p>
+            <div className="text-center py-12 paper-card bg-[#FEFCF6]">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-stone-700" />
+              <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 mt-2 font-bold">
+                Fetching repositories from GitHub API...
+              </p>
             </div>
           ) : filteredAvailableRepos.length === 0 ? (
-            <div className="text-center py-8 px-4 paper-card bg-[#FEFCF6]">
-              <p className="text-xs font-serif-body text-stone-700">No repositories found matching "{repoSearch}".</p>
+            <div className="text-center py-10 px-4 paper-card bg-[#FEFCF6]">
+              <p className="text-xs font-serif-body text-stone-700">
+                No repositories found matching "{searchQuery}".
+              </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4">
               {filteredAvailableRepos.map((repo) => {
                 const isAlreadyShowcased = showcasedRepoNames.has(repo.full_name);
 
                 return (
                   <div
                     key={repo.id}
-                    className={`p-3.5 sm:p-4 paper-card transition-all ${
+                    className={`p-3.5 sm:p-4 paper-card flex flex-col justify-between space-y-3 transition-all ${
                       isAlreadyShowcased
                         ? 'bg-[#FAF6EC] opacity-90'
                         : 'bg-[#FEFCF6]'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-2.5">
-                      <div className="space-y-0.5 min-w-0 flex-1">
-                        <div className="flex items-center space-x-1.5 flex-wrap">
+                    <div className="space-y-1.5">
+                      <div className="flex items-start justify-between gap-2 border-b border-dashed border-[#212121] pb-1.5">
+                        <div className="min-w-0 flex-1">
                           <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
                             {repo.name}
                           </h3>
-                          {repo.fork && (
-                            <span className="paper-badge text-[9px] font-mono">
-                              Fork
-                            </span>
-                          )}
+                          <p className="text-[10px] text-stone-600 font-mono truncate">
+                            {repo.full_name}
+                          </p>
                         </div>
-                        <p className="text-xs text-stone-600 font-mono truncate">
-                          {repo.full_name}
-                        </p>
+
+                        {repo.fork && (
+                          <span className="paper-badge text-[8px] font-mono flex-shrink-0">
+                            Fork
+                          </span>
+                        )}
                       </div>
 
-                      {isAlreadyShowcased ? (
-                        <span className="paper-badge text-[10px] font-bold bg-stone-200 py-0.5 px-2 flex-shrink-0">
-                          <CheckCircle2 className="w-3 h-3 mr-1 inline-block text-emerald-700" />
-                          Published
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleOpenAddModal(repo)}
-                          className="paper-button paper-button-dark text-xs py-1 px-2.5 font-bold min-h-[32px] flex-shrink-0"
-                        >
-                          <Plus className="w-3.5 h-3.5 mr-0.5 flex-shrink-0" />
-                          <span>Publish</span>
-                        </button>
-                      )}
-                    </div>
+                      <p className="text-xs font-serif-body text-stone-700 line-clamp-2 leading-relaxed">
+                        {repo.description || 'No description provided on GitHub.'}
+                      </p>
 
-                    <p className="text-xs font-serif-body text-stone-700 mt-1.5 line-clamp-2 leading-relaxed">
-                      {repo.description || 'No description provided on GitHub.'}
-                    </p>
-
-                    <div className="pt-2 mt-2 border-t border-dashed border-[#212121] flex items-center justify-between text-xs font-mono text-stone-700 font-bold">
-                      <div className="flex items-center space-x-2.5 text-[10px]">
+                      <div className="flex items-center space-x-2 font-mono text-[10px] text-stone-700 font-bold pt-1">
                         {repo.language && (
-                          <span className="flex items-center space-x-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-stone-800"></span>
-                            <span>{repo.language}</span>
+                          <span className="paper-badge text-[9px] bg-stone-200">
+                            {repo.language}
                           </span>
                         )}
                         <span className="flex items-center space-x-0.5">
-                          <Star className="w-3 h-3 text-stone-700" />
+                          <Star className="w-2.5 h-2.5" />
                           <span>{repo.stargazers_count}</span>
                         </span>
                         <span className="flex items-center space-x-0.5">
-                          <GitFork className="w-3 h-3 text-stone-700" />
+                          <GitFork className="w-2.5 h-2.5" />
                           <span>{repo.forks_count}</span>
                         </span>
                       </div>
+                    </div>
 
+                    {/* Publish Action Button */}
+                    <div className="pt-2 border-t border-dashed border-[#212121] flex items-center justify-between text-xs">
                       <a
                         href={repo.html_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="paper-button-icon min-w-[30px] min-h-[30px] p-1 text-stone-800 hover:text-black"
-                        title="Open repo on GitHub"
-                        aria-label={`Open ${repo.name} on GitHub`}
+                        className="text-stone-800 hover:text-black underline font-mono text-[11px] flex items-center space-x-0.5 font-bold"
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>GitHub</span>
+                        <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
                       </a>
+
+                      {isAlreadyShowcased ? (
+                        <span className="paper-badge text-[10px] font-bold bg-emerald-100 text-emerald-950 border-emerald-700 py-0.5 px-2 flex items-center space-x-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-700" />
+                          <span>Published</span>
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenAddModal(repo)}
+                          className="paper-button paper-button-dark text-xs py-1 px-2.5 font-bold min-h-[30px] flex items-center space-x-1"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Publish</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -655,152 +665,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
         </div>
       )}
 
-      {/* TAB 3: Edit Profile & Bio */}
-      {activeTab === 'profile' && (
-        <div className="max-w-xl bg-[#FEFCF6] paper-card p-4 sm:p-5 space-y-4">
-          <div className="border-b border-dashed border-[#212121] pb-2">
-            <span className="text-[10px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
-              PROFILE SETTINGS
-            </span>
-            <h2 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
-              Profile Information
-            </h2>
-            <p className="text-xs font-serif-body text-stone-700">
-              Customize your name, headline, degree program, and bio.
-            </p>
-          </div>
-
-          <form onSubmit={handleSaveProfile} className="space-y-3">
-            <div>
-              <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
-                Full Name
-              </label>
-              <input
-                id="edit-fullname-input"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g. Mark Anthony Reyes"
-                className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px]"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
-                  Headline
-                </label>
-                <span className="text-[9px] font-sketch text-stone-600 font-bold">e.g. Program &amp; Interests</span>
-              </div>
-              <input
-                id="edit-headline-input"
-                type="text"
-                value={headline}
-                onChange={(e) => setHeadline(e.target.value)}
-                placeholder="e.g. BS Computer Science • Full-Stack Developer"
-                className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-mono min-h-[34px]"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
-                  Program
-                </label>
-                <input
-                  id="edit-program-input"
-                  type="text"
-                  value={program}
-                  onChange={(e) => setProgram(e.target.value)}
-                  placeholder="e.g. BS Computer Science"
-                  className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
-                  Year Level
-                </label>
-                <select
-                  id="edit-year-select"
-                  value={yearLevel}
-                  onChange={(e) => setYearLevel(e.target.value)}
-                  className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px]"
-                >
-                  <option value="1st Year">1st Year</option>
-                  <option value="2nd Year">2nd Year</option>
-                  <option value="3rd Year">3rd Year</option>
-                  <option value="4th Year">4th Year</option>
-                  <option value="Graduate / Alumni">Graduate / Alumni</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
-                  About Me <span className="text-stone-600 font-normal">(Max 50 Characters)</span>
-                </label>
-                <span
-                  className={`text-[11px] font-mono font-bold ${
-                    bio.length > 50 ? 'text-red-600' : bio.length >= 45 ? 'text-amber-800' : 'text-stone-700'
-                  }`}
-                >
-                  {bio.length} / 50 characters
-                </span>
-              </div>
-              <input
-                id="edit-bio-textarea"
-                type="text"
-                maxLength={50}
-                value={bio}
-                onChange={(e) => setBio(e.target.value.slice(0, 50))}
-                placeholder="Crisp 50-character summary of your tech passion..."
-                className={`w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px] ${
-                  bio.length >= 50 ? 'border-amber-600 ring-1 ring-amber-600' : ''
-                }`}
-              />
-              <p className="text-[10px] font-serif-body italic text-stone-600 mt-0.5">
-                Max 50 characters for a fast, punchy bio on your GitShowcase portfolio card.
-              </p>
-            </div>
-
-            <div className="pt-1.5 flex items-center justify-between">
-              {profileSaved ? (
-                <span className="paper-badge bg-emerald-100 text-emerald-950 border-emerald-800 text-[10px] font-bold py-0.5 px-2">
-                  <Check className="w-3.5 h-3.5 mr-1 inline-block text-emerald-700" />
-                  Profile Saved
-                </span>
-              ) : (
-                <span></span>
-              )}
-
-              <button
-                id="save-profile-btn"
-                type="submit"
-                disabled={profileSaving}
-                className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold disabled:opacity-50 min-h-[36px]"
-              >
-                {profileSaving ? 'Saving...' : 'Save Profile'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-        </main>
-      </div>
-
-      {/* Modal: Add Project to Showcase */}
+      {/* MODAL 1: Add/Publish Project to Showcase */}
       {selectedRepoToAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-[#FEFCF6] paper-card max-w-md w-full p-3.5 sm:p-5 space-y-3 shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] max-h-[90dvh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/65 backdrop-blur-xs">
+          <div className="bg-[#FEFCF6] paper-card max-w-md w-full p-3.5 sm:p-5 space-y-3.5 shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] max-h-[90dvh] overflow-y-auto">
             <div className="flex items-start justify-between border-b border-dashed border-[#212121] pb-2 gap-2">
               <div className="min-w-0 flex-1">
                 <span className="text-[9px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
-                  ADD PROJECT
+                  PUBLISH WORK
                 </span>
                 <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
-                  Add to Showcase
+                  Publish to Showcase
                 </h3>
                 <p className="text-[10px] text-stone-700 font-mono truncate">
                   {selectedRepoToAdd.full_name}
@@ -823,6 +698,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 </label>
                 <input
                   type="text"
+                  required
                   value={customTitle}
                   onChange={(e) => setCustomTitle(e.target.value)}
                   placeholder="e.g. Smart Campus Navigation App"
@@ -832,31 +708,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
               <div>
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
-                  Description &amp; Key Features
+                  Short Description &amp; Highlights
                 </label>
                 <textarea
-                  rows={2}
+                  rows={3}
                   value={customDescription}
                   onChange={(e) => setCustomDescription(e.target.value)}
-                  placeholder="Summarize what the project is, what it does, and why it was built..."
-                  className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body"
+                  placeholder="Summarize what this project does, key features, or technologies used..."
+                  className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body leading-relaxed"
                 />
               </div>
 
               <div className="flex items-center space-x-2 pt-0.5 min-h-[28px]">
                 <input
                   type="checkbox"
-                  id="featured-checkbox"
+                  id="add-featured-checkbox"
                   checked={isFeatured}
                   onChange={(e) => setIsFeatured(e.target.checked)}
                   className="w-3.5 h-3.5 border-1.5 border-[#212121] rounded-xs cursor-pointer"
                 />
-                <label htmlFor="featured-checkbox" className="text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold select-none">
-                  Pin as Featured Project at Top of Page
+                <label htmlFor="add-featured-checkbox" className="text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold select-none">
+                  Pin as Featured Project in Profile Spotlight
                 </label>
               </div>
 
-              <div className="flex items-center justify-end space-x-2 pt-2 border-t border-dashed border-[#212121]">
+              <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-dashed border-[#212121]">
                 <button
                   type="button"
                   onClick={() => setSelectedRepoToAdd(null)}
@@ -867,9 +743,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 <button
                   type="submit"
                   disabled={addingInProgress}
-                  className="paper-button paper-button-dark text-xs py-1.5 px-3.5 font-bold disabled:opacity-50 min-h-[34px]"
+                  className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold disabled:opacity-50 min-h-[34px]"
                 >
-                  {addingInProgress ? 'Adding...' : 'Add to Showcase'}
+                  {addingInProgress ? 'Publishing...' : 'Publish to Showcase'}
                 </button>
               </div>
             </form>
@@ -877,10 +753,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
         </div>
       )}
 
-      {/* Modal: Edit Existing Project */}
+      {/* MODAL 2: Edit Existing Project */}
       {editingProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-[#FEFCF6] paper-card max-w-md w-full p-3.5 sm:p-5 space-y-3 shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] max-h-[90dvh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/65 backdrop-blur-xs">
+          <div className="bg-[#FEFCF6] paper-card max-w-md w-full p-3.5 sm:p-5 space-y-3.5 shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] max-h-[90dvh] overflow-y-auto">
             <div className="flex items-start justify-between border-b border-dashed border-[#212121] pb-2 gap-2">
               <div className="min-w-0 flex-1">
                 <span className="text-[9px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
@@ -910,6 +786,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 </label>
                 <input
                   type="text"
+                  required
                   value={editingProject.custom_title || ''}
                   onChange={(e) =>
                     setEditingProject({ ...editingProject, custom_title: e.target.value })
@@ -920,15 +797,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
               <div>
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
-                  Description &amp; Key Features
+                  Short Description &amp; Highlights
                 </label>
                 <textarea
-                  rows={2}
+                  rows={3}
                   value={editingProject.custom_description || ''}
                   onChange={(e) =>
                     setEditingProject({ ...editingProject, custom_description: e.target.value })
                   }
-                  className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body"
+                  className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body leading-relaxed"
                 />
               </div>
 
@@ -943,11 +820,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   className="w-3.5 h-3.5 border-1.5 border-[#212121] rounded-xs cursor-pointer"
                 />
                 <label htmlFor="edit-featured-checkbox" className="text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold select-none">
-                  Pin as Featured Project at Top of Page
+                  Pin as Featured Project in Profile Spotlight
                 </label>
               </div>
 
-              <div className="flex items-center justify-end space-x-2 pt-2 border-t border-dashed border-[#212121]">
+              <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-dashed border-[#212121]">
                 <button
                   type="button"
                   onClick={() => setEditingProject(null)}
@@ -957,7 +834,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 </button>
                 <button
                   type="submit"
-                  className="paper-button paper-button-dark text-xs py-1.5 px-3.5 font-bold min-h-[34px]"
+                  className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold min-h-[34px]"
                 >
                   Save Changes
                 </button>
@@ -966,7 +843,79 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
           </div>
         </div>
       )}
+
+      {/* MODAL 3: Preview Project Details */}
+      {previewProject && (
+        <div 
+          className="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-5"
+          onClick={() => setPreviewProject(null)}
+        >
+          <div 
+            className="bg-[#FEFCF6] paper-card max-w-xl w-full p-4 sm:p-6 space-y-4 shadow-[6px_6px_0px_#000] max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-start border-b border-dashed border-[#212121] pb-3">
+              <div>
+                {previewProject.is_featured && (
+                  <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold mb-1.5 inline-block">
+                    Featured Spotlight
+                  </span>
+                )}
+                <h2 className="text-lg sm:text-xl font-[900] uppercase font-newspaper-title text-[#212121]">
+                  {previewProject.custom_title || previewProject.repo_full_name.split('/')[1]}
+                </h2>
+                <p className="text-xs font-mono text-stone-700">
+                  {previewProject.repo_full_name}
+                </p>
+              </div>
+              <button 
+                onClick={() => setPreviewProject(null)} 
+                className="paper-button-icon min-w-[32px] min-h-[32px] p-1 flex items-center justify-center text-stone-800 cursor-pointer"
+                aria-label="Close modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs sm:text-sm font-serif-body text-stone-800 leading-relaxed">
+                {previewProject.custom_description || previewProject.live_stats?.description || 'No description provided.'}
+              </p>
+
+              {previewProject.live_stats?.topics && previewProject.live_stats.topics.length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {previewProject.live_stats.topics.map((topic, i) => (
+                    <span key={i} className="paper-badge text-[9px] font-mono">#{topic}</span>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center space-x-3 pt-3 border-t border-dashed border-[#212121]">
+                {previewProject.live_stats?.homepage && (
+                  <a
+                    href={previewProject.live_stats.homepage}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="paper-button text-xs py-2 px-3 font-bold inline-flex items-center space-x-1"
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>Visit Live Site</span>
+                  </a>
+                )}
+                <a
+                  href={previewProject.repo_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="paper-button paper-button-dark text-xs py-2 px-3 font-bold inline-flex items-center space-x-1"
+                >
+                  <Github className="w-3.5 h-3.5" />
+                  <span>View on GitHub</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-

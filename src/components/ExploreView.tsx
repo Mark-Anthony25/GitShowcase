@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { StudentShowcaseData, ShowcasedProject } from '../types';
 import { getAllStudentsShowcase } from '../lib/showcaseStore';
+import { DEGREE_PROGRAM_OPTIONS, matchesProgramFilter, getProgramBadgeLabel } from '../lib/programs';
 
 interface ExploreViewProps {
   navigate: (route: string) => void;
@@ -37,10 +38,6 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
     }
   };
 
-  const programs = Array.from(
-    new Set(students.map(s => s.profile.program).filter(Boolean))
-  ) as string[];
-
   const filteredStudents = students.filter(s => {
     const q = searchQuery.toLowerCase();
     const matchesQuery =
@@ -48,14 +45,14 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
       (s.profile.full_name && s.profile.full_name.toLowerCase().includes(q)) ||
       (s.profile.headline && s.profile.headline.toLowerCase().includes(q)) ||
       (s.profile.bio && s.profile.bio.toLowerCase().includes(q)) ||
+      (s.profile.program && s.profile.program.toLowerCase().includes(q)) ||
       s.projects.some(p => 
         p.repo_full_name.toLowerCase().includes(q) ||
         (p.custom_title && p.custom_title.toLowerCase().includes(q)) ||
         (p.custom_description && p.custom_description.toLowerCase().includes(q))
       );
 
-    const matchesProgram =
-      filterProgram === 'all' || s.profile.program === filterProgram;
+    const matchesProgram = matchesProgramFilter(s.profile.program, filterProgram);
 
     return matchesQuery && matchesProgram;
   });
@@ -73,8 +70,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
       (p.custom_title && p.custom_title.toLowerCase().includes(q)) ||
       (p.custom_description && p.custom_description.toLowerCase().includes(q));
 
-    const matchesProgram =
-      filterProgram === 'all' || s.profile.program === filterProgram;
+    const matchesProgram = matchesProgramFilter(s.profile.program, filterProgram);
 
     return matchesQuery && matchesProgram;
   });
@@ -122,19 +118,19 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             />
           </div>
 
-          {programs.length > 0 && (
-            <select
-              id="explore-program-filter"
-              value={filterProgram}
-              onChange={(e) => setFilterProgram(e.target.value)}
-              className="w-full sm:w-auto px-3 py-1.5 paper-input text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold min-h-[36px]"
-            >
-              <option value="all">All Programs</option>
-              {programs.map(prog => (
-                <option key={prog} value={prog}>{prog.toUpperCase()}</option>
-              ))}
-            </select>
-          )}
+          <select
+            id="explore-program-filter"
+            value={filterProgram}
+            onChange={(e) => setFilterProgram(e.target.value)}
+            className="w-full sm:w-auto px-3 py-1.5 paper-input text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold min-h-[36px]"
+          >
+            <option value="all">All Programs</option>
+            {DEGREE_PROGRAM_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Main Content Area */}

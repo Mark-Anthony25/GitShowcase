@@ -8,7 +8,7 @@ web
 
 ## Users
 
-Primary users are student developers from Isabela State University - Cauayan Campus (BS Computer Science, BS Information Technology, and related computing/engineering programs) preparing portfolios, sharing capstone projects, and tracking coding consistency. Secondary users include faculty advisers, classmates, and potential tech recruiters evaluating student contributions.
+Primary users are student developers from Isabela State University - Cauayan Campus (BS Computer Science, BS Information Technology, BS Entertainment and Multimedia Computing, BS Accounting Information Systems, and related computing programs) preparing portfolios, sharing capstone projects, and tracking coding consistency. Secondary users include faculty advisers, classmates, and potential tech recruiters evaluating student contributions.
 
 ## Product Purpose
 

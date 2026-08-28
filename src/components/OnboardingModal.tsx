@@ -7,6 +7,7 @@ import {
 import { Profile, GitHubRepoItem } from '../types';
 import { fetchUserRepos } from '../lib/github';
 import { addProjectToShowcase, getStudentShowcasedProjects } from '../lib/showcaseStore';
+import { DEGREE_PROGRAM_OPTIONS, getCanonicalProgram } from '../lib/programs';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -16,23 +17,14 @@ interface OnboardingModalProps {
   onCancel?: () => void;
 }
 
-const PROGRAM_OPTIONS = [
-  'BS Computer Science',
-  'BS Information Technology',
-  'BS Information Systems',
-  'BS Computer Engineering',
-  'Associate in Computer Technology',
-  'Other Computing Program'
-];
-
 const YEAR_OPTIONS = ['1st Year', '2nd Year', '3rd Year', '4th Year', 'Graduate / Alumni'];
 
 const HEADLINE_SUGGESTIONS = [
-  'BS Computer Science • Full-Stack Dev',
-  'BS Information Technology • Cloud & Web',
-  'Mobile App Developer • React Native',
-  'AI & Machine Learning Researcher',
-  'Cybersecurity & Systems Enthusiast'
+  'Multimedia Computing • Game Developer',
+  'Computer Science • Full-Stack Developer',
+  'Information Technology • Cloud & Web',
+  'Accounting Information Systems • Enterprise Dev',
+  'Mobile & Cross-Platform Developer'
 ];
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({
@@ -44,6 +36,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
+  // Canonical degree program extraction
+  const initialProg = getCanonicalProgram(profile.program);
+
   // Step 1: Profile fields
   const [username, setUsername] = useState(profile.github_username || '');
   const [fullName, setFullName] = useState(profile.full_name || '');
@@ -51,7 +46,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [aboutMe, setAboutMe] = useState(
     (profile.bio || 'Passionate student crafting web & IoT systems.').slice(0, 50)
   );
-  const [program, setProgram] = useState(profile.program || 'BS Computer Science');
+  const [selectedProgramOption, setSelectedProgramOption] = useState(initialProg.selectedOptionValue);
+  const [customProgramName, setCustomProgramName] = useState(initialProg.customProgramName);
   const [yearLevel, setYearLevel] = useState(profile.year_level || '3rd Year');
   const [step1Error, setStep1Error] = useState<string | null>(null);
 
@@ -159,13 +155,18 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       }
 
       // 2. Prepare updated profile with is_onboarded: true
+      const effectiveProgram =
+        selectedProgramOption === 'Other Programs'
+          ? (customProgramName.trim() || 'Other Programs')
+          : selectedProgramOption;
+
       const updatedProfile: Profile = {
         ...profile,
         github_username: username.trim().toLowerCase(),
         full_name: fullName.trim() || username.trim(),
         headline: headline.trim(),
         bio: aboutMe.trim().slice(0, 50),
-        program,
+        program: effectiveProgram,
         year_level: yearLevel,
         is_onboarded: true,
         updated_at: new Date().toISOString(),
@@ -331,36 +332,62 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
 
             {/* Program & Year Level */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
-                  Degree Program
-                </label>
-                <select
-                  value={program}
-                  onChange={(e) => setProgram(e.target.value)}
-                  className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px] cursor-pointer"
-                >
-                  {PROGRAM_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
+            <div className="space-y-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
+                    Degree Program
+                  </label>
+                  <select
+                    id="onboarding-program-select"
+                    value={selectedProgramOption}
+                    onChange={(e) => setSelectedProgramOption(e.target.value)}
+                    className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px] cursor-pointer"
+                  >
+                    {DEGREE_PROGRAM_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
+                    Year Level
+                  </label>
+                  <select
+                    id="onboarding-year-select"
+                    value={yearLevel}
+                    onChange={(e) => setYearLevel(e.target.value)}
+                    className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px] cursor-pointer"
+                  >
+                    {YEAR_OPTIONS.map((yr) => (
+                      <option key={yr} value={yr}>{yr}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
-                  Year Level
-                </label>
-                <select
-                  value={yearLevel}
-                  onChange={(e) => setYearLevel(e.target.value)}
-                  className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px] cursor-pointer"
-                >
-                  {YEAR_OPTIONS.map((yr) => (
-                    <option key={yr} value={yr}>{yr}</option>
-                  ))}
-                </select>
-              </div>
+              {/* Conditional custom program input when Other Programs is selected */}
+              {selectedProgramOption === 'Other Programs' && (
+                <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] space-y-1 animate-in fade-in duration-100">
+                  <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
+                    Specify Degree Program Name <span className="text-stone-600 font-normal">(e.g. BS Information Systems)</span>
+                  </label>
+                  <input
+                    id="onboarding-custom-program-input"
+                    type="text"
+                    value={customProgramName}
+                    onChange={(e) => setCustomProgramName(e.target.value)}
+                    placeholder="e.g. BS Information Systems"
+                    className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px]"
+                  />
+                  <p className="text-[10px] font-serif-body italic text-stone-600">
+                    Your custom degree program will be shown on your public profile card and project dispatches.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Actions */}

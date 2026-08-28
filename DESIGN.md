@@ -202,7 +202,7 @@ GitShowcase eschews soft, blurred shadows in favor of crisp, inked drop shadows 
 - **Focus:** Outline none, shadow expansion to `3px 3px 0px #212121`.
 
 ### Commit Heatmap Grid
-- **Style:** 52-week horizontal calendar with 7-day columns (`10px` rounded `1px` tiles with `2.5px` gaps), custom tooltip cards, and 5-level green ink fill levels.
+- **Style:** 52-week horizontal calendar with 7-day columns (`12px-14px` rounded `2px` tiles with `3px-3.5px` gaps), integrated 4-metric telemetry matrix, intensity distribution meter, custom tooltip cards, and 5-level green ink fill levels.
 
 ## Do's and Don'ts
 

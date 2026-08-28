@@ -142,7 +142,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate }) => {
                 onClick={() => navigate('/dashboard')}
                 className="paper-button paper-button-dark text-xs lg:text-sm py-2 lg:py-2.5 px-4 font-bold justify-center min-h-[38px] lg:min-h-[42px]"
               >
-                <LayoutDashboard className="w-4 h-4 mr-1.5 flex-shrink-0 stroke-[2]" />
+                <FolderGit2 className="w-4 h-4 mr-1.5 flex-shrink-0 stroke-[2]" />
                 <span>Go to My Projects</span>
                 <ArrowRight className="w-3.5 h-3.5 ml-1.5 flex-shrink-0 stroke-[2]" />
               </button>

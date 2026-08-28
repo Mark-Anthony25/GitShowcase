@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Github, User, Compass, LayoutDashboard, LogOut, Sparkles, Menu, X } from 'lucide-react';
+import { Github, User, Compass, FolderGit2, LogOut, Sparkles, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface HeaderProps {
@@ -120,7 +120,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
             </button>
             {user && (
               <button id="nav-dashboard-btn" onClick={() => navigate('/dashboard')} className={navBtnClass('/dashboard')}>
-                <LayoutDashboard className="w-3.5 h-3.5 mr-1 flex-shrink-0" /><span>My Projects</span>
+                <FolderGit2 className="w-3.5 h-3.5 mr-1 flex-shrink-0" /><span>My Projects</span>
               </button>
             )}
             {user && profile?.github_username && (
@@ -159,7 +159,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
                     {isDemoMode && <span className="paper-badge mt-1 text-[9px]">Guest Mode</span>}
                   </div>
                   <button onClick={() => { setDropdownOpen(false); navigate('/dashboard'); }} className="w-full text-left px-2 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[30px]">
-                    <LayoutDashboard className="w-3.5 h-3.5 flex-shrink-0" /><span>My Projects</span>
+                    <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" /><span>My Projects</span>
                   </button>
                   <button onClick={() => { setDropdownOpen(false); navigate(`/u/${myUsername}`); }} className="w-full text-left px-2 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[30px]">
                     <User className="w-3.5 h-3.5 flex-shrink-0" /><span>My Profile</span>
@@ -253,7 +253,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
                   onClick={() => { setMobileMenuOpen(false); navigate('/dashboard'); }}
                   className={`${navBtnClass('/dashboard')} w-full min-h-[38px] text-xs justify-start px-3`}
                 >
-                  <LayoutDashboard className="w-3.5 h-3.5 mr-2 flex-shrink-0" /><span>My Projects</span>
+                  <FolderGit2 className="w-3.5 h-3.5 mr-2 flex-shrink-0" /><span>My Projects</span>
                 </button>
               )}
               {user && profile?.github_username && (
