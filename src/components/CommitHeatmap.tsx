@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { GitCommit, Flame, Trophy, Calendar, Info } from 'lucide-react';
+import { GitCommit, Flame } from 'lucide-react';
 import { ContributionCalendar, ContributionDay } from '../types';
 
 interface CommitHeatmapProps {
@@ -155,29 +155,26 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
   };
 
   return (
-    <div className={`w-full max-w-full overflow-hidden p-3 sm:p-5 paper-card bg-[#FEFCF6] space-y-3.5 sm:space-y-4 ${className}`}>
+    <div className={`w-full max-w-full overflow-hidden p-3 sm:p-4 paper-card bg-[#FEFCF6] space-y-2.5 sm:space-y-3 ${className}`}>
       {/* Header with Title & Stats */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b-2 border-dashed border-[#212121] pb-3">
-        <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-          <GitCommit className="w-4 h-4 text-[#212121] flex-shrink-0" />
-          <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121]">
-            GitHub Commit Activity
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-dashed border-[#212121] pb-2">
+        <div className="flex items-center space-x-1.5 flex-wrap gap-y-0.5">
+          <GitCommit className="w-3.5 h-3.5 text-[#212121] flex-shrink-0" />
+          <h3 className="text-xs sm:text-sm font-[900] uppercase font-newspaper-title text-[#212121]">
+            Activity
           </h3>
-          <span className="paper-badge text-[10px] font-mono">
-            @{username}
-          </span>
         </div>
 
         {showStats && (
-          <div className="flex items-center space-x-3 sm:space-x-4 text-xs font-mono text-[#212121] flex-wrap gap-y-1">
-            <div className="flex items-center space-x-1 font-bold">
+          <div className="flex items-center space-x-2.5 sm:space-x-3 text-xs font-mono text-[#212121] flex-wrap gap-y-0.5">
+            <div className="flex items-center space-x-1 font-bold text-[11px]">
               <span className="text-[#212121]">
                 {calendarData.totalContributions.toLocaleString()}
               </span>
-              <span className="text-stone-600 font-normal">commits / year</span>
+              <span className="text-stone-600 font-normal">contributions</span>
             </div>
-            <div className="flex items-center space-x-1 text-orange-900 font-bold bg-amber-100 px-2 py-0.5 border border-amber-400 rounded-sm">
-              <Flame className="w-3.5 h-3.5 fill-orange-500 text-orange-600" />
+            <div className="flex items-center space-x-1 text-orange-900 font-bold bg-amber-100 px-1.5 py-0.5 border border-amber-400 rounded-sm text-[10px]">
+              <Flame className="w-3 h-3 fill-orange-500 text-orange-600" />
               <span>{calendarData.currentStreak}d streak</span>
             </div>
           </div>
@@ -186,13 +183,13 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
 
       {/* Heatmap Grid View */}
       <div className="w-full max-w-full overflow-x-auto pb-1 relative touch-pan-x">
-        <div className="min-w-[680px]">
+        <div className="min-w-[620px]">
           {/* Month Headers */}
-          <div className="flex text-[11px] font-sketch text-stone-700 mb-1 pl-8 font-bold">
+          <div className="flex text-[10px] font-sketch text-stone-700 mb-1 pl-7 font-bold">
             {monthLabels.map((m, idx) => (
               <div
                 key={idx}
-                style={{ marginLeft: idx === 0 ? `${m.weekIndex * 13}px` : undefined, width: '48px' }}
+                style={{ marginLeft: idx === 0 ? `${m.weekIndex * 12}px` : undefined, width: '44px' }}
                 className="truncate"
               >
                 {m.label}
@@ -203,7 +200,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
           {/* Grid Rows with Day Labels */}
           <div className="flex">
             {/* Day Labels (Sun, Tue, Thu, Sat) */}
-            <div className="flex flex-col justify-between pr-2 text-[10px] font-sketch text-stone-600 py-0.5 select-none w-7 text-right font-bold">
+            <div className="flex flex-col justify-between pr-1.5 text-[9px] font-sketch text-stone-600 py-0.5 select-none w-6 text-right font-bold">
               <span>Sun</span>
               <span>Tue</span>
               <span>Thu</span>
@@ -211,9 +208,9 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
             </div>
 
             {/* Weeks columns */}
-            <div className="flex gap-[3px]">
+            <div className="flex gap-[2.5px]">
               {calendarData.weeks.map((week, wIndex) => (
-                <div key={wIndex} className="flex flex-col gap-[3px]">
+                <div key={wIndex} className="flex flex-col gap-[2.5px]">
                   {week.days.map((day, dIndex) => (
                     <div
                       key={dIndex}
@@ -222,7 +219,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                         setHoveredDay({ day, x: rect.left, y: rect.top });
                       }}
                       onMouseLeave={() => setHoveredDay(null)}
-                      className={`w-[11px] h-[11px] rounded-[1px] border cursor-pointer transition-transform hover:scale-125 ${getLevelColor(
+                      className={`w-[10px] h-[10px] rounded-[1px] border cursor-pointer transition-transform hover:scale-125 ${getLevelColor(
                         day.level
                       )}`}
                     />
@@ -235,7 +232,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
 
         {/* Hover Tooltip */}
         {hoveredDay && (
-          <div className="absolute z-30 pointer-events-none bg-[#212121] text-[#FEFCF6] text-[11px] font-mono py-1 px-2.5 shadow-[3px_3px_0px_#000] -translate-y-8 left-1/2 -translate-x-1/2 border border-[#FEFCF6] whitespace-nowrap animate-in fade-in duration-75 paper-card">
+          <div className="absolute z-30 pointer-events-none bg-[#212121] text-[#FEFCF6] text-[10px] font-mono py-0.5 px-2 shadow-[2px_2px_0px_#000] -translate-y-7 left-1/2 -translate-x-1/2 border border-[#FEFCF6] whitespace-nowrap animate-in fade-in duration-75 paper-card">
             <strong>
               {hoveredDay.day.count === 0 ? 'No' : hoveredDay.day.count}{' '}
               {hoveredDay.day.count === 1 ? 'contribution' : 'contributions'}
@@ -246,25 +243,24 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
       </div>
 
       {/* Mobile swipe hint */}
-      <p className="md:hidden text-[10px] font-sketch text-stone-500 text-center -mt-1 pb-1">
+      <p className="md:hidden text-[9px] font-sketch text-stone-500 text-center -mt-0.5 pb-0.5">
         ← Swipe to see full year →
       </p>
 
       {/* Footer: Legend & Guidelines */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-[11px] font-sketch text-stone-700 pt-2 border-t-2 border-dashed border-[#212121] gap-2 font-bold">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-[10px] font-sketch text-stone-700 pt-1.5 border-t border-dashed border-[#212121] gap-1.5 font-bold">
         <div className="flex items-center space-x-1 text-stone-700">
-          <Info className="w-3.5 h-3.5 text-stone-600" />
-          <span>Synced directly with GitHub activity feed</span>
+          <span>Activity overview</span>
         </div>
 
         <div className="flex items-center space-x-1.5 self-end sm:self-auto">
           <span>Less</span>
-          <div className="flex gap-1 items-center">
-            <span className="w-3 h-3 rounded-[1px] bg-[#EAE5D9] border border-[#212121]"></span>
-            <span className="w-3 h-3 rounded-[1px] bg-[#9BE9A8] border border-[#212121]"></span>
-            <span className="w-3 h-3 rounded-[1px] bg-[#40C463] border border-[#212121]"></span>
-            <span className="w-3 h-3 rounded-[1px] bg-[#30A14E] border border-[#212121]"></span>
-            <span className="w-3 h-3 rounded-[1px] bg-[#216E39] border border-[#212121]"></span>
+          <div className="flex gap-0.5 items-center">
+            <span className="w-2.5 h-2.5 rounded-[1px] bg-[#EAE5D9] border border-[#212121]"></span>
+            <span className="w-2.5 h-2.5 rounded-[1px] bg-[#9BE9A8] border border-[#212121]"></span>
+            <span className="w-2.5 h-2.5 rounded-[1px] bg-[#40C463] border border-[#212121]"></span>
+            <span className="w-2.5 h-2.5 rounded-[1px] bg-[#30A14E] border border-[#212121]"></span>
+            <span className="w-2.5 h-2.5 rounded-[1px] bg-[#216E39] border border-[#212121]"></span>
           </div>
           <span>More</span>
         </div>

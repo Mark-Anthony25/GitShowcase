@@ -192,13 +192,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs overflow-y-auto">
-      <div className="bg-[#FEFCF6] paper-card max-w-2xl w-full p-4 sm:p-7 shadow-[4px_4px_0px_#000] sm:shadow-[8px_8px_0px_#000] my-auto text-[#212121] max-h-[90dvh] overflow-y-auto">
+      <div className="bg-[#FEFCF6] paper-card max-w-xl w-full p-3.5 sm:p-5 shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] my-auto text-[#212121] max-h-[90dvh] overflow-y-auto">
         
         {/* Step Indicator Header */}
-        <div className="border-b-2 border-dashed border-[#212121] pb-4 mb-5">
+        <div className="border-b border-dashed border-[#212121] pb-2.5 mb-3.5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="paper-badge bg-[#212121] text-white text-[10px] font-bold">
+            <div className="flex items-center space-x-1.5">
+              <span className="paper-badge bg-[#212121] text-white text-[9px] font-bold">
                 GITSHOWCASE ONBOARDING
               </span>
               <span className="text-xs font-sketch text-stone-700 font-bold">
@@ -210,50 +210,50 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </span>
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title mt-2 text-[#212121]">
-            {currentStep === 1 && 'Set Up Your Student Developer Profile'}
-            {currentStep === 2 && 'Select Repositories to Showcase'}
-            {currentStep === 3 && 'Publishing Your Portfolio...'}
+          <h2 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title mt-1.5 text-[#212121]">
+            {currentStep === 1 && 'Set Up Your Student Profile'}
+            {currentStep === 2 && 'Select Projects to Showcase'}
+            {currentStep === 3 && 'Publishing Your Profile...'}
           </h2>
-          <p className="text-xs sm:text-sm font-serif-body text-stone-700 mt-0.5">
-            {currentStep === 1 && 'Configure your developer headline, degree program, and a crisp 50-character bio.'}
-            {currentStep === 2 && 'Pick your best capstones, assignments, and open-source projects from GitHub to showcase.'}
-            {currentStep === 3 && 'Finalizing your GitShowcase page and synchronizing live GitHub activity.'}
+          <p className="text-xs font-serif-body text-stone-700 mt-0.5">
+            {currentStep === 1 && 'Configure your name, headline, degree program, and a short 50-character bio.'}
+            {currentStep === 2 && 'Pick your best capstones, assignments, and projects from GitHub to showcase.'}
+            {currentStep === 3 && 'Finalizing your project showcase page.'}
           </p>
         </div>
 
         {/* STEP 1: Profile Setup Form */}
         {currentStep === 1 && (
-          <form onSubmit={handleStep1Submit} className="space-y-4">
+          <form onSubmit={handleStep1Submit} className="space-y-3">
             {step1Error && (
-              <div className="p-3 bg-red-100 border-2 border-red-500 text-red-950 text-xs font-mono flex items-center space-x-2 rounded-xs">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <div className="p-2 bg-red-100 border border-red-500 text-red-950 text-xs font-mono flex items-center space-x-1.5 rounded-xs">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                 <span>{step1Error}</span>
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* GitHub Username */}
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
                   GitHub Username <span className="text-stone-600">*</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-600 font-mono text-xs">@</span>
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-600 font-mono text-xs pointer-events-none">@</span>
                   <input
                     type="text"
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="username"
-                    className="w-full pl-7 pr-3 py-2 paper-input text-xs font-mono text-[#212121]"
+                    className="w-full pl-7 pr-2.5 py-1.5 paper-input text-xs font-mono text-[#212121] min-h-[34px]"
                   />
                 </div>
               </div>
 
               {/* Full Name */}
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
                   Full Name <span className="text-stone-600">*</span>
                 </label>
                 <input
@@ -262,18 +262,18 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="e.g. Mark Anthony Reyes"
-                  className="w-full px-3 py-2 paper-input text-xs font-serif-body text-[#212121]"
+                  className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px]"
                 />
               </div>
             </div>
 
             {/* Headline */}
             <div>
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-0.5">
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
                   Professional / Student Headline
                 </label>
-                <span className="text-[10px] font-sketch text-stone-600 font-bold">e.g. Program &amp; Focus</span>
+                <span className="text-[9px] font-sketch text-stone-600 font-bold">e.g. Program &amp; Focus</span>
               </div>
               <input
                 type="text"
@@ -281,17 +281,17 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
                 placeholder="e.g. BS Computer Science • Full-Stack Developer"
-                className="w-full px-3 py-2 paper-input text-xs font-mono text-[#212121]"
+                className="w-full px-2.5 py-1.5 paper-input text-xs font-mono text-[#212121] min-h-[34px]"
               />
               {/* Quick Headline Suggestions */}
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                <span className="text-[10px] font-sketch text-stone-700 self-center font-bold">Suggestions:</span>
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                <span className="text-[9px] font-sketch text-stone-700 self-center font-bold">Suggestions:</span>
                 {HEADLINE_SUGGESTIONS.map((sugg) => (
                   <button
                     key={sugg}
                     type="button"
                     onClick={() => setHeadline(sugg)}
-                    className="paper-button text-[11px] font-mono py-1 px-2.5 min-h-[32px] cursor-pointer"
+                    className="paper-button text-[10px] font-mono py-0.5 px-2 min-h-[26px] cursor-pointer"
                   >
                     {sugg}
                   </button>
@@ -301,12 +301,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
             {/* About Me (Bio) - STRICT 50 Characters MAX */}
             <div>
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-0.5">
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
                   About Me <span className="text-stone-600 font-normal">(Max 50 Characters)</span>
                 </label>
                 <span
-                  className={`text-xs font-mono font-bold ${
+                  className={`text-[11px] font-mono font-bold ${
                     aboutMe.length > 50 ? 'text-red-600' : aboutMe.length >= 45 ? 'text-amber-800' : 'text-stone-700'
                   }`}
                 >
@@ -319,27 +319,27 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 value={aboutMe}
                 onChange={(e) => setAboutMe(e.target.value.slice(0, 50))}
                 placeholder="Crisp 50-character summary of your tech passion..."
-                className={`w-full px-3 py-2 paper-input text-xs font-serif-body min-h-[44px] ${
+                className={`w-full px-2.5 py-1.5 paper-input text-xs font-serif-body min-h-[34px] ${
                   aboutMe.length >= 50
-                    ? 'border-amber-600 ring-2 ring-amber-600'
+                    ? 'border-amber-600 ring-1 ring-amber-600'
                     : ''
                 }`}
               />
-              <p className="text-[11px] font-serif-body italic text-stone-600 mt-1">
+              <p className="text-[10px] font-serif-body italic text-stone-600 mt-0.5">
                 Keep it punchy and memorable for visiting students and faculty advisors.
               </p>
             </div>
 
             {/* Program & Year Level */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
                   Degree Program
                 </label>
                 <select
                   value={program}
                   onChange={(e) => setProgram(e.target.value)}
-                  className="w-full px-3 py-2 paper-input text-xs font-serif-body text-[#212121] min-h-[44px] cursor-pointer"
+                  className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px] cursor-pointer"
                 >
                   {PROGRAM_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>{opt}</option>
@@ -348,13 +348,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
                   Year Level
                 </label>
                 <select
                   value={yearLevel}
                   onChange={(e) => setYearLevel(e.target.value)}
-                  className="w-full px-3 py-2 paper-input text-xs font-serif-body text-[#212121] min-h-[44px] cursor-pointer"
+                  className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px] cursor-pointer"
                 >
                   {YEAR_OPTIONS.map((yr) => (
                     <option key={yr} value={yr}>{yr}</option>
@@ -364,12 +364,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:space-x-3 pt-4 border-t-2 border-dashed border-[#212121]">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-3 border-t border-dashed border-[#212121]">
               {onCancel && (
                 <button
                   type="button"
                   onClick={onCancel}
-                  className="paper-button text-xs py-2 px-4 min-h-[44px] font-bold justify-center"
+                  className="paper-button text-xs py-1.5 px-3 min-h-[34px] font-bold justify-center"
                 >
                   Skip for Now
                 </button>
@@ -377,10 +377,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               <button
                 type="submit"
                 id="onboarding-step1-next-btn"
-                className="paper-button paper-button-dark text-xs py-2 px-5 font-bold min-h-[44px] justify-center"
+                className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold min-h-[34px] justify-center"
               >
                 <span>Continue to Select Repositories</span>
-                <ArrowRight className="w-4 h-4 ml-1.5 flex-shrink-0" />
+                <ArrowRight className="w-3.5 h-3.5 ml-1 flex-shrink-0" />
               </button>
             </div>
           </form>
@@ -388,15 +388,15 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
         {/* STEP 2: Choose Repositories to Showcase */}
         {currentStep === 2 && (
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="relative flex-1">
                 <input
                   type="text"
                   placeholder="Filter connected repositories by name or language..."
                   value={repoSearch}
                   onChange={(e) => setRepoSearch(e.target.value)}
-                  className="w-full px-3 py-2 paper-input text-xs font-mono"
+                  className="w-full px-2.5 py-1.5 paper-input text-xs font-mono min-h-[34px]"
                 />
               </div>
               <div className="flex items-center space-x-2 font-mono text-xs text-stone-700">
@@ -407,14 +407,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
 
             {/* Repos List */}
-            <div className="paper-card bg-[#FEFCF6] max-h-64 overflow-y-auto divide-y-2 divide-dashed divide-stone-300 p-2">
+            <div className="paper-card bg-[#FEFCF6] max-h-60 overflow-y-auto divide-y divide-dashed divide-stone-300 p-1.5">
               {loadingRepos ? (
-                <div className="p-8 text-center space-y-2">
-                  <div className="animate-spin w-6 h-6 border-2 border-black border-t-transparent mx-auto"></div>
+                <div className="p-6 text-center space-y-1.5">
+                  <div className="animate-spin w-5 h-5 border-2 border-black border-t-transparent mx-auto"></div>
                   <p className="text-xs font-sketch uppercase text-stone-700 font-bold">Connecting to GitHub repositories...</p>
                 </div>
               ) : filteredRepos.length === 0 ? (
-                <div className="p-8 text-center text-xs font-mono text-stone-600">
+                <div className="p-6 text-center text-xs font-mono text-stone-600">
                   No repositories found. You can add them later or adjust your search.
                 </div>
               ) : (
@@ -425,29 +425,29 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   return (
                     <div
                       key={repo.id}
-                      className={`p-3.5 transition-colors ${
+                      className={`p-2.5 transition-colors ${
                         isSelected ? 'bg-[#FAF6EC]' : 'hover:bg-stone-50'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <label className="flex items-start space-x-3 cursor-pointer flex-1">
+                      <div className="flex items-start justify-between gap-2.5">
+                        <label className="flex items-start space-x-2 cursor-pointer flex-1">
                           <input
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => toggleRepoSelection(repo)}
-                            className="w-4 h-4 mt-0.5 border-2 border-[#212121] rounded-xs accent-black cursor-pointer"
+                            className="w-3.5 h-3.5 mt-0.5 border-1.5 border-[#212121] rounded-xs accent-black cursor-pointer"
                           />
-                          <div className="space-y-1">
-                            <div className="flex items-center space-x-2 flex-wrap">
-                              <span className="font-newspaper-title font-[900] text-sm uppercase text-[#212121]">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center space-x-1.5 flex-wrap">
+                              <span className="font-newspaper-title font-[900] text-xs uppercase text-[#212121]">
                                 {repo.name}
                               </span>
                               {repo.language && (
-                                <span className="paper-badge text-[10px] font-mono">
+                                <span className="paper-badge text-[9px] font-mono">
                                   {repo.language}
                                 </span>
                               )}
-                              <div className="flex items-center space-x-2 font-mono text-[10px] text-stone-700 font-bold">
+                              <div className="flex items-center space-x-1.5 font-mono text-[9px] text-stone-700 font-bold">
                                 <span className="flex items-center"><Star className="w-2.5 h-2.5 mr-0.5" /> {repo.stargazers_count}</span>
                                 <span className="flex items-center"><GitFork className="w-2.5 h-2.5 mr-0.5" /> {repo.forks_count}</span>
                               </div>
@@ -471,14 +471,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                               });
                             }}
                             title="Pin as Lead Capstone Project"
-                            className={`paper-button text-xs py-1.5 px-2.5 min-h-[36px] font-bold flex-shrink-0 ${
+                            className={`paper-button text-xs py-1 px-2 min-h-[30px] font-bold flex-shrink-0 ${
                               meta?.isFeatured
                                 ? 'paper-button-dark'
                                 : ''
                             }`}
                           >
-                            <Star className={`w-3.5 h-3.5 mr-1 inline-block ${meta?.isFeatured ? 'fill-amber-300 text-amber-300' : ''}`} />
-                            <span>{meta?.isFeatured ? 'Featured Pin' : 'Feature'}</span>
+                            <Star className={`w-3 h-3 mr-0.5 inline-block ${meta?.isFeatured ? 'fill-amber-300 text-amber-300' : ''}`} />
+                            <span>{meta?.isFeatured ? 'Featured' : 'Feature'}</span>
                           </button>
                         )}
                       </div>
@@ -489,13 +489,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-4 border-t-2 border-dashed border-[#212121]">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-3 border-t border-dashed border-[#212121]">
               <button
                 type="button"
                 onClick={() => setCurrentStep(1)}
-                className="paper-button text-xs py-2 px-4 min-h-[44px] font-bold justify-center"
+                className="paper-button text-xs py-1.5 px-3 min-h-[34px] font-bold justify-center"
               >
-                <ArrowLeft className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                <ArrowLeft className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
                 <span>Back to Profile</span>
               </button>
 
@@ -504,14 +504,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 id="complete-onboarding-btn"
                 disabled={savingRepos}
                 onClick={handleFinishOnboarding}
-                className="paper-button paper-button-dark text-xs py-2.5 px-5 font-bold disabled:opacity-50 min-h-[44px] justify-center"
+                className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold disabled:opacity-50 min-h-[34px] justify-center"
               >
                 {savingRepos ? (
                   <span>Publishing Showcase...</span>
                 ) : (
                   <>
-                    <Check className="w-4 h-4 text-emerald-400 mr-1.5 flex-shrink-0" />
-                    <span>Complete Setup &amp; Launch Showcase</span>
+                    <Check className="w-3.5 h-3.5 text-emerald-400 mr-1 flex-shrink-0" />
+                    <span>Complete Setup &amp; Launch</span>
                   </>
                 )}
               </button>
@@ -521,14 +521,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
         {/* STEP 3: Success Confirmation */}
         {currentStep === 3 && (
-          <div className="py-12 text-center space-y-4">
-            <div className="w-14 h-14 paper-card bg-emerald-100 border-emerald-600 flex items-center justify-center mx-auto text-emerald-800">
-              <CheckCircle2 className="w-7 h-7" />
+          <div className="py-10 text-center space-y-3">
+            <div className="w-12 h-12 paper-card bg-emerald-100 border-emerald-600 flex items-center justify-center mx-auto text-emerald-800">
+              <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h3 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
+            <h3 className="text-lg sm:text-xl font-[900] uppercase font-newspaper-title text-[#212121]">
               GitShowcase Portfolio Created!
             </h3>
-            <p className="text-xs sm:text-sm font-serif-body text-stone-700 max-w-sm mx-auto">
+            <p className="text-xs font-serif-body text-stone-700 max-w-sm mx-auto">
               Your student profile, curated repositories, and GitHub commit boxes are now published and live.
             </p>
           </div>

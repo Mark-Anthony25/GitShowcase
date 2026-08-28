@@ -224,254 +224,295 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
   const username = profile?.github_username || 'student';
 
   return (
-    <div className="space-y-5 sm:space-y-6 pb-10 text-[#212121] w-full max-w-full">
-      {/* Top Student Card */}
-      <div className="paper-card bg-[#FAF6EC] p-3.5 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 sm:gap-4">
-        <div className="flex items-center space-x-3 min-w-0">
-          <div className="w-12 h-12 sm:w-13 sm:h-13 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[2px_2px_0px_#212121]">
-            <img
-              src={profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80'}
-              alt={profile?.github_username || 'Student'}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div className="min-w-0">
-            <span className="text-[10px] sm:text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold truncate">
-              STUDENT DESK &bull; ISU CAUAYAN
-            </span>
-            <h1 className="text-lg sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121] truncate">
-              {profile?.full_name || 'My Projects'}
-            </h1>
-            <p className="text-xs sm:text-sm font-serif-body text-stone-700 truncate">
-              @{username} &bull; {profile?.program || 'BS Computer Science'} &bull; {profile?.year_level || '3rd Year'}
-            </p>
-          </div>
-        </div>
+    <div className="space-y-4 sm:space-y-5 pb-8 text-[#212121] w-full max-w-full">
+      {/* Responsive Two-Column Dashboard Layout at Desktop Breakpoints */}
+      <div className="flex flex-col lg:flex-row items-start gap-4 sm:gap-5 lg:gap-6 w-full">
+        {/* Left Column: Sidebar (Profile, Stats, Streak, Quick Actions, Nav) */}
+        <aside className="w-full lg:w-80 xl:w-96 flex-shrink-0 space-y-3.5 sm:space-y-4 lg:sticky lg:top-4">
+          {/* Profile Identity Card */}
+          <div className="paper-card bg-[#FAF6EC] p-3.5 sm:p-5 space-y-3.5">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[2px_2px_0px_#212121]">
+                <img
+                  src={profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop&q=80'}
+                  alt={profile?.github_username || 'Student'}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-[9px] sm:text-[10px] font-sketch uppercase tracking-widest text-stone-700 block font-bold truncate">
+                  STUDENT AUTHOR
+                </span>
+                <h1 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121] truncate leading-tight">
+                  {profile?.full_name || 'My Projects'}
+                </h1>
+                <p className="text-xs font-mono text-stone-700 truncate">
+                  @{username}
+                </p>
+              </div>
+            </div>
 
-        <div className="flex items-center space-x-2 w-full sm:w-auto">
-          {onOpenOnboarding && (
-            <button
-              id="reopen-onboarding-btn"
-              onClick={onOpenOnboarding}
-              className="paper-button text-xs py-2 px-3.5 flex-1 sm:flex-initial justify-center min-h-[42px] sm:min-h-[38px] font-bold"
-            >
-              <Sparkles className="w-4 h-4 text-stone-700 mr-1.5 flex-shrink-0" />
-              <span>Setup Wizard</span>
-            </button>
-          )}
+            <div className="space-y-1.5 pt-2 border-t border-dashed border-[#212121]">
+              {profile?.headline && (
+                <p className="text-xs font-headline uppercase tracking-wider text-stone-800 font-bold truncate">
+                  {profile.headline}
+                </p>
+              )}
+              <div className="flex items-center space-x-1.5 text-xs font-serif-body text-stone-700 flex-wrap gap-y-1">
+                <span className="paper-badge font-bold bg-[#EFE9DB]">
+                  {profile?.program || 'BS Computer Science'}
+                </span>
+                <span className="paper-badge bg-stone-200 font-mono font-bold">
+                  {profile?.year_level || '3rd Year'}
+                </span>
+              </div>
+              {profile?.bio && (
+                <p className="text-xs font-serif-body text-stone-800 italic bg-[#FEFCF6] p-2.5 border border-[#212121] paper-card shadow-[1px_1px_0px_rgba(0,0,0,0.15)] mt-1 leading-relaxed">
+                  "{profile.bio}"
+                </p>
+              )}
+            </div>
 
-          <button
-            id="view-public-profile-btn"
-            onClick={() => navigate(`/u/${username}`)}
-            className="flex-1 sm:flex-initial paper-button paper-button-dark text-xs py-2 px-4 font-bold justify-center min-h-[42px] sm:min-h-[38px]"
-          >
-            <Eye className="w-4 h-4 mr-1.5 flex-shrink-0" />
-            <span>View Public Page</span>
-            <ArrowUpRight className="w-4 h-4 ml-1 flex-shrink-0" />
-          </button>
-        </div>
-      </div>
+            {/* Live Stats Counters */}
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-dashed border-[#212121] text-center">
+              <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121] shadow-[1.5px_1.5px_0px_#212121]">
+                <span className="text-[9px] font-sketch uppercase text-stone-600 block font-bold">Published</span>
+                <span className="text-base font-[900] font-newspaper-title text-[#212121]">{showcased.length}</span>
+              </div>
+              <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121] shadow-[1.5px_1.5px_0px_#212121]">
+                <span className="text-[9px] font-sketch uppercase text-stone-600 block font-bold">Featured</span>
+                <span className="text-base font-[900] font-newspaper-title text-[#212121]">
+                  {showcased.filter(p => p.is_featured).length}
+                </span>
+              </div>
+            </div>
 
-      {/* GitHub Commit Heatmap on Desk */}
-      <CommitHeatmap username={username} compact={false} />
+            {/* Quick Actions */}
+            <div className="space-y-1.5 pt-2 border-t border-dashed border-[#212121]">
+              <button
+                id="view-public-profile-btn"
+                onClick={() => navigate(`/u/${username}`)}
+                className="w-full paper-button paper-button-dark text-xs py-2 px-3 font-bold justify-center min-h-[36px]"
+              >
+                <Eye className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                <span>View Public Profile</span>
+                <ArrowUpRight className="w-3.5 h-3.5 ml-1 flex-shrink-0" />
+              </button>
 
-      {isSchemaMissing && (
-        <div className="p-3 sm:p-3.5 bg-amber-50 border-2 border-amber-500 paper-card text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-start space-x-2">
-            <AlertCircle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <p className="font-bold uppercase tracking-wider font-headline text-xs">
-                Supabase Tables Pending Creation
-              </p>
-              <p className="font-serif-body text-stone-800 text-xs">
-                Your database URL is connected, but the tables (<code>showcased_projects</code>, <code>profiles</code>) haven't been run yet in the Supabase SQL editor. The app is running smoothly using client-side offline storage.
-              </p>
+              {onOpenOnboarding && (
+                <button
+                  id="reopen-onboarding-btn"
+                  onClick={onOpenOnboarding}
+                  className="w-full paper-button text-xs py-2 px-3 justify-center min-h-[36px] font-bold text-stone-800"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-stone-700 mr-1.5 flex-shrink-0" />
+                  <span>Edit Setup Guide</span>
+                </button>
+              )}
             </div>
           </div>
-          {onOpenGuide && (
-            <button
-              onClick={onOpenGuide}
-              className="paper-button text-xs py-2 px-3.5 whitespace-nowrap font-bold flex-shrink-0 min-h-[40px]"
-            >
-              Open SQL Setup Guide
-            </button>
-          )}
-        </div>
-      )}
 
-      {isDemoMode && (
-        <div className="p-2.5 sm:p-3 bg-[#EFE9DB] paper-card text-[#212121] flex items-center justify-between text-xs font-mono">
-          <div className="flex items-center space-x-2">
-            <Sparkles className="w-4 h-4 text-stone-800 flex-shrink-0" />
-            <span className="text-[11px] sm:text-xs">
-              <strong>DEMO MODE ACTIVE</strong>: You can test adding/editing repositories and updating your profile data.
+          {/* Section Navigation Tabs */}
+          <div className="paper-card bg-[#FEFCF6] p-2.5 sm:p-3 space-y-1.5">
+            <span className="text-[9px] sm:text-[10px] font-sketch uppercase tracking-wider text-stone-700 font-bold block px-1">
+              DASHBOARD SECTIONS
             </span>
+            <div className="flex flex-row lg:flex-col gap-1.5">
+              <button
+                id="tab-showcase-btn"
+                onClick={() => setActiveTab('showcase')}
+                className={`paper-button text-xs py-2 px-3 font-bold flex-1 lg:flex-none justify-start min-h-[36px] ${
+                  activeTab === 'showcase' ? 'paper-button-dark' : 'bg-[#FEFCF6]'
+                }`}
+              >
+                <Bookmark className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                <span>My Projects ({showcased.length})</span>
+              </button>
+
+              <button
+                id="tab-add-repos-btn"
+                onClick={() => setActiveTab('repos')}
+                className={`paper-button text-xs py-2 px-3 font-bold flex-1 lg:flex-none justify-start min-h-[36px] ${
+                  activeTab === 'repos' ? 'paper-button-dark' : 'bg-[#FEFCF6]'
+                }`}
+              >
+                <Plus className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                <span>Add Projects</span>
+              </button>
+
+              <button
+                id="tab-profile-btn"
+                onClick={() => setActiveTab('profile')}
+                className={`paper-button text-xs py-2 px-3 font-bold flex-1 lg:flex-none justify-start min-h-[36px] ${
+                  activeTab === 'profile' ? 'paper-button-dark' : 'bg-[#FEFCF6]'
+                }`}
+              >
+                <User className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                <span>Edit Profile</span>
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        </aside>
 
-      {/* Tabs */}
-      <div className="border-b-2 border-dashed border-[#212121] flex flex-wrap gap-2 pb-1">
-        <button
-          id="tab-showcase-btn"
-          onClick={() => setActiveTab('showcase')}
-          className={`paper-button text-xs py-2 px-3 sm:px-4 font-bold min-h-[42px] ${
-            activeTab === 'showcase'
-              ? 'paper-button-dark'
-              : ''
-          }`}
-        >
-          <Bookmark className="w-4 h-4 mr-1.5 flex-shrink-0" />
-          <span>Published ({showcased.length})</span>
-        </button>
+        {/* Right Column: Main Content Area */}
+        <main className="flex-1 min-w-0 space-y-4 sm:space-y-5 w-full">
+          {/* GitHub Commit Heatmap on Desk */}
+          <CommitHeatmap username={username} compact={false} />
 
-        <button
-          id="tab-add-repos-btn"
-          onClick={() => setActiveTab('repos')}
-          className={`paper-button text-xs py-2 px-3 sm:px-4 font-bold min-h-[42px] ${
-            activeTab === 'repos'
-              ? 'paper-button-dark'
-              : ''
-          }`}
-        >
-          <Plus className="w-4 h-4 mr-1.5 flex-shrink-0" />
-          <span>Import Repos</span>
-        </button>
+          {isSchemaMissing && (
+            <div className="p-2.5 sm:p-3 bg-amber-50 border border-amber-500 paper-card text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs">
+              <div className="flex items-start space-x-2">
+                <AlertCircle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-bold uppercase tracking-wider font-headline text-xs">
+                    Supabase Tables Pending Creation
+                  </p>
+                  <p className="font-serif-body text-stone-800 text-xs">
+                    Your database URL is connected, but the tables (<code>showcased_projects</code>, <code>profiles</code>) haven't been run yet in the Supabase SQL editor. The app is running smoothly using client-side offline storage.
+                  </p>
+                </div>
+              </div>
+              {onOpenGuide && (
+                <button
+                  onClick={onOpenGuide}
+                  className="paper-button text-xs py-1.5 px-3 whitespace-nowrap font-bold flex-shrink-0 min-h-[34px]"
+                >
+                  Open SQL Setup Guide
+                </button>
+              )}
+            </div>
+          )}
 
-        <button
-          id="tab-profile-btn"
-          onClick={() => setActiveTab('profile')}
-          className={`paper-button text-xs py-2 px-3 sm:px-4 font-bold min-h-[42px] ${
-            activeTab === 'profile'
-              ? 'paper-button-dark'
-              : ''
-          }`}
-        >
-          <User className="w-4 h-4 mr-1.5 flex-shrink-0" />
-          <span>Edit Profile</span>
-        </button>
-      </div>
+          {isDemoMode && (
+            <div className="p-2 sm:p-2.5 bg-[#EFE9DB] paper-card text-[#212121] flex items-center justify-between text-xs font-mono">
+              <div className="flex items-center space-x-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-stone-800 flex-shrink-0" />
+                <span className="text-[10px] sm:text-xs">
+                  <strong>DEMO MODE ACTIVE</strong>: You can test adding/editing repositories and updating your profile data.
+                </span>
+              </div>
+            </div>
+          )}
 
       {/* TAB 1: Showcased Projects */}
       {activeTab === 'showcase' && (
-        <div className="space-y-5">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b-2 border-dashed border-[#212121] pb-3">
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 border-b border-dashed border-[#212121] pb-2">
             <div>
-              <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
-                Published Work &bull; {showcased.length} Repositories
+              <h2 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
+                My Projects
               </h2>
-              <p className="text-xs sm:text-sm font-serif-body text-stone-700">
-                These dispatches appear on your public showcase page at <code className="bg-stone-200 px-1 py-0.5 font-mono text-[11px] border border-stone-400 rounded-xs">/u/{username}</code>.
+              <p className="text-xs font-serif-body text-stone-700">
+                These projects appear on your public profile at <code className="bg-stone-200 px-1 py-0.5 font-mono text-[10px] border border-stone-400 rounded-xs">/u/{username}</code>.
               </p>
             </div>
 
             <button
               onClick={() => setActiveTab('repos')}
-              className="paper-button text-xs py-2 px-4 font-bold min-h-[40px]"
+              className="paper-button text-xs py-1.5 px-3 font-bold min-h-[34px]"
             >
-              <Plus className="w-4 h-4 mr-1.5 flex-shrink-0" />
-              <span>Import More Repos</span>
+              <Plus className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
+              <span>Add More Projects</span>
             </button>
           </div>
 
           {loadingShowcase ? (
-            <div className="text-center py-12 paper-card bg-[#FEFCF6]">
-              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-stone-700" />
-              <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 mt-2 font-bold">Loading dispatches...</p>
+            <div className="text-center py-10 paper-card bg-[#FEFCF6]">
+              <RefreshCw className="w-5 h-5 animate-spin mx-auto text-stone-700" />
+              <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 mt-1.5 font-bold">Loading projects...</p>
             </div>
           ) : showcased.length === 0 ? (
-            <div className="text-center py-12 px-4 paper-card bg-[#FEFCF6] space-y-3 border-dashed">
-              <Newspaper className="w-8 h-8 text-stone-600 mx-auto" />
-              <div className="space-y-1">
-                <h3 className="text-lg font-[900] uppercase font-newspaper-title text-[#212121]">No projects published yet</h3>
-                <p className="text-xs sm:text-sm font-serif-body text-stone-700 max-w-sm mx-auto">
+            <div className="text-center py-10 px-4 paper-card bg-[#FEFCF6] space-y-2.5 border-dashed">
+              <Newspaper className="w-7 h-7 text-stone-600 mx-auto" />
+              <div className="space-y-0.5">
+                <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121]">No projects published yet</h3>
+                <p className="text-xs font-serif-body text-stone-700 max-w-sm mx-auto">
                   Pick your best repositories from GitHub to display them on your public profile.
                 </p>
               </div>
               <button
                 onClick={() => setActiveTab('repos')}
-                className="paper-button paper-button-dark text-xs py-2 px-4 font-bold min-h-[44px]"
+                className="paper-button paper-button-dark text-xs py-1.5 px-3.5 font-bold min-h-[34px]"
               >
-                <Plus className="w-4 h-4 mr-1.5 flex-shrink-0" />
-                <span>Browse GitHub Repositories</span>
+                <Plus className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
+                <span>Add Projects from GitHub</span>
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
               {showcased.map((proj) => (
                 <div
                   key={proj.id}
-                  className={`p-5 paper-card transition-all ${
+                  className={`p-3.5 sm:p-4 paper-card transition-all ${
                     proj.is_featured
                       ? 'bg-[#FAF6EC]'
                       : 'bg-[#FEFCF6]'
                   }`}
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <div className="space-y-1 min-w-0 flex-1">
-                      <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5">
+                    <div className="space-y-0.5 min-w-0 flex-1">
+                      <div className="flex items-center space-x-1.5 flex-wrap gap-y-0.5">
                         {proj.is_featured && (
-                          <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[10px] font-bold">
-                            <Pin className="w-3 h-3 mr-1" />
-                            LEAD DISPATCH
+                          <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold">
+                            FEATURED
                           </span>
                         )}
-                        <span className="text-xs font-mono text-stone-700 truncate max-w-[200px]">
+                        <span className="text-xs font-mono text-stone-700 truncate max-w-[180px]">
                           {proj.repo_full_name}
                         </span>
                       </div>
-                      <h3 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121] break-words">
+                      <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] break-words">
                         {proj.custom_title || proj.repo_full_name.split('/')[1]}
                       </h3>
                     </div>
 
-                    {/* Action button row with min 44x44px touch targets */}
-                    <div className="flex items-center space-x-2 flex-shrink-0 self-end sm:self-start">
+                    {/* Proportional Action Button Row */}
+                    <div className="flex items-center space-x-1.5 flex-shrink-0 self-end sm:self-start">
                       <button
                         title={proj.is_featured ? 'Unpin from top' : 'Pin to top as lead dispatch'}
                         aria-label={proj.is_featured ? 'Unpin lead project' : 'Pin as lead project'}
                         onClick={() => handleToggleFeatured(proj)}
-                        className={`paper-button-icon min-w-[44px] min-h-[44px] ${
+                        className={`paper-button-icon min-w-[32px] min-h-[32px] p-1 ${
                           proj.is_featured ? 'paper-button-dark' : ''
                         }`}
                       >
-                        <Star className={`w-4.5 h-4.5 ${proj.is_featured ? 'fill-amber-300 text-amber-300' : 'text-stone-800'}`} />
+                        <Star className={`w-3.5 h-3.5 ${proj.is_featured ? 'fill-amber-300 text-amber-300' : 'text-stone-800'}`} />
                       </button>
 
                       <button
                         title="Edit title and context description"
                         aria-label="Edit project details"
                         onClick={() => setEditingProject(proj)}
-                        className="paper-button-icon min-w-[44px] min-h-[44px] text-stone-800"
+                        className="paper-button-icon min-w-[32px] min-h-[32px] p-1 text-stone-800"
                       >
-                        <Edit3 className="w-4.5 h-4.5" />
+                        <Edit3 className="w-3.5 h-3.5" />
                       </button>
 
                       <button
                         title="Remove from publication"
                         aria-label="Remove project from showcase"
                         onClick={() => handleRemoveProject(proj.id)}
-                        className="paper-button-icon min-w-[44px] min-h-[44px] text-rose-800 hover:bg-rose-100 hover:text-rose-950"
+                        className="paper-button-icon min-w-[32px] min-h-[32px] p-1 text-rose-800 hover:bg-rose-100 hover:text-rose-950"
                       >
-                        <Trash2 className="w-4.5 h-4.5" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
 
-                  <p className="text-xs sm:text-sm font-serif-body text-stone-700 mt-2 line-clamp-3 leading-relaxed">
+                  <p className="text-xs font-serif-body text-stone-700 mt-1.5 line-clamp-2 leading-relaxed">
                     {proj.custom_description || 'No custom context notes provided.'}
                   </p>
 
-                  <div className="pt-3 mt-3 border-t-2 border-dashed border-[#212121] flex items-center justify-between text-xs font-mono">
+                  <div className="pt-2 mt-2 border-t border-dashed border-[#212121] flex items-center justify-between text-xs font-mono">
                     <a
                       href={proj.repo_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-stone-900 hover:text-black underline flex items-center space-x-1.5 font-bold min-h-[36px] py-1"
+                      className="text-stone-900 hover:text-black underline flex items-center space-x-1 font-bold min-h-[30px] py-0.5"
                     >
-                      <Github className="w-4 h-4 flex-shrink-0" />
-                      <span>Inspect Repository</span>
-                      <ExternalLink className="w-3.5 h-3.5 ml-0.5 flex-shrink-0" />
+                      <Github className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>View on GitHub</span>
+                      <ExternalLink className="w-3 h-3 ml-0.5 flex-shrink-0" />
                     </a>
                   </div>
                 </div>
@@ -483,71 +524,71 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
       {/* TAB 2: Add from GitHub Repos */}
       {activeTab === 'repos' && (
-        <div className="space-y-5">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b-2 border-dashed border-[#212121] pb-3">
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 border-b border-dashed border-[#212121] pb-2">
             <div>
-              <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
-                Available Repositories from GitHub
+              <h2 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
+                Your GitHub Projects
               </h2>
-              <p className="text-xs sm:text-sm font-serif-body text-stone-700">
-                Select any repository to draft an article and publish it to your classmate showcase.
+              <p className="text-xs font-serif-body text-stone-700">
+                Select projects from your GitHub to add to your showcase.
               </p>
             </div>
 
-            <div className="flex items-center space-x-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
-                <Search className="w-4 h-4 text-stone-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <div className="flex items-center space-x-1.5 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-56">
+                <Search className="w-3.5 h-3.5 text-stone-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Filter repositories..."
                   value={repoSearch}
                   onChange={(e) => setRepoSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 paper-input text-xs font-mono text-[#212121] min-h-[44px]"
+                  className="w-full pl-8 pr-2.5 py-1.5 paper-input text-xs font-mono text-[#212121] min-h-[34px]"
                 />
               </div>
 
               <button
                 onClick={loadGitHubRepos}
-                className="paper-button-icon min-w-[44px] min-h-[44px] flex-shrink-0 cursor-pointer"
+                className="paper-button-icon min-w-[34px] min-h-[34px] p-1.5 flex-shrink-0 cursor-pointer"
                 title="Refresh GitHub Repositories"
                 aria-label="Refresh GitHub Repositories"
               >
-                <RefreshCw className={`w-4.5 h-4.5 text-stone-800 ${loadingRepos ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-3.5 h-3.5 text-stone-800 ${loadingRepos ? 'animate-spin' : ''}`} />
               </button>
             </div>
           </div>
 
           {loadingRepos ? (
-            <div className="text-center py-12 paper-card bg-[#FEFCF6]">
-              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-stone-700" />
-              <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 mt-2 font-bold">Fetching live from GitHub API...</p>
+            <div className="text-center py-10 paper-card bg-[#FEFCF6]">
+              <RefreshCw className="w-5 h-5 animate-spin mx-auto text-stone-700" />
+              <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 mt-1.5 font-bold">Fetching live from GitHub API...</p>
             </div>
           ) : filteredAvailableRepos.length === 0 ? (
-            <div className="text-center py-10 px-4 paper-card bg-[#FEFCF6]">
-              <p className="text-xs sm:text-sm font-serif-body text-stone-700">No repositories found matching "{repoSearch}".</p>
+            <div className="text-center py-8 px-4 paper-card bg-[#FEFCF6]">
+              <p className="text-xs font-serif-body text-stone-700">No repositories found matching "{repoSearch}".</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
               {filteredAvailableRepos.map((repo) => {
                 const isAlreadyShowcased = showcasedRepoNames.has(repo.full_name);
 
                 return (
                   <div
                     key={repo.id}
-                    className={`p-5 paper-card transition-all ${
+                    className={`p-3.5 sm:p-4 paper-card transition-all ${
                       isAlreadyShowcased
                         ? 'bg-[#FAF6EC] opacity-90'
                         : 'bg-[#FEFCF6]'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <div className="flex items-center space-x-2 flex-wrap">
-                          <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="space-y-0.5 min-w-0 flex-1">
+                        <div className="flex items-center space-x-1.5 flex-wrap">
+                          <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
                             {repo.name}
                           </h3>
                           {repo.fork && (
-                            <span className="paper-badge text-[10px] font-mono">
+                            <span className="paper-badge text-[9px] font-mono">
                               Fork
                             </span>
                           )}
@@ -558,39 +599,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                       </div>
 
                       {isAlreadyShowcased ? (
-                        <span className="paper-badge text-xs font-bold bg-stone-200 py-1 px-2.5 flex-shrink-0">
-                          <CheckCircle2 className="w-3.5 h-3.5 mr-1 inline-block text-emerald-700" />
+                        <span className="paper-badge text-[10px] font-bold bg-stone-200 py-0.5 px-2 flex-shrink-0">
+                          <CheckCircle2 className="w-3 h-3 mr-1 inline-block text-emerald-700" />
                           Published
                         </span>
                       ) : (
                         <button
                           onClick={() => handleOpenAddModal(repo)}
-                          className="paper-button paper-button-dark text-xs py-1.5 px-3.5 font-bold min-h-[38px] flex-shrink-0"
+                          className="paper-button paper-button-dark text-xs py-1 px-2.5 font-bold min-h-[32px] flex-shrink-0"
                         >
-                          <Plus className="w-4 h-4 mr-1 flex-shrink-0" />
+                          <Plus className="w-3.5 h-3.5 mr-0.5 flex-shrink-0" />
                           <span>Publish</span>
                         </button>
                       )}
                     </div>
 
-                    <p className="text-xs sm:text-sm font-serif-body text-stone-700 mt-2 line-clamp-2 leading-relaxed">
+                    <p className="text-xs font-serif-body text-stone-700 mt-1.5 line-clamp-2 leading-relaxed">
                       {repo.description || 'No description provided on GitHub.'}
                     </p>
 
-                    <div className="pt-3 mt-3 border-t-2 border-dashed border-[#212121] flex items-center justify-between text-xs font-mono text-stone-700 font-bold">
-                      <div className="flex items-center space-x-3">
+                    <div className="pt-2 mt-2 border-t border-dashed border-[#212121] flex items-center justify-between text-xs font-mono text-stone-700 font-bold">
+                      <div className="flex items-center space-x-2.5 text-[10px]">
                         {repo.language && (
                           <span className="flex items-center space-x-1">
-                            <span className="w-2 h-2 rounded-full bg-stone-800"></span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-stone-800"></span>
                             <span>{repo.language}</span>
                           </span>
                         )}
-                        <span className="flex items-center space-x-1">
-                          <Star className="w-3.5 h-3.5 text-stone-700" />
+                        <span className="flex items-center space-x-0.5">
+                          <Star className="w-3 h-3 text-stone-700" />
                           <span>{repo.stargazers_count}</span>
                         </span>
-                        <span className="flex items-center space-x-1">
-                          <GitFork className="w-3.5 h-3.5 text-stone-700" />
+                        <span className="flex items-center space-x-0.5">
+                          <GitFork className="w-3 h-3 text-stone-700" />
                           <span>{repo.forks_count}</span>
                         </span>
                       </div>
@@ -599,11 +640,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                         href={repo.html_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="paper-button-icon min-w-[38px] min-h-[38px] p-1.5 text-stone-800 hover:text-black"
+                        className="paper-button-icon min-w-[30px] min-h-[30px] p-1 text-stone-800 hover:text-black"
                         title="Open repo on GitHub"
                         aria-label={`Open ${repo.name} on GitHub`}
                       >
-                        <ExternalLink className="w-4 h-4" />
+                        <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     </div>
                   </div>
@@ -616,23 +657,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
       {/* TAB 3: Edit Profile & Bio */}
       {activeTab === 'profile' && (
-        <div className="max-w-2xl bg-[#FEFCF6] paper-card p-6 space-y-5">
-          <div className="border-b-2 border-dashed border-[#212121] pb-3">
-            <span className="text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
-              STUDENT PROFILE
+        <div className="max-w-xl bg-[#FEFCF6] paper-card p-4 sm:p-5 space-y-4">
+          <div className="border-b border-dashed border-[#212121] pb-2">
+            <span className="text-[10px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
+              PROFILE SETTINGS
             </span>
-            <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
-              Author Credentials &amp; Bio
+            <h2 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
+              Profile Information
             </h2>
-            <p className="text-xs sm:text-sm font-serif-body text-stone-700">
-              Customize how your headline, degree, and 50-character bio appear across GitShowcase.
+            <p className="text-xs font-serif-body text-stone-700">
+              Customize your name, headline, degree program, and bio.
             </p>
           </div>
 
-          <form onSubmit={handleSaveProfile} className="space-y-4">
+          <form onSubmit={handleSaveProfile} className="space-y-3">
             <div>
               <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
-                Full Student Name
+                Full Name
               </label>
               <input
                 id="edit-fullname-input"
@@ -640,16 +681,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="e.g. Mark Anthony Reyes"
-                className="w-full px-3 py-2 paper-input text-[#212121] text-xs font-serif-body"
+                className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px]"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
-                  Student / Professional Headline
+                  Headline
                 </label>
-                <span className="text-[10px] font-sketch text-stone-600 font-bold">e.g. Program &amp; Tech Focus</span>
+                <span className="text-[9px] font-sketch text-stone-600 font-bold">e.g. Program &amp; Interests</span>
               </div>
               <input
                 id="edit-headline-input"
@@ -657,14 +698,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
                 placeholder="e.g. BS Computer Science • Full-Stack Developer"
-                className="w-full px-3 py-2 paper-input text-[#212121] text-xs font-mono"
+                className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-mono min-h-[34px]"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
-                  Degree / Academic Program
+                  Program
                 </label>
                 <input
                   id="edit-program-input"
@@ -672,7 +713,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   value={program}
                   onChange={(e) => setProgram(e.target.value)}
                   placeholder="e.g. BS Computer Science"
-                  className="w-full px-3 py-2 paper-input text-[#212121] text-xs font-serif-body"
+                  className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px]"
                 />
               </div>
 
@@ -684,7 +725,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   id="edit-year-select"
                   value={yearLevel}
                   onChange={(e) => setYearLevel(e.target.value)}
-                  className="w-full px-3 py-2 paper-input text-[#212121] text-xs font-serif-body"
+                  className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px]"
                 >
                   <option value="1st Year">1st Year</option>
                   <option value="2nd Year">2nd Year</option>
@@ -701,7 +742,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   About Me <span className="text-stone-600 font-normal">(Max 50 Characters)</span>
                 </label>
                 <span
-                  className={`text-xs font-mono font-bold ${
+                  className={`text-[11px] font-mono font-bold ${
                     bio.length > 50 ? 'text-red-600' : bio.length >= 45 ? 'text-amber-800' : 'text-stone-700'
                   }`}
                 >
@@ -715,19 +756,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 value={bio}
                 onChange={(e) => setBio(e.target.value.slice(0, 50))}
                 placeholder="Crisp 50-character summary of your tech passion..."
-                className={`w-full px-3 py-2 paper-input text-[#212121] text-xs font-serif-body ${
-                  bio.length >= 50 ? 'border-amber-600 ring-2 ring-amber-600' : ''
+                className={`w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px] ${
+                  bio.length >= 50 ? 'border-amber-600 ring-1 ring-amber-600' : ''
                 }`}
               />
-              <p className="text-[11px] font-serif-body italic text-stone-600 mt-1">
+              <p className="text-[10px] font-serif-body italic text-stone-600 mt-0.5">
                 Max 50 characters for a fast, punchy bio on your GitShowcase portfolio card.
               </p>
             </div>
 
-            <div className="pt-2 flex items-center justify-between">
+            <div className="pt-1.5 flex items-center justify-between">
               {profileSaved ? (
-                <span className="paper-badge bg-emerald-100 text-emerald-950 border-emerald-800 text-xs font-bold py-1 px-2.5">
-                  <Check className="w-4 h-4 mr-1 inline-block text-emerald-700" />
+                <span className="paper-badge bg-emerald-100 text-emerald-950 border-emerald-800 text-[10px] font-bold py-0.5 px-2">
+                  <Check className="w-3.5 h-3.5 mr-1 inline-block text-emerald-700" />
                   Profile Saved
                 </span>
               ) : (
@@ -738,7 +779,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 id="save-profile-btn"
                 type="submit"
                 disabled={profileSaving}
-                className="paper-button paper-button-dark text-xs py-2 px-5 font-bold disabled:opacity-50 min-h-[44px]"
+                className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold disabled:opacity-50 min-h-[36px]"
               >
                 {profileSaving ? 'Saving...' : 'Save Profile'}
               </button>
@@ -746,20 +787,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
           </form>
         </div>
       )}
+        </main>
+      </div>
 
       {/* Modal: Add Project to Showcase */}
       {selectedRepoToAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-[#FEFCF6] paper-card max-w-lg w-full p-4 sm:p-6 space-y-4 shadow-[8px_8px_0px_#000] max-h-[90dvh] overflow-y-auto">
-            <div className="flex items-start justify-between border-b-2 border-dashed border-[#212121] pb-3 gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-[#FEFCF6] paper-card max-w-md w-full p-3.5 sm:p-5 space-y-3 shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] max-h-[90dvh] overflow-y-auto">
+            <div className="flex items-start justify-between border-b border-dashed border-[#212121] pb-2 gap-2">
               <div className="min-w-0 flex-1">
-                <span className="text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
-                  SHOWCASE PROJECT
+                <span className="text-[9px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
+                  ADD PROJECT
                 </span>
-                <h3 className="text-lg font-[900] uppercase font-newspaper-title text-[#212121] truncate">
-                  Publish to Student Showcase
+                <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
+                  Add to Showcase
                 </h3>
-                <p className="text-xs text-stone-700 font-mono truncate">
+                <p className="text-[10px] text-stone-700 font-mono truncate">
                   {selectedRepoToAdd.full_name}
                 </p>
               </div>
@@ -767,15 +810,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 id="close-add-modal-btn"
                 aria-label="Close dialog"
                 onClick={() => setSelectedRepoToAdd(null)}
-                className="paper-button-icon min-w-[44px] min-h-[44px] p-2 flex items-center justify-center text-stone-800 cursor-pointer flex-shrink-0"
+                className="paper-button-icon min-w-[32px] min-h-[32px] p-1 flex items-center justify-center text-stone-800 cursor-pointer flex-shrink-0"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleConfirmAdd} className="space-y-3.5">
+            <form onSubmit={handleConfirmAdd} className="space-y-3">
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
                   Project Title
                 </label>
                 <input
@@ -783,50 +826,50 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   value={customTitle}
                   onChange={(e) => setCustomTitle(e.target.value)}
                   placeholder="e.g. Smart Campus Navigation App"
-                  className="w-full px-3 py-2 paper-input text-xs font-serif-body min-h-[44px]"
+                  className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body min-h-[34px]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
                   Description &amp; Key Features
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={customDescription}
                   onChange={(e) => setCustomDescription(e.target.value)}
-                  placeholder="Summarize the project's purpose, technologies used, and your role..."
-                  className="w-full px-3 py-2 paper-input text-xs font-serif-body"
+                  placeholder="Summarize what the project is, what it does, and why it was built..."
+                  className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body"
                 />
               </div>
 
-              <div className="flex items-center space-x-2 pt-1 min-h-[36px]">
+              <div className="flex items-center space-x-2 pt-0.5 min-h-[28px]">
                 <input
                   type="checkbox"
                   id="featured-checkbox"
                   checked={isFeatured}
                   onChange={(e) => setIsFeatured(e.target.checked)}
-                  className="w-4 h-4 border-2 border-[#212121] rounded-xs cursor-pointer"
+                  className="w-3.5 h-3.5 border-1.5 border-[#212121] rounded-xs cursor-pointer"
                 />
                 <label htmlFor="featured-checkbox" className="text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold select-none">
                   Pin as Featured Project at Top of Page
                 </label>
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-3 border-t-2 border-dashed border-[#212121]">
+              <div className="flex items-center justify-end space-x-2 pt-2 border-t border-dashed border-[#212121]">
                 <button
                   type="button"
                   onClick={() => setSelectedRepoToAdd(null)}
-                  className="paper-button text-xs py-2 px-4 min-h-[44px] font-bold"
+                  className="paper-button text-xs py-1.5 px-3 min-h-[34px] font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={addingInProgress}
-                  className="paper-button paper-button-dark text-xs py-2 px-5 font-bold disabled:opacity-50 min-h-[44px]"
+                  className="paper-button paper-button-dark text-xs py-1.5 px-3.5 font-bold disabled:opacity-50 min-h-[34px]"
                 >
-                  {addingInProgress ? 'Publishing...' : 'Publish to Showcase'}
+                  {addingInProgress ? 'Adding...' : 'Add to Showcase'}
                 </button>
               </div>
             </form>
@@ -836,17 +879,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
 
       {/* Modal: Edit Existing Project */}
       {editingProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-[#FEFCF6] paper-card max-w-lg w-full p-4 sm:p-6 space-y-4 shadow-[8px_8px_0px_#000] max-h-[90dvh] overflow-y-auto">
-            <div className="flex items-start justify-between border-b-2 border-dashed border-[#212121] pb-3 gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-[#FEFCF6] paper-card max-w-md w-full p-3.5 sm:p-5 space-y-3 shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] max-h-[90dvh] overflow-y-auto">
+            <div className="flex items-start justify-between border-b border-dashed border-[#212121] pb-2 gap-2">
               <div className="min-w-0 flex-1">
-                <span className="text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
-                  EDIT DETAILS
+                <span className="text-[9px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
+                  EDIT PROJECT
                 </span>
-                <h3 className="text-lg font-[900] uppercase font-newspaper-title text-[#212121] truncate">
+                <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
                   Edit Project Details
                 </h3>
-                <p className="text-xs text-stone-700 font-mono truncate">
+                <p className="text-[10px] text-stone-700 font-mono truncate">
                   {editingProject.repo_full_name}
                 </p>
               </div>
@@ -854,15 +897,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                 id="close-edit-modal-btn"
                 aria-label="Close dialog"
                 onClick={() => setEditingProject(null)}
-                className="paper-button-icon min-w-[44px] min-h-[44px] p-2 flex items-center justify-center text-stone-800 cursor-pointer flex-shrink-0"
+                className="paper-button-icon min-w-[32px] min-h-[32px] p-1 flex items-center justify-center text-stone-800 cursor-pointer flex-shrink-0"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveProjectEdit} className="space-y-3.5">
+            <form onSubmit={handleSaveProjectEdit} className="space-y-3">
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
                   Project Title
                 </label>
                 <input
@@ -871,25 +914,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   onChange={(e) =>
                     setEditingProject({ ...editingProject, custom_title: e.target.value })
                   }
-                  className="w-full px-3 py-2 paper-input text-xs font-serif-body min-h-[44px]"
+                  className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body min-h-[34px]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
                   Description &amp; Key Features
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={editingProject.custom_description || ''}
                   onChange={(e) =>
                     setEditingProject({ ...editingProject, custom_description: e.target.value })
                   }
-                  className="w-full px-3 py-2 paper-input text-xs font-serif-body"
+                  className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body"
                 />
               </div>
 
-              <div className="flex items-center space-x-2 pt-1 min-h-[36px]">
+              <div className="flex items-center space-x-2 pt-0.5 min-h-[28px]">
                 <input
                   type="checkbox"
                   id="edit-featured-checkbox"
@@ -897,24 +940,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenOn
                   onChange={(e) =>
                     setEditingProject({ ...editingProject, is_featured: e.target.checked })
                   }
-                  className="w-4 h-4 border-2 border-[#212121] rounded-xs cursor-pointer"
+                  className="w-3.5 h-3.5 border-1.5 border-[#212121] rounded-xs cursor-pointer"
                 />
                 <label htmlFor="edit-featured-checkbox" className="text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold select-none">
                   Pin as Featured Project at Top of Page
                 </label>
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-3 border-t-2 border-dashed border-[#212121]">
+              <div className="flex items-center justify-end space-x-2 pt-2 border-t border-dashed border-[#212121]">
                 <button
                   type="button"
                   onClick={() => setEditingProject(null)}
-                  className="paper-button text-xs py-2 px-4 min-h-[44px] font-bold"
+                  className="paper-button text-xs py-1.5 px-3 min-h-[34px] font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="paper-button paper-button-dark text-xs py-2 px-5 font-bold min-h-[44px]"
+                  className="paper-button paper-button-dark text-xs py-1.5 px-3.5 font-bold min-h-[34px]"
                 >
                   Save Changes
                 </button>

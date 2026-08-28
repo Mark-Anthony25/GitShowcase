@@ -54,70 +54,91 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
     setMobileMenuOpen(false);
   }, [currentRoute]);
 
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setMobileMenuOpen(false);
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = '';
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    } else {
+      document.body.style.overflow = '';
+    }
+  }, [mobileMenuOpen]);
+
   const navBtnClass = (route: string) =>
-    `px-3 py-2 sm:py-1.5 border-2 border-[#212121] transition-all cursor-pointer flex items-center justify-center space-x-2 font-bold text-xs font-headline uppercase tracking-wider min-h-[42px] md:min-h-[36px] ${
+    `paper-button text-xs py-1.5 px-3.5 font-bold ${
       currentRoute === route
-        ? 'bg-[#212121] text-[#FEFCF6] shadow-[2px_2px_0px_#000]'
-        : 'bg-[#FEFCF6] text-[#212121] hover:bg-[#EBE7DC] shadow-[1px_1px_0px_#212121]'
+        ? 'paper-button-dark'
+        : 'bg-[#FEFCF6]'
     }`;
 
   return (
-    <header className="w-full bg-[#FEFCF6] border-2 border-[#212121] text-[#212121] select-none paper-card p-2 sm:p-3 mb-4">
+    <header className="w-full bg-[#FEFCF6] border-1.5 border-[#212121] text-[#212121] select-none paper-card p-1.5 sm:p-2.5 mb-2.5 sm:mb-3">
       {/* Top Utility Bar */}
-      <div className="flex items-center justify-between border-b-2 border-dashed border-[#212121] px-1.5 sm:px-2 py-1 text-[10px] sm:text-[11px] font-sketch uppercase tracking-wider text-stone-700 bg-[#FAF6EC] gap-1">
-        <span className="truncate max-w-[150px] sm:max-w-none font-bold">ISU Cauayan Campus</span>
+      <div className="flex items-center justify-between border-b border-dashed border-[#212121] px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-sketch uppercase tracking-wider text-stone-700 bg-[#FAF6EC] gap-1">
+        <span className="truncate max-w-[150px] sm:max-w-none font-bold">ISU Cauayan</span>
         <span className="hidden md:inline font-bold">{getFormattedDate()}</span>
-        <span className="font-bold truncate flex-shrink-0">Student Showcase</span>
+        <span className="font-bold truncate flex-shrink-0">Project Showcase</span>
       </div>
 
       {/* Main Brand Title and Nav Bar */}
-      <div className="py-2 px-1.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-3">
+      <div className="py-1.5 sm:py-2 px-1 sm:px-3 flex items-center justify-between gap-3 lg:gap-6">
         {/* Brand / Logo */}
         <button
           id="masthead-home-btn"
           onClick={() => navigate('/')}
-          className="text-left group cursor-pointer flex items-center space-x-2 sm:space-x-3 min-w-0 max-w-[calc(100%-80px)] md:max-w-none focus:outline-none"
+          className="text-left group cursor-pointer flex items-center space-x-2 sm:space-x-3 shrink-0 focus:outline-none"
         >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 border-2 border-[#212121] bg-[#212121] text-[#FAF8F2] flex items-center justify-center flex-shrink-0 shadow-[2px_2px_0px_#212121] rounded-sm">
-            <Github className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 sm:w-9 sm:h-9 border-1.5 sm:border-2 border-[#212121] bg-[#FEFCF6] text-[#212121] flex items-center justify-center flex-shrink-0 shadow-[1.5px_1.5px_0px_#212121] sm:shadow-[2px_2px_0px_#212121] rounded-xs group-hover:bg-[#FAF6EC] transition-colors">
+            <Github className="w-4 h-4 sm:w-5 sm:h-5 text-[#212121] stroke-[2]" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-3xl font-[900] tracking-tight uppercase font-newspaper-title text-[#212121] leading-none group-hover:opacity-80 transition-opacity truncate">
+            <h1 className="text-base sm:text-xl font-[900] tracking-tight uppercase font-newspaper-title text-[#212121] leading-none group-hover:opacity-80 transition-opacity truncate">
               GITSHOWCASE
             </h1>
-            <p className="text-[10px] sm:text-[12px] font-sketch text-stone-700 font-semibold truncate">
-              ISU Cauayan &bull; Developer Hub
+            <p className="text-[9px] sm:text-[11px] font-sketch text-stone-700 font-semibold truncate">
+              Student Project Showcase
             </p>
           </div>
         </button>
 
-        {/* Desktop Nav - hidden on mobile */}
-        <div className="hidden md:flex items-center gap-2">
-          <nav className="flex items-center space-x-1.5">
+        {/* Desktop Middle: Centered Navigation */}
+        <div className="hidden md:flex items-center justify-center flex-1 mx-3 lg:mx-6">
+          <nav className="flex items-center space-x-2 lg:space-x-3">
             <button id="nav-front-page-btn" onClick={() => navigate('/')} className={navBtnClass('/')}>
-              Front Page
+              Home
             </button>
             <button id="nav-explore-btn" onClick={() => navigate('/explore')} className={navBtnClass('/explore')}>
-              <Compass className="w-4 h-4 mr-1 flex-shrink-0" /><span>Directory</span>
+              <Compass className="w-3.5 h-3.5 mr-1 flex-shrink-0" /><span>Browse Projects</span>
             </button>
             {user && (
               <button id="nav-dashboard-btn" onClick={() => navigate('/dashboard')} className={navBtnClass('/dashboard')}>
-                <LayoutDashboard className="w-4 h-4 mr-1 flex-shrink-0" /><span>My Desk</span>
+                <LayoutDashboard className="w-3.5 h-3.5 mr-1 flex-shrink-0" /><span>My Projects</span>
               </button>
             )}
             {user && profile?.github_username && (
               <button id="nav-my-profile-btn" onClick={() => navigate(`/u/${profile.github_username}`)} className={navBtnClass(`/u/${profile.github_username}`)}>
-                <User className="w-4 h-4 mr-1 flex-shrink-0" /><span>My Page</span>
+                <User className="w-3.5 h-3.5 mr-1 flex-shrink-0" /><span>My Profile</span>
               </button>
             )}
           </nav>
-          <div className="h-5 w-0.5 bg-[#212121]"></div>
+        </div>
+
+        {/* Desktop Right: User Menu & Auth Controls */}
+        <div className="hidden md:flex items-center gap-2 shrink-0">
           {user ? (
             <div className="relative" ref={dropdownRef}>
               <button
                 id="user-menu-btn"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="paper-button flex items-center space-x-2 py-1.5 px-3 text-xs font-bold uppercase cursor-pointer min-h-[38px]"
+                className="paper-button flex items-center space-x-2 py-1 px-3 text-xs font-bold uppercase cursor-pointer min-h-[34px]"
                 aria-expanded={dropdownOpen}
                 aria-haspopup="true"
               >
@@ -131,44 +152,41 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
                 <span className="max-w-[100px] truncate font-mono text-[11px]">@{profile?.github_username || 'student'}</span>
               </button>
               {dropdownOpen && (
-                <div className="absolute right-0 mt-1.5 w-56 bg-[#FEFCF6] border-2 border-[#212121] shadow-[4px_4px_0px_#212121] p-2 z-50 animate-in fade-in duration-100 paper-card">
-                  <div className="p-2 border-b-2 border-dashed border-[#212121] mb-1 bg-[#FAF6EC]">
+                <div className="absolute right-0 mt-1.5 w-52 bg-[#FEFCF6] border-2 border-[#212121] shadow-[4px_4px_0px_#212121] p-1.5 z-50 animate-in fade-in duration-100 paper-card">
+                  <div className="p-2 border-b border-dashed border-[#212121] mb-1 bg-[#FAF6EC]">
                     <p className="text-xs font-bold font-headline uppercase text-[#212121] truncate">{profile?.full_name || 'Student Author'}</p>
-                    <p className="text-[11px] font-mono text-stone-700 truncate">@{profile?.github_username || 'isabela-coder'}</p>
-                    {isDemoMode && <span className="paper-badge mt-1 text-[10px]">Guest Mode</span>}
+                    <p className="text-[10px] font-mono text-stone-700 truncate">@{profile?.github_username || 'isabela-coder'}</p>
+                    {isDemoMode && <span className="paper-badge mt-1 text-[9px]">Guest Mode</span>}
                   </div>
-                  <button onClick={() => { setDropdownOpen(false); navigate('/dashboard'); }} className="w-full text-left px-2 py-2 text-xs font-headline hover:bg-[#EAE4D4] flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[36px]">
-                    <LayoutDashboard className="w-4 h-4 flex-shrink-0" /><span>Project Desk</span>
+                  <button onClick={() => { setDropdownOpen(false); navigate('/dashboard'); }} className="w-full text-left px-2 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[30px]">
+                    <LayoutDashboard className="w-3.5 h-3.5 flex-shrink-0" /><span>My Projects</span>
                   </button>
-                  <button onClick={() => { setDropdownOpen(false); navigate(`/u/${myUsername}`); }} className="w-full text-left px-2 py-2 text-xs font-headline hover:bg-[#EAE4D4] flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[36px]">
-                    <User className="w-4 h-4 flex-shrink-0" /><span>View Public Page</span>
+                  <button onClick={() => { setDropdownOpen(false); navigate(`/u/${myUsername}`); }} className="w-full text-left px-2 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[30px]">
+                    <User className="w-3.5 h-3.5 flex-shrink-0" /><span>My Profile</span>
                   </button>
-                  <button onClick={() => { setDropdownOpen(false); navigate('/explore'); }} className="w-full text-left px-2 py-2 text-xs font-headline hover:bg-[#EAE4D4] flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[36px]">
-                    <Compass className="w-4 h-4 flex-shrink-0" /><span>Classmate Directory</span>
-                  </button>
-                  <div className="border-t-2 border-dashed border-[#212121] my-1"></div>
-                  <button id="signout-btn" onClick={() => { setDropdownOpen(false); signOut(); navigate('/'); }} className="w-full text-left px-2 py-2 text-xs font-headline text-red-700 hover:bg-red-50 flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[36px]">
-                    <LogOut className="w-4 h-4 flex-shrink-0" /><span>Sign Out</span>
+                  <div className="border-t border-dashed border-[#212121] my-1"></div>
+                  <button id="signout-btn" onClick={() => { setDropdownOpen(false); signOut(); navigate('/'); }} className="w-full text-left px-2 py-1.5 text-xs font-headline text-red-700 hover:bg-red-50 flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[30px]">
+                    <LogOut className="w-3.5 h-3.5 flex-shrink-0" /><span>Sign Out</span>
                   </button>
                 </div>
               )}
             </div>
           ) : (
             <div className="flex items-center space-x-2">
-              <button id="demo-student-login-btn" onClick={() => { signInAsDemoStudent(); navigate('/dashboard'); }} className="paper-button text-xs py-1.5 px-3 cursor-pointer min-h-[38px]">
+              <button id="demo-student-login-btn" onClick={() => { signInAsDemoStudent(); navigate('/dashboard'); }} className="paper-button text-xs py-1.5 px-3 cursor-pointer min-h-[34px] text-stone-800 hover:text-black font-bold">
                 <Sparkles className="w-3.5 h-3.5 text-stone-700 mr-1 flex-shrink-0" /><span>Guest Demo</span>
               </button>
-              <button id="github-login-btn" onClick={async () => { await signInWithGitHub(); navigate('/dashboard'); }} className="paper-button paper-button-dark text-xs py-1.5 px-3.5 font-bold cursor-pointer min-h-[38px]">
-                <Github className="w-4 h-4 text-white mr-1.5 flex-shrink-0" /><span>GitHub Sign In</span>
+              <button id="github-login-btn" onClick={async () => { await signInWithGitHub(); navigate('/dashboard'); }} className="paper-button text-xs py-1.5 px-3.5 font-bold cursor-pointer min-h-[34px] bg-[#FEFCF6] text-[#212121] hover:bg-[#FAF6EC]">
+                <Github className="w-3.5 h-3.5 text-[#212121] mr-1 flex-shrink-0" /><span>GitHub Sign In</span>
               </button>
             </div>
           )}
         </div>
 
         {/* Mobile: avatar thumbnail + hamburger */}
-        <div className="flex md:hidden items-center space-x-2 flex-shrink-0">
+        <div className="flex md:hidden items-center space-x-1.5 flex-shrink-0">
           {user && (
-            <div className="w-8 h-8 border-2 border-[#212121] bg-stone-300 overflow-hidden flex-shrink-0 rounded-xs shadow-[1px_1px_0px_#212121]">
+            <div className="w-7 h-7 border-1.5 border-[#212121] bg-stone-300 overflow-hidden flex-shrink-0 rounded-xs shadow-[1px_1px_0px_#212121]">
               <img
                 src={profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
                 alt={profile?.github_username || 'Avatar'}
@@ -180,61 +198,114 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
             id="mobile-nav-toggle-btn"
             aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="paper-button-icon min-w-[44px] min-h-[44px] p-2 flex items-center justify-center cursor-pointer"
+            className="paper-button-icon min-w-[34px] min-h-[34px] p-1.5 flex items-center justify-center cursor-pointer"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5 text-[#212121]" /> : <Menu className="w-5 h-5 text-[#212121]" />}
+            {mobileMenuOpen ? <X className="w-4 h-4 text-[#212121]" /> : <Menu className="w-4 h-4 text-[#212121]" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile drawer */}
+      {/* Mobile Navigation Modal / Backdrop */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t-2 border-dashed border-[#212121] pt-3 pb-3 px-2 flex flex-col gap-2 bg-[#FAF6EC] animate-in fade-in duration-150">
-          <button onClick={() => navigate('/')} className={`${navBtnClass('/')} w-full min-h-[44px] text-xs justify-start px-3`}>
-            Front Page
-          </button>
-          <button onClick={() => navigate('/explore')} className={`${navBtnClass('/explore')} w-full min-h-[44px] text-xs justify-start px-3`}>
-            <Compass className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>Campus Directory</span>
-          </button>
-          {user && (
-            <button onClick={() => navigate('/dashboard')} className={`${navBtnClass('/dashboard')} w-full min-h-[44px] text-xs justify-start px-3`}>
-              <LayoutDashboard className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>Project Desk</span>
-            </button>
-          )}
-          {user && profile?.github_username && (
-            <button onClick={() => navigate(`/u/${profile.github_username}`)} className={`${navBtnClass(`/u/${profile.github_username}`)} w-full min-h-[44px] text-xs justify-start px-3`}>
-              <User className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>My Public Page</span>
-            </button>
-          )}
-          <div className="border-t-2 border-dashed border-[#212121] my-1" />
-          {user ? (
-            <div className="space-y-2 pt-1">
-              <div className="px-2 py-1 bg-[#FEFCF6] border border-[#212121] rounded-xs">
-                <p className="text-xs font-bold font-headline uppercase text-[#212121] truncate">
-                  {profile?.full_name || 'Student Author'}
-                </p>
-                <p className="text-[11px] font-mono text-stone-700">
-                  @{profile?.github_username || 'student'}{isDemoMode ? ' · Guest' : ''}
-                </p>
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 bg-[#212121]/70 backdrop-blur-xs md:hidden animate-in fade-in duration-150"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile Navigation Menu"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setMobileMenuOpen(false);
+          }}
+        >
+          <div className="w-full max-w-sm bg-[#FEFCF6] border-2 border-[#212121] shadow-[4px_4px_0px_#212121] paper-card p-3 sm:p-4 space-y-3 mt-2 animate-in zoom-in-95 duration-150">
+            {/* Modal Top Masthead */}
+            <div className="flex items-center justify-between border-b border-dashed border-[#212121] pb-2">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 border-1.5 border-[#212121] bg-[#FEFCF6] text-[#212121] flex items-center justify-center rounded-xs shadow-[1px_1px_0px_#212121]">
+                  <Github className="w-3.5 h-3.5 text-[#212121] stroke-[2]" />
+                </div>
+                <span className="font-newspaper-title font-[900] uppercase text-sm text-[#212121] tracking-tight">Navigation</span>
               </div>
               <button
-                id="mobile-signout-btn"
-                onClick={() => { setMobileMenuOpen(false); signOut(); navigate('/'); }}
-                className="paper-button text-xs py-2 px-3.5 text-red-700 bg-red-50 border-red-500 cursor-pointer w-full justify-center font-bold min-h-[44px]"
+                onClick={() => setMobileMenuOpen(false)}
+                className="paper-button-icon min-w-[30px] min-h-[30px] p-1 cursor-pointer"
+                aria-label="Close navigation menu"
               >
-                <LogOut className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>Sign Out</span>
+                <X className="w-4 h-4 text-[#212121]" />
               </button>
             </div>
-          ) : (
-            <div className="flex flex-col sm:flex-row gap-2 pt-1">
-              <button id="demo-mobile" onClick={() => { signInAsDemoStudent(); navigate('/dashboard'); }} className="paper-button text-xs py-2.5 px-3 cursor-pointer flex-1 justify-center min-h-[44px] font-bold">
-                <Sparkles className="w-4 h-4 text-stone-700 mr-1.5 flex-shrink-0" /><span>Guest Demo</span>
+
+            {/* Navigation Routes */}
+            <div className="flex flex-col gap-1.5 pt-0.5">
+              <button
+                onClick={() => { setMobileMenuOpen(false); navigate('/'); }}
+                className={`${navBtnClass('/')} w-full min-h-[38px] text-xs justify-start px-3`}
+              >
+                Home
               </button>
-              <button id="github-mobile" onClick={async () => { await signInWithGitHub(); navigate('/dashboard'); }} className="paper-button paper-button-dark text-xs py-2.5 px-3.5 font-bold cursor-pointer flex-1 justify-center min-h-[44px]">
-                <Github className="w-4 h-4 text-white mr-1.5 flex-shrink-0" /><span>GitHub Sign In</span>
+              <button
+                onClick={() => { setMobileMenuOpen(false); navigate('/explore'); }}
+                className={`${navBtnClass('/explore')} w-full min-h-[38px] text-xs justify-start px-3`}
+              >
+                <Compass className="w-3.5 h-3.5 mr-2 flex-shrink-0" /><span>Browse Projects</span>
               </button>
+              {user && (
+                <button
+                  onClick={() => { setMobileMenuOpen(false); navigate('/dashboard'); }}
+                  className={`${navBtnClass('/dashboard')} w-full min-h-[38px] text-xs justify-start px-3`}
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5 mr-2 flex-shrink-0" /><span>My Projects</span>
+                </button>
+              )}
+              {user && profile?.github_username && (
+                <button
+                  onClick={() => { setMobileMenuOpen(false); navigate(`/u/${profile.github_username}`); }}
+                  className={`${navBtnClass(`/u/${profile.github_username}`)} w-full min-h-[38px] text-xs justify-start px-3`}
+                >
+                  <User className="w-3.5 h-3.5 mr-2 flex-shrink-0" /><span>My Profile</span>
+                </button>
+              )}
             </div>
-          )}
+
+            <div className="border-t border-dashed border-[#212121] my-0.5" />
+
+            {/* User Session / Auth Action Box */}
+            {user ? (
+              <div className="space-y-2 pt-0.5">
+                <div className="px-2.5 py-1.5 bg-[#FAF6EC] border border-[#212121] rounded-xs">
+                  <p className="text-xs font-bold font-headline uppercase text-[#212121] truncate">
+                    {profile?.full_name || 'Student Author'}
+                  </p>
+                  <p className="text-[10px] font-mono text-stone-700">
+                    @{profile?.github_username || 'student'}{isDemoMode ? ' · Guest' : ''}
+                  </p>
+                </div>
+                <button
+                  id="mobile-signout-btn"
+                  onClick={() => { setMobileMenuOpen(false); signOut(); navigate('/'); }}
+                  className="paper-button text-xs py-2 px-3 text-red-700 bg-red-50 border-red-400 cursor-pointer w-full justify-center font-bold min-h-[36px]"
+                >
+                  <LogOut className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" /><span>Sign Out</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 pt-0.5">
+                <button
+                  id="demo-mobile"
+                  onClick={() => { setMobileMenuOpen(false); signInAsDemoStudent(); navigate('/dashboard'); }}
+                  className="paper-button text-xs py-2 px-3 cursor-pointer justify-center min-h-[36px] font-bold w-full text-stone-800"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-stone-700 mr-1.5 flex-shrink-0" /><span>Guest Demo</span>
+                </button>
+                <button
+                  id="github-mobile"
+                  onClick={async () => { setMobileMenuOpen(false); await signInWithGitHub(); navigate('/dashboard'); }}
+                  className="paper-button text-xs py-2 px-3 font-bold cursor-pointer justify-center min-h-[36px] w-full bg-[#FEFCF6] text-[#212121] hover:bg-[#FAF6EC]"
+                >
+                  <Github className="w-3.5 h-3.5 text-[#212121] mr-1.5 flex-shrink-0" /><span>GitHub Sign In</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </header>

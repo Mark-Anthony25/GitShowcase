@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Github, Star, GitFork, ExternalLink, Calendar, BookOpen, 
   Share2, Check, ArrowLeft, Sparkles, Pin, Code2, Tag, 
-  Globe, AlertCircle, RefreshCw, GraduationCap, Newspaper, User
+  Globe, AlertCircle, RefreshCw, GraduationCap, Newspaper, User,
+  X, ArrowUpRight
 } from 'lucide-react';
 import { StudentShowcaseData, ShowcasedProject } from '../types';
 import { getStudentShowcaseByUsername } from '../lib/showcaseStore';
@@ -17,6 +18,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   const [data, setData] = useState<StudentShowcaseData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<ShowcasedProject | null>(null);
 
   useEffect(() => {
     loadShowcase();
@@ -46,9 +48,9 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
       <div className="py-20 text-center space-y-3 paper-card bg-[#FEFCF6]">
         <RefreshCw className="w-8 h-8 animate-spin mx-auto text-stone-700" />
         <h2 className="text-xl font-[900] uppercase font-newspaper-title text-[#212121]">
-          Preparing Student Chronicle...
+          Loading profile...
         </h2>
-        <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 font-bold">Retrieving published dispatches for @{username}</p>
+        <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 font-bold">Loading projects...</p>
       </div>
     );
   }
@@ -60,14 +62,11 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
           <AlertCircle className="w-6 h-6" />
         </div>
         <div className="space-y-1">
-          <span className="text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
-            EDITION NOT FOUND
-          </span>
           <h1 className="text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
             Student Profile Not Found
           </h1>
           <p className="text-xs sm:text-sm font-serif-body text-stone-700 leading-relaxed">
-            No public chronicle has been published for <code className="bg-stone-200 text-stone-900 px-1 py-0.5 font-mono text-[11px] border border-stone-400 rounded-xs">@{username}</code> yet.
+            This profile hasn't been set up yet.
           </p>
         </div>
         <div className="pt-2 flex items-center justify-center space-x-3">
@@ -75,13 +74,13 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             onClick={() => navigate('/explore')}
             className="paper-button text-xs py-2 px-4 font-bold"
           >
-            Explore Campus Register
+            Browse Projects
           </button>
           <button
             onClick={() => navigate('/')}
             className="paper-button paper-button-dark text-xs py-2 px-4 font-bold"
           >
-            Return to Front Page
+            Go Home
           </button>
         </div>
       </div>
@@ -93,208 +92,317 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   const regularProjects = projects.filter(p => !p.is_featured);
 
   return (
-    <div className="space-y-8 pb-12 text-[#212121]">
-      {/* Top Action Bar */}
-      <div className="flex items-center justify-between border-b-2 border-dashed border-[#212121] pb-3 gap-2">
-        <button
-          onClick={() => navigate('/explore')}
-          className="paper-button text-xs py-2 px-3 sm:px-4 font-bold min-h-[42px]"
-        >
-          <ArrowLeft className="w-4 h-4 mr-1.5 flex-shrink-0" />
-          <span>Back to Directory</span>
-        </button>
+    <>
+      <div className="space-y-5 sm:space-y-6 pb-8 text-[#212121]">
+        {/* Top Action Bar */}
+        <div className="flex items-center justify-between border-b border-dashed border-[#212121] pb-2 gap-2">
+          <button
+            onClick={() => navigate('/explore')}
+            className="paper-button text-xs py-1.5 px-3 font-bold min-h-[34px]"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
+            <span>Back to Browse</span>
+          </button>
 
-        <button
-          id="share-profile-btn"
-          onClick={handleShare}
-          className="paper-button text-xs py-2 px-3.5 sm:px-4 font-bold min-h-[42px]"
-        >
-          {copiedLink ? (
-            <>
-              <Check className="w-4 h-4 text-emerald-700 mr-1.5 flex-shrink-0" />
-              <span>Link Copied!</span>
-            </>
-          ) : (
-            <>
-              <Share2 className="w-4 h-4 mr-1.5 flex-shrink-0" />
-              <span>Share Profile</span>
-            </>
-          )}
-        </button>
-      </div>
+          <button
+            id="share-profile-btn"
+            onClick={handleShare}
+            className="paper-button text-xs py-1.5 px-3 font-bold min-h-[34px]"
+          >
+            {copiedLink ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-700 mr-1 flex-shrink-0" />
+                <span>Link Copied!</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
+                <span>Share Profile</span>
+              </>
+            )}
+          </button>
+        </div>
 
-      {/* Profile Lead Story Masthead */}
-      <div className="bg-[#FAF6EC] paper-card p-4 sm:p-6 space-y-4 w-full max-w-full">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-5 pb-4 border-b-2 border-dashed border-[#212121]">
-          <div className="flex items-center space-x-3.5 sm:space-x-4 min-w-0">
-            <div className="w-14 h-14 sm:w-20 sm:h-20 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[2px_2px_0px_#212121] sm:shadow-[3px_3px_0px_#212121]">
-              <img
-                src={profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'}
-                alt={profile.full_name || profile.github_username}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="space-y-0.5 min-w-0">
-              <span className="text-[10px] sm:text-[11px] font-sketch uppercase tracking-widest text-stone-700 block font-bold truncate">
-                STUDENT DEVELOPER &bull; ISU CAUAYAN
-              </span>
-              <h1 className="text-xl sm:text-3xl font-[900] uppercase font-newspaper-title text-[#212121] truncate">
-                {profile.full_name || profile.github_username}
-              </h1>
-              {profile.headline && (
-                <p className="text-xs sm:text-sm font-headline uppercase tracking-wider text-stone-800 font-bold truncate">
-                  {profile.headline}
-                </p>
-              )}
-              <div className="flex items-center space-x-1.5 sm:space-x-2 text-[11px] sm:text-sm font-serif-body text-stone-700 flex-wrap gap-y-0.5">
-                <span className="font-mono font-bold text-stone-900">@{profile.github_username}</span>
-                <span>&bull;</span>
-                <span className="truncate">{profile.program || 'Student'}</span>
-                {profile.year_level && (
-                  <>
-                    <span>&bull;</span>
-                    <span>{profile.year_level}</span>
-                  </>
+        {/* Responsive Two-Column Layout on Desktop */}
+        <div className="flex flex-col lg:flex-row items-start gap-4 sm:gap-5 lg:gap-6 w-full">
+          {/* Left Column: Sidebar Profile Identity & Bio */}
+          <aside className="w-full lg:w-80 xl:w-96 flex-shrink-0 space-y-4 lg:sticky lg:top-4">
+            <div className="bg-[#FAF6EC] paper-card p-3.5 sm:p-5 space-y-3.5">
+              <div className="flex items-center space-x-3">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[2px_2px_0px_#212121]">
+                  <img
+                    src={profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'}
+                    alt={profile.full_name || profile.github_username}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <h1 className="text-lg sm:text-xl font-[900] uppercase font-newspaper-title text-[#212121] truncate leading-tight">
+                    {profile.full_name || profile.github_username}
+                  </h1>
+                  <p className="text-xs font-mono font-bold text-stone-800 truncate">
+                    @{profile.github_username}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-dashed border-[#212121]">
+                {profile.headline && (
+                  <p className="text-xs sm:text-sm font-headline uppercase tracking-wider text-stone-800 font-bold">
+                    {profile.headline}
+                  </p>
+                )}
+                <div className="flex items-center space-x-1.5 text-xs font-serif-body text-stone-700 flex-wrap gap-y-1">
+                  {profile.program && (
+                    <span className="paper-badge font-bold bg-[#EFE9DB]">{profile.program}</span>
+                  )}
+                  {profile.year_level && (
+                    <span className="paper-badge bg-stone-200 font-mono font-bold">{profile.year_level}</span>
+                  )}
+                </div>
+                {profile.bio && (
+                  <p className="text-xs font-serif-body text-stone-900 leading-relaxed italic bg-[#FEFCF6] p-2.5 border border-[#212121] rounded-xs mt-1.5">
+                    "{profile.bio}"
+                  </p>
                 )}
               </div>
+
+              {/* Stats Counters */}
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-dashed border-[#212121] text-center">
+                <div className="p-2 bg-[#FEFCF6] border border-[#212121] rounded-xs shadow-[1px_1px_0px_#212121]">
+                  <span className="text-[9px] font-sketch uppercase text-stone-600 block font-bold">Projects</span>
+                  <span className="text-base font-[900] font-newspaper-title text-[#212121]">{projects.length}</span>
+                </div>
+                <div className="p-2 bg-[#FEFCF6] border border-[#212121] rounded-xs shadow-[1px_1px_0px_#212121]">
+                  <span className="text-[9px] font-sketch uppercase text-stone-600 block font-bold">Featured</span>
+                  <span className="text-base font-[900] font-newspaper-title text-[#212121]">{featuredProjects.length}</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-dashed border-[#212121]">
+                <a
+                  href={`https://github.com/${profile.github_username}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full paper-button paper-button-dark text-xs py-2 px-3 font-bold justify-center min-h-[36px] flex items-center"
+                >
+                  <Github className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                  <span>View GitHub Profile</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 ml-1 flex-shrink-0" />
+                </a>
+              </div>
             </div>
-          </div>
+          </aside>
 
-          <a
-            href={`https://github.com/${profile.github_username}`}
-            target="_blank"
-            rel="noreferrer"
-            className="paper-button paper-button-dark text-xs py-2 px-4 font-bold flex-shrink-0 w-full sm:w-auto justify-center min-h-[44px]"
-          >
-            <Github className="w-4 h-4 text-white mr-2 flex-shrink-0" />
-            <span>GitHub Profile</span>
-            <ExternalLink className="w-3.5 h-3.5 ml-1.5 flex-shrink-0" />
-          </a>
+          {/* Right Column: Main Content Area */}
+          <main className="flex-1 min-w-0 space-y-4 sm:space-y-5 w-full">
+            {/* GitHub Commit Activity Heatmap Boxes */}
+            <CommitHeatmap username={profile.github_username} />
+
+            {/* Featured Projects Section */}
+            {featuredProjects.length > 0 && (
+              <section className="space-y-2.5">
+                <div className="border-b border-dashed border-[#212121] pb-1.5 flex items-center justify-between">
+                  <div className="flex items-center space-x-1.5">
+                    <Star className="w-3.5 h-3.5 text-stone-800 fill-stone-800" />
+                    <h2 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
+                      Featured Projects
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
+                  {featuredProjects.map(project => (
+                    <ProjectCard 
+                      key={project.id} 
+                      project={project} 
+                      isFeatured 
+                      onClick={() => setSelectedProject(project)} 
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Regular / All Showcased Projects Section */}
+            <section className="space-y-2.5">
+              <div className="border-b border-dashed border-[#212121] pb-1.5 flex items-center justify-between">
+                <div className="flex items-center space-x-1.5">
+                  <Newspaper className="w-3.5 h-3.5 text-stone-800" />
+                  <h2 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
+                    All Projects
+                  </h2>
+                </div>
+              </div>
+
+              {projects.length === 0 ? (
+                <div className="p-6 text-center paper-card bg-[#FEFCF6] border-dashed space-y-1">
+                  <p className="text-xs font-serif-body text-stone-700">No projects have been added yet.</p>
+                </div>
+              ) : regularProjects.length === 0 && featuredProjects.length > 0 ? (
+                <p className="text-xs font-serif-body italic text-stone-600">All projects are shown as featured above.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
+                  {regularProjects.map(project => (
+                    <ProjectCard 
+                      key={project.id} 
+                      project={project} 
+                      onClick={() => setSelectedProject(project)} 
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          </main>
         </div>
-
-        {profile.bio && (
-          <div className="bg-[#FEFCF6] p-3 sm:p-4 paper-card border-dashed">
-            <span className="text-[10px] sm:text-[11px] font-sketch uppercase text-stone-700 block mb-0.5 sm:mb-1 font-bold">About Me</span>
-            <p className="text-xs sm:text-sm font-serif-body text-stone-900 leading-relaxed italic break-words">
-              "{profile.bio}"
-            </p>
-          </div>
-        )}
       </div>
 
-      {/* GitHub Commit Activity Heatmap Boxes */}
-      <CommitHeatmap username={profile.github_username} />
-
-      {/* Featured Projects Section */}
-      {featuredProjects.length > 0 && (
-        <section className="space-y-3">
-          <div className="border-b-2 border-dashed border-[#212121] pb-2 flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Star className="w-4 h-4 text-stone-800 fill-stone-800" />
-              <h2 className="text-lg sm:text-xl font-[900] uppercase font-newspaper-title text-[#212121]">
-                Featured Capstones &amp; Projects
-              </h2>
+      {/* Project Detail Modal */}
+      {selectedProject && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 sm:p-6"
+          onClick={() => setSelectedProject(null)}
+        >
+          <div 
+            className="bg-[#FEFCF6] paper-card max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-start border-b border-dashed border-[#212121] p-4 sm:p-6">
+              <div>
+                {selectedProject.is_featured && (
+                  <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold mb-2 inline-block">
+                    Featured
+                  </span>
+                )}
+                <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
+                  {selectedProject.custom_title || selectedProject.repo_full_name.split('/')[1]}
+                </h2>
+              </div>
+              <button 
+                onClick={() => setSelectedProject(null)} 
+                className="p-1 hover:bg-stone-200 rounded-sm transition-colors"
+              >
+                <X className="w-5 h-5 text-stone-700" />
+              </button>
             </div>
-            <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[10px] font-bold">PINNED</span>
+            
+            <div className="p-4 sm:p-6 space-y-4">
+              <p className="text-sm font-serif-body text-stone-800 leading-relaxed">
+                {selectedProject.custom_description || selectedProject.live_stats?.description || 'No description provided.'}
+              </p>
+              
+              {selectedProject.live_stats?.topics && selectedProject.live_stats.topics.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedProject.live_stats.topics.map((topic, i) => (
+                    <span key={i} className="paper-badge text-[10px] font-mono">#{topic}</span>
+                  ))}
+                </div>
+              )}
+              
+              <div className="flex items-center space-x-3 pt-4">
+                {selectedProject.live_stats?.homepage && (
+                  <a
+                    href={selectedProject.live_stats.homepage}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="paper-button text-xs py-2 px-4 font-bold inline-flex items-center"
+                  >
+                    <Globe className="w-4 h-4 mr-1.5" />
+                    Visit Project
+                  </a>
+                )}
+                <a
+                  href={selectedProject.repo_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="paper-button paper-button-dark text-xs py-2 px-4 font-bold inline-flex items-center"
+                >
+                  <Github className="w-4 h-4 mr-1.5" />
+                  View on GitHub
+                </a>
+              </div>
+              
+              {/* More Projects by Developer */}
+              {projects.filter(p => p.id !== selectedProject.id).length > 0 && (
+                <div className="mt-8 border-t border-dashed border-[#212121] pt-6">
+                  <h3 className="text-sm font-[900] uppercase font-newspaper-title text-[#212121] mb-3">
+                    More Projects by {profile.full_name || profile.github_username}
+                  </h3>
+                  <div className="space-y-2">
+                    {projects.filter(p => p.id !== selectedProject.id).map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => setSelectedProject(p)}
+                        className="w-full text-left p-3 paper-card bg-[#FAF6EC] hover:bg-[#FEFCF6] transition-colors flex justify-between items-center"
+                      >
+                        <div>
+                          <div className="font-bold font-newspaper-title uppercase text-sm">
+                            {p.custom_title || p.repo_full_name.split('/')[1]}
+                          </div>
+                          <div className="text-xs font-serif-body text-stone-600 truncate max-w-[200px] sm:max-w-sm mt-1">
+                            {p.custom_description || p.live_stats?.description || 'No description provided.'}
+                          </div>
+                        </div>
+                        <ArrowLeft className="w-4 h-4 transform rotate-180 text-stone-400 flex-shrink-0 ml-2" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {featuredProjects.map(project => (
-              <ProjectCard key={project.id} project={project} isFeatured />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Regular / All Showcased Projects Section */}
-      <section className="space-y-3">
-        <div className="border-b-2 border-dashed border-[#212121] pb-2 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Newspaper className="w-4 h-4 text-stone-800" />
-            <h2 className="text-lg sm:text-xl font-[900] uppercase font-newspaper-title text-[#212121]">
-              {featuredProjects.length > 0 ? 'Other Course Repositories' : 'Showcased Repositories'} ({projects.length})
-            </h2>
-          </div>
-          <span className="paper-badge text-[10px] font-mono font-bold">ALL REPOS</span>
         </div>
-
-        {projects.length === 0 ? (
-          <div className="p-8 text-center paper-card bg-[#FEFCF6] border-dashed space-y-1">
-            <p className="text-xs sm:text-sm font-serif-body text-stone-700">No project articles have been published in this edition yet.</p>
-          </div>
-        ) : regularProjects.length === 0 && featuredProjects.length > 0 ? (
-          <p className="text-xs sm:text-sm font-serif-body italic text-stone-600">All showcased repositories are pinned in the lead dispatches above.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {regularProjects.map(project => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
+      )}
+    </>
   );
 };
 
 interface ProjectCardProps {
   project: ShowcasedProject;
   isFeatured?: boolean;
+  onClick: () => void;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, isFeatured = false }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, isFeatured = false, onClick }) => {
   const stats = project.live_stats;
 
   return (
-    <div
-      className={`p-5 paper-card transition-all flex flex-col justify-between space-y-4 ${
+    <button
+      onClick={onClick}
+      className={`w-full text-left p-3.5 sm:p-4 paper-card transition-all flex flex-col justify-between space-y-3 cursor-pointer hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_#212121] ${
         isFeatured
           ? 'bg-[#FAF6EC]'
           : 'bg-[#FEFCF6]'
       }`}
     >
-      <div className="space-y-2.5">
-        {/* Header Badge / Star Counters */}
-        <div className="flex items-start justify-between gap-3 border-b-2 border-dashed border-[#212121] pb-2.5">
-          <div className="space-y-0.5">
+      <div className="space-y-2">
+        {/* Header Badge */}
+        <div className="flex items-start justify-between gap-2.5 border-b border-dashed border-[#212121] pb-2">
+          <div className="space-y-0.5 w-full">
             {isFeatured && (
-              <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[10px] font-bold mb-1">
-                <Pin className="w-2.5 h-2.5 mr-1 inline-block" />
-                LEAD DISPATCH
+              <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold mb-0.5">
+                <Pin className="w-2 h-2 mr-0.5 inline-block" />
+                Featured
               </span>
             )}
-            <h3 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121] leading-snug">
+            <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] leading-snug">
               {project.custom_title || project.repo_full_name.split('/')[1]}
             </h3>
-            <p className="text-xs font-mono text-stone-700">
-              {project.repo_full_name}
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-2 text-xs font-mono text-stone-800 bg-[#FAF6EC] border border-[#212121] px-2 py-0.5 flex-shrink-0 shadow-[1px_1px_0px_#212121] font-bold">
-            <span className="flex items-center">
-              <Star className="w-3 h-3 text-stone-700 mr-1" />
-              <span>{stats ? stats.stars : 0}</span>
-            </span>
-            <span className="text-stone-400">&bull;</span>
-            <span className="flex items-center">
-              <GitFork className="w-3 h-3 mr-1" />
-              <span>{stats ? stats.forks : 0}</span>
-            </span>
           </div>
         </div>
 
-        {/* Custom description (Student's voice / context) */}
-        <p className="text-xs sm:text-sm font-serif-body text-stone-800 leading-relaxed">
+        {/* Custom description */}
+        <p className="text-xs font-serif-body text-stone-800 leading-relaxed line-clamp-3">
           {project.custom_description || stats?.description || 'No description provided.'}
         </p>
 
         {/* Topics / Tags */}
         {stats && stats.topics && stats.topics.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-1">
+          <div className="flex flex-wrap gap-1 pt-0.5">
             {stats.topics.slice(0, 4).map((topic, i) => (
-              <span
+               <span
                 key={i}
-                className="paper-badge text-[10px] font-mono"
+                className="paper-badge text-[9px] font-mono"
               >
                 #{topic}
               </span>
@@ -303,42 +411,28 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isFeatured = false }
         )}
       </div>
 
-      {/* Footer / Links & Metadata */}
-      <div className="pt-3 border-t-2 border-dashed border-[#212121] flex items-center justify-between text-xs font-mono">
-        <div className="flex items-center space-x-3 text-stone-800 font-bold">
-          {stats?.language && (
-            <span className="flex items-center space-x-1">
-              <span className="w-2 h-2 rounded-full bg-stone-800"></span>
-              <span>{stats.language}</span>
+      {/* Footer / Links */}
+      <div className="pt-2 border-t border-dashed border-[#212121] flex items-center justify-end text-xs font-mono">
+        <div className="flex items-center space-x-2">
+          {stats?.homepage && (
+            <span
+              className="text-stone-800 hover:text-black underline flex items-center space-x-1 font-bold min-h-[30px] py-0.5 px-1 text-xs"
+              onClick={(e) => { e.stopPropagation(); window.open(stats.homepage, '_blank', 'noreferrer'); }}
+            >
+              <Globe className="w-3 h-3 mr-0.5 flex-shrink-0" />
+              <span>Visit Project</span>
             </span>
           )}
-        </div>
-
-        <div className="flex items-center space-x-3">
-          {stats?.homepage && (
-            <a
-              href={stats.homepage}
-              target="_blank"
-              rel="noreferrer"
-              className="text-stone-800 hover:text-black underline flex items-center space-x-1.5 font-bold min-h-[38px] py-1 px-1.5"
-            >
-              <Globe className="w-3.5 h-3.5 mr-0.5 flex-shrink-0" />
-              <span>Live System</span>
-            </a>
-          )}
-          <a
-            href={project.repo_url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center space-x-1.5 text-stone-800 hover:text-black underline font-bold min-h-[38px] py-1 px-1.5"
+          <span
+            className="inline-flex items-center space-x-1 text-stone-800 hover:text-black underline font-bold min-h-[30px] py-0.5 px-1 text-xs"
+            onClick={(e) => { e.stopPropagation(); window.open(project.repo_url, '_blank', 'noreferrer'); }}
           >
-            <Github className="w-4 h-4 mr-0.5 flex-shrink-0" />
-            <span>Source Code</span>
-            <ExternalLink className="w-3.5 h-3.5 ml-0.5 flex-shrink-0" />
-          </a>
+            <Github className="w-3.5 h-3.5 mr-0.5 flex-shrink-0" />
+            <span>View on GitHub</span>
+            <ExternalLink className="w-3 h-3 ml-0.5 flex-shrink-0" />
+          </span>
         </div>
       </div>
-    </div>
+    </button>
   );
 };
-

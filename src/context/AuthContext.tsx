@@ -11,6 +11,8 @@ interface AuthContextType {
   isLoading: boolean;
   isConfigured: boolean;
   isDemoMode: boolean;
+  authError: string | null;
+  clearAuthError: () => void;
   signInWithGitHub: () => Promise<void>;
   signInAsDemoStudent: () => void;
   signOut: () => Promise<void>;
@@ -27,6 +29,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [githubToken, setGithubToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Check for OAuth error parameters in URL on mount
+  useEffect(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      
+      const errDesc = searchParams.get('error_description') || hashParams.get('error_description');
+      const err = searchParams.get('error') || hashParams.get('error');
+
+      if (errDesc || err) {
+        let msg = decodeURIComponent(errDesc || err || 'OAuth sign in failed');
+        if (msg.includes('Unable to exchange external code')) {
+          msg = 'Unable to exchange GitHub authorization code. This usually means the GitHub Client Secret in your Supabase Dashboard -> Authentication -> Providers -> GitHub is invalid, expired, or mistyped.';
+        }
+        setAuthError(msg);
+
+        // Clean query params from URL without refreshing
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    } catch (e) {
+      console.error('Error parsing OAuth error in URL:', e);
+    }
+  }, []);
 
   // Initialize auth state
   useEffect(() => {
@@ -191,6 +219,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         isConfigured: isSupabaseConfigured,
         isDemoMode,
+        authError,
+        clearAuthError: () => setAuthError(null),
         signInWithGitHub,
         signInAsDemoStudent,
         signOut,
