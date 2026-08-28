@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Github, Star, ExternalLink, Share2, Check, ArrowLeft, 
+  Github, Star, ExternalLink, Share2, Check, ArrowLeft, ArrowRight,
   Code2, Globe, AlertCircle, RefreshCw, FolderGit2, Edit3, 
   User, X, ArrowUpRight, Pin, Sparkles, GraduationCap
 } from 'lucide-react';

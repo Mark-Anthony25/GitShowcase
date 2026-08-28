@@ -51,6 +51,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
   }, [dropdownOpen]);
 
   useEffect(() => {
+    setDropdownOpen(false);
     setMobileMenuOpen(false);
   }, [currentRoute]);
 
@@ -80,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
     }`;
 
   return (
-    <header className="w-full bg-[#FEFCF6] border-1.5 border-[#212121] text-[#212121] select-none paper-card p-1.5 sm:p-2.5 mb-2.5 sm:mb-3">
+    <header className="w-full bg-[#FEFCF6] border-1.5 border-[#212121] text-[#212121] select-none p-1.5 sm:p-2.5 mb-2.5 sm:mb-3 relative z-30 shadow-[2px_2px_0px_rgba(0,0,0,0.85)] rounded-[255px_15px_225px_15px/15px_225px_15px_255px]">
       {/* Top Utility Bar */}
       <div className="flex items-center justify-between border-b border-dashed border-[#212121] px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-sketch uppercase tracking-wider text-stone-700 bg-[#FAF6EC] gap-1">
         <span className="truncate max-w-[150px] sm:max-w-none font-bold">ISU Cauayan</span>
@@ -138,9 +139,12 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
               <button
                 id="user-menu-btn"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="paper-button flex items-center space-x-2 py-1 px-3 text-xs font-bold uppercase cursor-pointer min-h-[34px]"
+                className={`paper-button flex items-center space-x-2 py-1 px-3 text-xs font-bold uppercase cursor-pointer min-h-[34px] transition-colors ${
+                  dropdownOpen ? 'paper-button-dark' : ''
+                }`}
                 aria-expanded={dropdownOpen}
-                aria-haspopup="true"
+                aria-haspopup="menu"
+                aria-controls="user-dropdown-menu"
               >
                 <div className="w-5 h-5 border border-[#212121] bg-stone-300 overflow-hidden flex-shrink-0 rounded-xs">
                   <img
@@ -152,22 +156,49 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
                 <span className="max-w-[100px] truncate font-mono text-[11px]">@{profile?.github_username || 'student'}</span>
               </button>
               {dropdownOpen && (
-                <div className="absolute right-0 mt-1.5 w-52 bg-[#FEFCF6] border-2 border-[#212121] shadow-[4px_4px_0px_#212121] p-1.5 z-50 animate-in fade-in duration-100 paper-card">
-                  <div className="p-2 border-b border-dashed border-[#212121] mb-1 bg-[#FAF6EC]">
-                    <p className="text-xs font-bold font-headline uppercase text-[#212121] truncate">{profile?.full_name || 'Student Author'}</p>
-                    <p className="text-[10px] font-mono text-stone-700 truncate">@{profile?.github_username || 'isabela-coder'}</p>
-                    {isDemoMode && <span className="paper-badge mt-1 text-[9px]">Guest Mode</span>}
+                <div
+                  id="user-dropdown-menu"
+                  role="menu"
+                  aria-orientation="vertical"
+                  aria-labelledby="user-menu-btn"
+                  className="absolute right-0 top-full pt-1.5 w-56 z-50 animate-in fade-in duration-100"
+                >
+                  <div className="w-full bg-[#FEFCF6] border-2 border-[#212121] shadow-[4px_4px_0px_#212121] p-1.5 rounded-[255px_15px_225px_15px/15px_225px_15px_255px]">
+                    <div className="p-2 border-b border-dashed border-[#212121] mb-1 bg-[#FAF6EC] rounded-xs">
+                      <p className="text-xs font-bold font-headline uppercase text-[#212121] truncate">{profile?.full_name || 'Student Author'}</p>
+                      <p className="text-[10px] font-mono text-stone-700 truncate">@{profile?.github_username || 'isabela-coder'}</p>
+                      {isDemoMode && <span className="paper-badge mt-1 text-[9px]">Guest Mode</span>}
+                    </div>
+                    <div className="flex flex-col gap-0.5" role="none">
+                      <button
+                        role="menuitem"
+                        onClick={() => { setDropdownOpen(false); navigate('/dashboard'); }}
+                        className="w-full text-left px-2.5 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] focus:bg-[#EAE4D4] focus:outline-none flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[32px] rounded-xs transition-colors"
+                      >
+                        <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" /><span>My Projects</span>
+                      </button>
+                      <button
+                        role="menuitem"
+                        onClick={() => { setDropdownOpen(false); navigate(`/u/${myUsername}`); }}
+                        className="w-full text-left px-2.5 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] focus:bg-[#EAE4D4] focus:outline-none flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[32px] rounded-xs transition-colors"
+                      >
+                        <User className="w-3.5 h-3.5 flex-shrink-0" /><span>My Profile</span>
+                      </button>
+                    </div>
+                    <div className="border-t border-dashed border-[#212121] my-1" role="separator"></div>
+                    <button
+                      id="signout-btn"
+                      role="menuitem"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        signOut();
+                        navigate('/');
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 text-xs font-headline text-red-700 hover:bg-red-50 focus:bg-red-50 focus:outline-none hover:text-red-800 flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[32px] rounded-xs transition-colors"
+                    >
+                      <LogOut className="w-3.5 h-3.5 flex-shrink-0" /><span>Sign Out</span>
+                    </button>
                   </div>
-                  <button onClick={() => { setDropdownOpen(false); navigate('/dashboard'); }} className="w-full text-left px-2 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[30px]">
-                    <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" /><span>My Projects</span>
-                  </button>
-                  <button onClick={() => { setDropdownOpen(false); navigate(`/u/${myUsername}`); }} className="w-full text-left px-2 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[30px]">
-                    <User className="w-3.5 h-3.5 flex-shrink-0" /><span>My Profile</span>
-                  </button>
-                  <div className="border-t border-dashed border-[#212121] my-1"></div>
-                  <button id="signout-btn" onClick={() => { setDropdownOpen(false); signOut(); navigate('/'); }} className="w-full text-left px-2 py-1.5 text-xs font-headline text-red-700 hover:bg-red-50 flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[30px]">
-                    <LogOut className="w-3.5 h-3.5 flex-shrink-0" /><span>Sign Out</span>
-                  </button>
                 </div>
               )}
             </div>

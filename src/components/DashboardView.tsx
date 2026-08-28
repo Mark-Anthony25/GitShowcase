@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Github, Plus, Trash2, Edit3, Star, GitFork, ExternalLink, 
   RefreshCw, Eye, Pin, Search, CheckCircle2, FolderGit2, 
-  ArrowUpRight, X, Globe, Sparkles, AlertCircle, Layers
+  X, Globe, Sparkles, AlertCircle, Layers
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
@@ -237,7 +237,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
       {/* Project Workbench Masthead Banner */}
       <section className="paper-card bg-[#FEFCF6] p-3.5 sm:p-5 space-y-3.5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 border-b border-dashed border-[#212121] pb-3.5">
+        <div className="border-b border-dashed border-[#212121] pb-3.5">
           <div className="space-y-1 min-w-0">
             <div className="flex items-center space-x-2">
               <div className="w-7 h-7 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center shadow-[1.5px_1.5px_0px_#212121] flex-shrink-0">
@@ -253,31 +253,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             <p className="text-xs sm:text-sm font-serif-body text-stone-700 max-w-2xl leading-relaxed">
               Manage, publish, edit, and curate your projects and GitHub repositories displayed across GitShowcase.
             </p>
-          </div>
-
-          {/* Context & Cross-Navigation Link to "My Profile" */}
-          <div className="flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end gap-2 shrink-0">
-            <div className="flex items-center space-x-2 px-2.5 py-1 bg-[#FAF6EC] border border-[#212121] rounded-xs text-xs font-mono">
-              <div className="w-4 h-4 border border-[#212121] rounded-xs overflow-hidden bg-stone-300 flex-shrink-0">
-                <img
-                  src={profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-                  alt={profile?.github_username || 'Student'}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <span className="text-stone-800 font-bold truncate max-w-[140px]">@{username}</span>
-            </div>
-
-            <button
-              id="workbench-view-profile-btn"
-              onClick={() => navigate(`/u/${username}`)}
-              className="paper-button paper-button-dark text-xs py-1.5 px-3 font-bold min-h-[34px] flex items-center space-x-1.5"
-              title="View your public profile and personal identity"
-            >
-              <Eye className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>View Profile</span>
-              <ArrowUpRight className="w-3.5 h-3.5 ml-0.5 flex-shrink-0" />
-            </button>
           </div>
         </div>
 
