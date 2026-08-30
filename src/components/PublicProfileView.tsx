@@ -35,13 +35,31 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   const [profileSaved, setProfileSaved] = useState(false);
 
   useEffect(() => {
-    loadShowcase();
-  }, [username]);
+    loadShowcase(false);
 
-  const loadShowcase = async () => {
+    const handleFocus = () => {
+      loadShowcase(true);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadShowcase(true);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [username, githubToken]);
+
+  const loadShowcase = async (force = false) => {
     setLoading(true);
     try {
-      const res = await getStudentShowcaseByUsername(username);
+      const res = await getStudentShowcaseByUsername(username, githubToken, force);
       setData(res);
 
       if (res?.profile) {
@@ -311,13 +329,20 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
               </div>
 
               {/* Public Portfolio Metrics Summary */}
-              <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-dashed border-[#212121] text-center">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2 pt-2.5 border-t border-dashed border-[#212121] text-center">
                 <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
-                  <span className="text-[9px] font-sketch uppercase text-stone-600 block font-bold">Public Projects</span>
+                  <span className="text-[8.5px] sm:text-[9px] font-sketch uppercase text-stone-600 block font-bold truncate">Projects</span>
                   <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121]">{projects.length}</span>
                 </div>
                 <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
-                  <span className="text-[9px] font-sketch uppercase text-stone-600 block font-bold">Spotlight Pinned</span>
+                  <span className="text-[8.5px] sm:text-[9px] font-sketch uppercase text-stone-600 block font-bold truncate">Total Stars</span>
+                  <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121] flex items-center justify-center space-x-0.5">
+                    <Star className="w-3 h-3 fill-amber-500 text-amber-700 inline" />
+                    <span>{projects.reduce((acc, p) => acc + (p.live_stats?.stars ?? 0), 0)}</span>
+                  </span>
+                </div>
+                <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+                  <span className="text-[8.5px] sm:text-[9px] font-sketch uppercase text-stone-600 block font-bold truncate">Spotlight</span>
                   <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121]">{featuredProjects.length}</span>
                 </div>
               </div>
@@ -481,7 +506,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                   type="text"
                   value={editFullName}
                   onChange={(e) => setEditFullName(e.target.value)}
-                  placeholder="e.g. Mark Anthony Reyes"
+                  placeholder="e.g. Juan dela Cruz"
                   className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px]"
                 />
               </div>
@@ -630,7 +655,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                 <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
                   {selectedProject.custom_title || selectedProject.repo_full_name.split('/')[1]}
                 </h2>
-                <p className="text-xs font-mono text-stone-700">
+                <p className="text-xs font-mono text-stone-700 mt-0.5">
                   {selectedProject.repo_full_name}
                 </p>
               </div>
@@ -644,6 +669,28 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             </div>
             
             <div className="p-4 sm:p-6 space-y-4">
+              {/* Live GitHub Telemetry Bar */}
+              <div className="flex items-center space-x-3 text-xs font-mono text-stone-800 font-bold py-1 border-b border-dashed border-[#212121]/50 pb-2">
+                <span className="flex items-center space-x-1" title="Actual GitHub Stars">
+                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-700" />
+                  <span>{selectedProject.live_stats?.stars ?? 0} stars</span>
+                </span>
+                <span className="flex items-center space-x-1" title="GitHub Forks">
+                  <GitFork className="w-3.5 h-3.5 text-stone-600" />
+                  <span>{selectedProject.live_stats?.forks ?? 0} forks</span>
+                </span>
+                {selectedProject.live_stats?.language && (
+                  <span className="paper-badge text-[10px] bg-stone-200">
+                    {selectedProject.live_stats.language}
+                  </span>
+                )}
+                {selectedProject.live_stats?.open_issues !== undefined && selectedProject.live_stats.open_issues > 0 && (
+                  <span className="text-[10px] text-stone-600 font-normal">
+                    ({selectedProject.live_stats.open_issues} open issues)
+                  </span>
+                )}
+              </div>
+
               <p className="text-sm font-serif-body text-stone-800 leading-relaxed">
                 {selectedProject.custom_description || selectedProject.live_stats?.description || 'No description provided.'}
               </p>
@@ -755,6 +802,25 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isFeatured = false, 
         <p className="text-xs font-serif-body text-stone-800 leading-relaxed line-clamp-2">
           {project.custom_description || stats?.description || 'No description provided.'}
         </p>
+
+        {/* Live GitHub Telemetry (Stars, Forks, Language) */}
+        <div className="flex items-center space-x-2 font-mono text-[10px] text-stone-700 font-bold pt-0.5">
+          {stats?.language && (
+            <span className="paper-badge text-[9px] bg-stone-200">
+              {stats.language}
+            </span>
+          )}
+          <span className="flex items-center space-x-0.5" title="Actual GitHub Stars">
+            <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-700" />
+            <span>{stats !== undefined ? stats.stars : '...'}</span>
+          </span>
+          {stats && (
+            <span className="flex items-center space-x-0.5" title="GitHub Forks">
+              <GitFork className="w-2.5 h-2.5 text-stone-600" />
+              <span>{stats.forks}</span>
+            </span>
+          )}
+        </div>
 
         {/* Topics / Tags */}
         {stats && stats.topics && stats.topics.length > 0 && (

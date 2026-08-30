@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { supabase, isSupabaseConfigured, User, Session } from '../lib/supabase';
 import { Profile } from '../types';
 import { getProfileById, updateStudentProfile } from '../lib/showcaseStore';
-import { fetchGitHubUserData } from '../lib/github';
+import { fetchGitHubUserData, setActiveGitHubToken } from '../lib/github';
 
 interface AuthContextType {
   user: User | null;
@@ -11,11 +11,9 @@ interface AuthContextType {
   githubToken: string | null;
   isLoading: boolean;
   isConfigured: boolean;
-  isDemoMode: boolean;
   authError: string | null;
   clearAuthError: () => void;
   signInWithGitHub: () => Promise<void>;
-  signInAsDemoStudent: () => void;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateProfileData: (updates: Partial<Profile>) => Promise<Profile | null>;
@@ -29,8 +27,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [githubToken, setGithubToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDemoMode, setIsDemoMode] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  // Sync global GitHub token for background requests
+  useEffect(() => {
+    setActiveGitHubToken(githubToken);
+  }, [githubToken]);
 
   // Check for OAuth error parameters in URL on mount
   useEffect(() => {
@@ -69,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         let initialAvatar = meta.avatar_url || `https://github.com/${githubHandle}.png`;
         let initialName = meta.full_name || meta.name || githubHandle;
-        let initialBio = 'Passionate student crafting web systems.';
+        let initialBio = '';
 
         // Try live GitHub user fetch for richest info
         try {
@@ -89,9 +91,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           full_name: initialName,
           headline: 'BS Computer Science • Developer',
           avatar_url: initialAvatar,
-          bio: initialBio.slice(0, 50),
+          bio: initialBio.slice(0, 50) || null,
           program: 'BS Computer Science',
-          year_level: '3rd Year',
+          year_level: '1st Year',
           is_onboarded: false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -120,7 +122,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (tok) {
                 setGithubToken(tok);
               }
-              setIsDemoMode(false);
               await loadProfile(session.user.id, session.user, tok);
             }
           } catch (err) {
@@ -194,9 +195,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           if (newSession?.user) {
-            setIsDemoMode(false);
             await loadProfile(newSession.user.id, newSession.user, tok);
-          } else if (!isDemoMode) {
+          } else {
             setProfile(null);
           }
         });
@@ -207,11 +207,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           authListener?.subscription.unsubscribe();
         };
       } else {
-        // Supabase is not configured yet. Check if demo session is stored in localStorage
-        const storedDemo = localStorage.getItem('is_demo_student_active');
-        if (storedDemo === 'true') {
-          activateDemoSession();
-        }
         if (mounted) setIsLoading(false);
       }
     }
@@ -221,37 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       mounted = false;
     };
-  }, [loadProfile, isDemoMode]);
-
-  const activateDemoSession = () => {
-    setIsDemoMode(true);
-    const mockUser: any = {
-      id: 'demo-student-uuid-001',
-      email: 'markanthonyreyes239@gmail.com',
-      user_metadata: {
-        user_name: 'isabela-coder',
-        full_name: 'Mark Anthony Reyes',
-        avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-      }
-    };
-    setUser(mockUser);
-    setProfile({
-      id: 'demo-student-uuid-001',
-      github_username: 'isabela-coder',
-      full_name: 'Mark Anthony Reyes',
-      headline: 'BS Computer Science • Full-Stack Developer',
-      avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-      bio: 'Passionate CS student crafting web & IoT systems.',
-      program: 'BS Computer Science',
-      year_level: '3rd Year',
-      is_onboarded: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('is_demo_student_active', 'true');
-    }
-  };
+  }, [loadProfile]);
 
   const signInWithGitHub = async () => {
     if (!isSupabaseConfigured || !supabase) {
@@ -300,10 +265,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signInAsDemoStudent = () => {
-    activateDemoSession();
-  };
-
   const signOut = async () => {
     if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut();
@@ -312,10 +273,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSession(null);
     setProfile(null);
     setGithubToken(null);
-    setIsDemoMode(false);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('is_demo_student_active');
-    }
   };
 
   const refreshProfile = async () => {
@@ -342,11 +299,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         githubToken,
         isLoading,
         isConfigured: isSupabaseConfigured,
-        isDemoMode,
         authError,
         clearAuthError: () => setAuthError(null),
         signInWithGitHub,
-        signInAsDemoStudent,
         signOut,
         refreshProfile,
         updateProfileData,

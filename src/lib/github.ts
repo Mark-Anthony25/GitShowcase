@@ -3,7 +3,29 @@ import { GitHubRepoItem, RepoLiveStats, ContributionCalendar, ContributionDay, G
 // In-memory cache for contribution calendars and repo stats to minimize API rate-limits
 const contributionCache = new Map<string, { data: ContributionCalendar; timestamp: number }>();
 const repoStatsCache = new Map<string, { data: RepoLiveStats; timestamp: number }>();
-const CACHE_TTL_MS = 1000 * 60 * 5; // 5 minutes cache
+const CACHE_TTL_MS = 1000 * 30; // 30 seconds transient cache for burst rendering
+
+let globalGitHubToken: string | null = null;
+
+export function setActiveGitHubToken(token: string | null) {
+  globalGitHubToken = token;
+}
+
+export function getActiveGitHubToken(): string | null {
+  return globalGitHubToken;
+}
+
+export function clearRepoStatsCache(repoFullName?: string) {
+  if (repoFullName) {
+    for (const key of repoStatsCache.keys()) {
+      if (key.startsWith(`${repoFullName}_`)) {
+        repoStatsCache.delete(key);
+      }
+    }
+  } else {
+    repoStatsCache.clear();
+  }
+}
 
 /**
  * Fetch authenticated or public user details from GitHub
@@ -13,25 +35,31 @@ export async function fetchGitHubUserData(
   username?: string | null
 ): Promise<GitHubUserData | null> {
   try {
+    const effectiveToken = token !== undefined ? token : globalGitHubToken;
     const headers: Record<string, string> = {
-      Accept: 'application/vnd.github.v3+json',
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
     };
 
     let url = 'https://api.github.com/user';
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
+    if (effectiveToken) {
+      headers.Authorization = `Bearer ${effectiveToken}`;
     } else if (username) {
       url = `https://api.github.com/users/${encodeURIComponent(username)}`;
     } else {
       return null;
     }
 
-    const res = await fetch(url, { headers });
+    const res = await fetch(url, { headers, cache: 'no-cache' });
     if (!res.ok) {
-      if (token && username && (res.status === 401 || res.status === 403)) {
+      if (effectiveToken && username && (res.status === 401 || res.status === 403)) {
         // Fallback to public endpoint if token is unauthorized
         const publicRes = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, {
-          headers: { Accept: 'application/vnd.github.v3+json' },
+          headers: {
+            Accept: 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
+          },
+          cache: 'no-cache',
         });
         if (publicRes.ok) {
           const pubData = await publicRes.json();
@@ -78,30 +106,39 @@ export async function fetchGitHubUserData(
  */
 export async function fetchUserRepos(
   githubToken?: string | null,
-  username?: string | null
+  username?: string | null,
+  forceRefresh = false
 ): Promise<GitHubRepoItem[]> {
   try {
+    const effectiveToken = githubToken !== undefined ? githubToken : globalGitHubToken;
     const headers: Record<string, string> = {
-      Accept: 'application/vnd.github.v3+json',
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
     };
 
     let url = 'https://api.github.com/user/repos?sort=updated&per_page=100&type=all';
 
-    if (githubToken) {
-      headers.Authorization = `Bearer ${githubToken}`;
+    if (effectiveToken) {
+      headers.Authorization = `Bearer ${effectiveToken}`;
     } else if (username) {
       url = `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=100`;
     } else {
       return [];
     }
 
-    const res = await fetch(url, { headers });
+    const res = await fetch(url, { headers, cache: 'no-cache' });
     if (!res.ok) {
       if ((res.status === 401 || res.status === 403) && username) {
         console.warn('GitHub API rate limited or token expired, attempting public user repos');
         const publicRes = await fetch(
           `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=100`,
-          { headers: { Accept: 'application/vnd.github.v3+json' } }
+          {
+            headers: {
+              Accept: 'application/vnd.github+json',
+              'X-GitHub-Api-Version': '2022-11-28',
+            },
+            cache: 'no-cache',
+          }
         );
         if (publicRes.ok) {
           return await publicRes.json();
@@ -114,52 +151,97 @@ export async function fetchUserRepos(
     return Array.isArray(repos) ? repos : [];
   } catch (error) {
     console.error('Error fetching repos from GitHub:', error);
-    // If username is provided and fails, return empty array with error logged
     return [];
   }
 }
 
 /**
- * Fetch live single repo metadata for public profile view
+ * Fetch live single repo metadata for public profile view and dispatches
  */
-export async function fetchLiveRepoStats(repoFullName: string, token?: string | null): Promise<RepoLiveStats | null> {
-  const cacheKey = `${repoFullName}_${token || 'public'}`;
-  const cached = repoStatsCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return cached.data;
+export async function fetchLiveRepoStats(
+  repoFullName: string,
+  token?: string | null,
+  forceRefresh = false
+): Promise<RepoLiveStats | null> {
+  const cleanRepoName = repoFullName.trim();
+  if (!cleanRepoName || !cleanRepoName.includes('/')) {
+    return null;
+  }
+
+  const effectiveToken = token !== undefined ? token : globalGitHubToken;
+  const cacheKey = `${cleanRepoName}_${effectiveToken ? 'auth' : 'public'}`;
+
+  if (!forceRefresh) {
+    const cached = repoStatsCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data;
+    }
   }
 
   try {
     const headers: Record<string, string> = {
-      Accept: 'application/vnd.github.v3+json',
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
     };
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
+    if (effectiveToken) {
+      headers.Authorization = `Bearer ${effectiveToken}`;
     }
 
-    const res = await fetch(`https://api.github.com/repos/${repoFullName}`, { headers });
+    const res = await fetch(`https://api.github.com/repos/${cleanRepoName}`, {
+      headers,
+      cache: 'no-cache',
+    });
+
     if (!res.ok) {
+      // If unauthorized with token, try public fallback for public repo
+      if (effectiveToken && (res.status === 401 || res.status === 403)) {
+        const publicRes = await fetch(`https://api.github.com/repos/${cleanRepoName}`, {
+          headers: {
+            Accept: 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
+          },
+          cache: 'no-cache',
+        });
+        if (publicRes.ok) {
+          const data = await publicRes.json();
+          const stats: RepoLiveStats = {
+            stars: typeof data.stargazers_count === 'number' ? data.stargazers_count : 0,
+            forks: typeof data.forks_count === 'number' ? data.forks_count : 0,
+            language: data.language ?? null,
+            topics: Array.isArray(data.topics) ? data.topics : [],
+            last_commit_at: data.pushed_at || data.updated_at,
+            description: data.description || null,
+            homepage: data.homepage || null,
+            open_issues: typeof data.open_issues_count === 'number' ? data.open_issues_count : 0,
+            license: data.license?.spdx_id || data.license?.name || null,
+          };
+          repoStatsCache.set(cacheKey, { data: stats, timestamp: Date.now() });
+          return stats;
+        }
+      }
       return null;
     }
 
     const data = await res.json();
     const stats: RepoLiveStats = {
-      stars: data.stargazers_count ?? 0,
-      forks: data.forks_count ?? 0,
+      stars: typeof data.stargazers_count === 'number' ? data.stargazers_count : 0,
+      forks: typeof data.forks_count === 'number' ? data.forks_count : 0,
       language: data.language ?? null,
-      topics: data.topics || [],
+      topics: Array.isArray(data.topics) ? data.topics : [],
       last_commit_at: data.pushed_at || data.updated_at,
-      description: data.description,
-      homepage: data.homepage,
-      open_issues: data.open_issues_count ?? 0,
+      description: data.description || null,
+      homepage: data.homepage || null,
+      open_issues: typeof data.open_issues_count === 'number' ? data.open_issues_count : 0,
       license: data.license?.spdx_id || data.license?.name || null,
     };
 
     repoStatsCache.set(cacheKey, { data: stats, timestamp: Date.now() });
     return stats;
   } catch (err) {
-    console.error(`Error fetching live stats for ${repoFullName}:`, err);
-    return null;
+    console.error(`Error fetching live stats for ${cleanRepoName}:`, err);
+    // If error occurs and we have a cached value, return it
+    const lastKnown = repoStatsCache.get(cacheKey);
+    return lastKnown ? lastKnown.data : null;
   }
 }
 
@@ -495,87 +577,4 @@ function calculateStreakStats(allDays: ContributionDay[]) {
     activeDaysCount,
     levelCounts,
   };
-}
-
-/**
- * Demo repositories for initial demonstration / preview before GitHub login
- */
-export function getDemoRepos(): GitHubRepoItem[] {
-  return [
-    {
-      id: 101,
-      name: 'campus-event-navigator',
-      full_name: 'isu-student/campus-event-navigator',
-      html_url: 'https://github.com/isu-student/campus-event-navigator',
-      description: 'Interactive campus map & real-time seminar schedule manager for students with push alerts.',
-      stargazers_count: 24,
-      forks_count: 5,
-      language: 'TypeScript',
-      topics: ['react', 'tailwindcss', 'campus-life', 'maps'],
-      updated_at: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
-      private: false,
-      fork: false,
-      homepage: 'https://events.example.edu',
-    },
-    {
-      id: 102,
-      name: 'ai-code-reviewer-cli',
-      full_name: 'isu-student/ai-code-reviewer-cli',
-      html_url: 'https://github.com/isu-student/ai-code-reviewer-cli',
-      description: 'A developer CLI tool that analyzes pull requests for security vulnerabilities and code smells.',
-      stargazers_count: 58,
-      forks_count: 12,
-      language: 'Rust',
-      topics: ['cli', 'developer-tools', 'rust', 'code-review'],
-      updated_at: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
-      private: false,
-      fork: false,
-      homepage: null,
-    },
-    {
-      id: 103,
-      name: 'agri-crop-vision',
-      full_name: 'isu-student/agri-crop-vision',
-      html_url: 'https://github.com/isu-student/agri-crop-vision',
-      description: 'Computer vision pipeline for early disease detection in regional rice and corn crops.',
-      stargazers_count: 42,
-      forks_count: 8,
-      language: 'Python',
-      topics: ['machine-learning', 'pytorch', 'agriculture', 'computer-vision'],
-      updated_at: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
-      private: false,
-      fork: false,
-      homepage: 'https://agrivision.example.org',
-    },
-    {
-      id: 104,
-      name: 'smart-attendance-rfid',
-      full_name: 'isu-student/smart-attendance-rfid',
-      html_url: 'https://github.com/isu-student/smart-attendance-rfid',
-      description: 'IoT and RFID based automated classroom attendance system connected via WebSocket server.',
-      stargazers_count: 17,
-      forks_count: 3,
-      language: 'C++',
-      topics: ['iot', 'esp32', 'rfid', 'embedded'],
-      updated_at: new Date(Date.now() - 1000 * 60 * 60 * 120).toISOString(),
-      private: false,
-      fork: false,
-      homepage: null,
-    },
-    {
-      id: 105,
-      name: 'algo-visualizer-web',
-      full_name: 'isu-student/algo-visualizer-web',
-      html_url: 'https://github.com/isu-student/algo-visualizer-web',
-      description: 'Step-by-step interactive animations for graph algorithms (Dijkstra, A*, BFS, DFS).',
-      stargazers_count: 89,
-      forks_count: 19,
-      language: 'TypeScript',
-      topics: ['algorithms', 'visualization', 'canvas', 'education'],
-      updated_at: new Date(Date.now() - 1000 * 60 * 60 * 200).toISOString(),
-      private: false,
-      fork: false,
-      homepage: 'https://algoviz.example.app',
-    },
-  ];
 }

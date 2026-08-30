@@ -2,8 +2,8 @@ import { supabase, isSupabaseConfigured } from './supabase';
 import { Profile, ShowcasedProject, StudentShowcaseData } from '../types';
 import { fetchLiveRepoStats } from './github';
 
-const LOCAL_STORAGE_KEY_PROFILES = 'showcase_demo_profiles';
-const LOCAL_STORAGE_KEY_PROJECTS = 'showcase_demo_projects';
+const LOCAL_STORAGE_KEY_PROFILES = 'gitshowcase_profiles';
+const LOCAL_STORAGE_KEY_PROJECTS = 'gitshowcase_projects';
 
 // Observable state for when Supabase credentials exist but database tables are not yet created in SQL editor
 let schemaMissingDetected = false;
@@ -44,63 +44,9 @@ export function isSchemaError(err: any): boolean {
   return isErr;
 }
 
-// Initial demo profile for preview testability
-const defaultDemoProfile: Profile = {
-  id: 'demo-student-uuid-001',
-  github_username: 'isabela-coder',
-  full_name: 'Mark Anthony Reyes',
-  headline: 'BS Computer Science • Full-Stack Developer',
-  avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-  bio: 'Passionate CS student crafting web & IoT systems.',
-  program: 'BS Computer Science',
-  year_level: '3rd Year',
-  is_onboarded: true,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-};
-
-const defaultDemoProjects: ShowcasedProject[] = [
-  {
-    id: 'proj-1',
-    profile_id: 'demo-student-uuid-001',
-    repo_full_name: 'isu-student/campus-event-navigator',
-    repo_url: 'https://github.com/isu-student/campus-event-navigator',
-    custom_title: 'Campus Navigator & Event Hub',
-    custom_description: 'Full-stack interactive mapping application designed for university events with real-time room navigation.',
-    is_featured: true,
-    display_order: 1,
-    added_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-  },
-  {
-    id: 'proj-2',
-    profile_id: 'demo-student-uuid-001',
-    repo_full_name: 'isu-student/ai-code-reviewer-cli',
-    repo_url: 'https://github.com/isu-student/ai-code-reviewer-cli',
-    custom_title: 'AI Code Reviewer Engine (Rust)',
-    custom_description: 'High performance CLI that executes automated AST scans on git diffs before merging.',
-    is_featured: true,
-    display_order: 2,
-    added_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
-  },
-  {
-    id: 'proj-3',
-    profile_id: 'demo-student-uuid-001',
-    repo_full_name: 'isu-student/agri-crop-vision',
-    repo_url: 'https://github.com/isu-student/agri-crop-vision',
-    custom_title: 'Regional Agri-Vision AI',
-    custom_description: 'Deep learning model trained to classify leaf blights in regional crops with 94.2% accuracy.',
-    is_featured: false,
-    display_order: 3,
-    added_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString(),
-  }
-];
-
-function getLocalDemoData(): { profiles: Record<string, Profile>; projects: ShowcasedProject[] } {
+function getLocalData(): { profiles: Record<string, Profile>; projects: ShowcasedProject[] } {
   if (typeof window === 'undefined') {
-    return {
-      profiles: { [defaultDemoProfile.github_username.toLowerCase()]: defaultDemoProfile },
-      projects: defaultDemoProjects,
-    };
+    return { profiles: {}, projects: [] };
   }
 
   const rawProfiles = localStorage.getItem(LOCAL_STORAGE_KEY_PROFILES);
@@ -125,23 +71,38 @@ function getLocalDemoData(): { profiles: Record<string, Profile>; projects: Show
     }
   }
 
-  if (!profiles[defaultDemoProfile.github_username.toLowerCase()]) {
-    profiles[defaultDemoProfile.github_username.toLowerCase()] = defaultDemoProfile;
-    localStorage.setItem(LOCAL_STORAGE_KEY_PROFILES, JSON.stringify(profiles));
-  }
-
-  if (projects.length === 0) {
-    projects = defaultDemoProjects;
-    localStorage.setItem(LOCAL_STORAGE_KEY_PROJECTS, JSON.stringify(projects));
-  }
-
   return { profiles, projects };
 }
 
-function saveLocalDemoData(profiles: Record<string, Profile>, projects: ShowcasedProject[]) {
+function saveLocalData(profiles: Record<string, Profile>, projects: ShowcasedProject[]) {
   if (typeof window === 'undefined') return;
   localStorage.setItem(LOCAL_STORAGE_KEY_PROFILES, JSON.stringify(profiles));
   localStorage.setItem(LOCAL_STORAGE_KEY_PROJECTS, JSON.stringify(projects));
+}
+
+/**
+ * Enrich projects with live GitHub stats (real-time stars, forks, language, topics)
+ */
+export async function enrichProjectsWithLiveStats(
+  projects: ShowcasedProject[],
+  token?: string | null,
+  forceRefresh = false
+): Promise<ShowcasedProject[]> {
+  if (!projects || projects.length === 0) return [];
+  return await Promise.all(
+    projects.map(async (p) => {
+      try {
+        const stats = await fetchLiveRepoStats(p.repo_full_name, token, forceRefresh);
+        return {
+          ...p,
+          live_stats: stats || p.live_stats || undefined,
+        };
+      } catch (err) {
+        console.warn(`Error enriching live stats for ${p.repo_full_name}:`, err);
+        return p;
+      }
+    })
+  );
 }
 
 /**
@@ -173,15 +134,19 @@ export async function getProfileById(userId: string): Promise<Profile | null> {
     }
   }
 
-  const { profiles } = getLocalDemoData();
+  const { profiles } = getLocalData();
   const match = Object.values(profiles).find(p => p.id === userId);
-  return match || defaultDemoProfile;
+  return match || null;
 }
 
 /**
- * Fetch public showcase data by student GitHub username
+ * Fetch public showcase data by student GitHub username with live enriched stats
  */
-export async function getStudentShowcaseByUsername(username: string): Promise<StudentShowcaseData | null> {
+export async function getStudentShowcaseByUsername(
+  username: string,
+  token?: string | null,
+  forceRefresh = false
+): Promise<StudentShowcaseData | null> {
   const normalizedUsername = username.trim().toLowerCase();
 
   if (isSupabaseConfigured && supabase) {
@@ -211,15 +176,7 @@ export async function getStudentShowcaseByUsername(username: string): Promise<St
         const rawProjects = (projectsData || []) as ShowcasedProject[];
 
         // 3. Enrich projects with live GitHub stats
-        const enrichedProjects = await Promise.all(
-          rawProjects.map(async (p) => {
-            const stats = await fetchLiveRepoStats(p.repo_full_name);
-            return {
-              ...p,
-              live_stats: stats || undefined,
-            };
-          })
-        );
+        const enrichedProjects = await enrichProjectsWithLiveStats(rawProjects, token, forceRefresh);
 
         return {
           profile: profileData as Profile,
@@ -236,27 +193,16 @@ export async function getStudentShowcaseByUsername(username: string): Promise<St
     }
   }
 
-  // Fallback demo local store
-  const { profiles, projects } = getLocalDemoData();
-  const profile = profiles[normalizedUsername] || 
-    (normalizedUsername === defaultDemoProfile.github_username.toLowerCase() ? defaultDemoProfile : null);
+  // Fallback local store
+  const { profiles, projects } = getLocalData();
+  const profile = profiles[normalizedUsername] || Object.values(profiles).find(p => p.github_username?.toLowerCase() === normalizedUsername) || null;
 
   if (!profile) {
     return null;
   }
 
   const studentProjects = projects.filter(p => p.profile_id === profile.id);
-
-  // Enrich with live stats where possible
-  const enriched = await Promise.all(
-    studentProjects.map(async (p) => {
-      const stats = await fetchLiveRepoStats(p.repo_full_name);
-      return {
-        ...p,
-        live_stats: stats || undefined,
-      };
-    })
-  );
+  const enriched = await enrichProjectsWithLiveStats(studentProjects, token, forceRefresh);
 
   return {
     profile,
@@ -265,9 +211,12 @@ export async function getStudentShowcaseByUsername(username: string): Promise<St
 }
 
 /**
- * Fetch all students for Explore / Showcase Directory
+ * Fetch all students for Explore / Showcase Directory with live enriched stats
  */
-export async function getAllStudentsShowcase(): Promise<StudentShowcaseData[]> {
+export async function getAllStudentsShowcase(
+  token?: string | null,
+  forceRefresh = false
+): Promise<StudentShowcaseData[]> {
   if (isSupabaseConfigured && supabase) {
     try {
       const { data: profiles, error } = await supabase
@@ -275,28 +224,34 @@ export async function getAllStudentsShowcase(): Promise<StudentShowcaseData[]> {
         .select('*, showcased_projects(*)')
         .order('created_at', { ascending: false });
 
-      if (!error && profiles && profiles.length > 0) {
-        return profiles.map((p: any) => ({
-          profile: {
-            id: p.id,
-            github_username: p.github_username,
-            full_name: p.full_name,
-            headline: p.headline || null,
-            avatar_url: p.avatar_url,
-            bio: p.bio,
-            program: p.program,
-            year_level: p.year_level,
-            is_onboarded: Boolean(p.is_onboarded),
-            created_at: p.created_at,
-            updated_at: p.updated_at,
-          },
-          projects: p.showcased_projects || [],
-        }));
+      if (!error && profiles) {
+        return await Promise.all(
+          profiles.map(async (p: any) => {
+            const rawProjects = (p.showcased_projects || []) as ShowcasedProject[];
+            const enrichedProjects = await enrichProjectsWithLiveStats(rawProjects, token, forceRefresh);
+            return {
+              profile: {
+                id: p.id,
+                github_username: p.github_username,
+                full_name: p.full_name,
+                headline: p.headline || null,
+                avatar_url: p.avatar_url,
+                bio: p.bio,
+                program: p.program,
+                year_level: p.year_level,
+                is_onboarded: Boolean(p.is_onboarded),
+                created_at: p.created_at,
+                updated_at: p.updated_at,
+              },
+              projects: enrichedProjects,
+            };
+          })
+        );
       }
 
       if (error) {
         isSchemaError(error);
-        console.warn('Error fetching all showcases from Supabase, using demo directory:', error.message);
+        console.warn('Error fetching all showcases from Supabase:', error.message);
       }
     } catch (err) {
       isSchemaError(err);
@@ -304,18 +259,30 @@ export async function getAllStudentsShowcase(): Promise<StudentShowcaseData[]> {
     }
   }
 
-  // Fallback local demo directory
-  const { profiles, projects } = getLocalDemoData();
-  return Object.values(profiles).map(profile => ({
-    profile,
-    projects: projects.filter(p => p.profile_id === profile.id),
-  }));
+  // Fallback local store
+  const { profiles, projects } = getLocalData();
+  return await Promise.all(
+    Object.values(profiles).map(async (profile) => {
+      const studentProjects = projects.filter(p => p.profile_id === profile.id);
+      const enrichedProjects = await enrichProjectsWithLiveStats(studentProjects, token, forceRefresh);
+      return {
+        profile,
+        projects: enrichedProjects,
+      };
+    })
+  );
 }
 
 /**
- * Fetch showcased projects for the logged in student
+ * Fetch showcased projects for the logged in student with live enriched stats
  */
-export async function getStudentShowcasedProjects(profileId: string): Promise<ShowcasedProject[]> {
+export async function getStudentShowcasedProjects(
+  profileId: string,
+  token?: string | null,
+  forceRefresh = false
+): Promise<ShowcasedProject[]> {
+  let rawProjects: ShowcasedProject[] = [];
+
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase
@@ -327,21 +294,25 @@ export async function getStudentShowcasedProjects(profileId: string): Promise<Sh
         .order('added_at', { ascending: false });
 
       if (!error && data) {
-        return data as ShowcasedProject[];
-      }
-
-      if (error) {
+        rawProjects = data as ShowcasedProject[];
+      } else if (error) {
         isSchemaError(error);
         console.warn('Notice: Falling back to local storage for showcased projects (Supabase table not found or unavailable):', error.message);
+        const { projects } = getLocalData();
+        rawProjects = projects.filter(p => p.profile_id === profileId);
       }
     } catch (err) {
       isSchemaError(err);
       console.warn('Exception fetching student projects from Supabase:', err);
+      const { projects } = getLocalData();
+      rawProjects = projects.filter(p => p.profile_id === profileId);
     }
+  } else {
+    const { projects } = getLocalData();
+    rawProjects = projects.filter(p => p.profile_id === profileId);
   }
 
-  const { projects } = getLocalDemoData();
-  return projects.filter(p => p.profile_id === profileId);
+  return await enrichProjectsWithLiveStats(rawProjects, token, forceRefresh);
 }
 
 /**
@@ -355,6 +326,8 @@ export async function addProjectToShowcase(params: {
   customDescription?: string | null;
   isFeatured?: boolean;
 }): Promise<ShowcasedProject | null> {
+  let createdProject: ShowcasedProject | null = null;
+
   if (isSupabaseConfigured && supabase) {
     try {
       const newRow = {
@@ -374,7 +347,7 @@ export async function addProjectToShowcase(params: {
         .single();
 
       if (!error && data) {
-        return data as ShowcasedProject;
+        createdProject = data as ShowcasedProject;
       }
 
       if (error) {
@@ -387,23 +360,33 @@ export async function addProjectToShowcase(params: {
     }
   }
 
-  // Local demo fallback
-  const { profiles, projects } = getLocalDemoData();
-  const newProj: ShowcasedProject = {
-    id: `local-proj-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-    profile_id: params.profileId,
-    repo_full_name: params.repoFullName,
-    repo_url: params.repoUrl,
-    custom_title: params.customTitle || null,
-    custom_description: params.customDescription || null,
-    is_featured: Boolean(params.isFeatured),
-    display_order: projects.filter(p => p.profile_id === params.profileId).length + 1,
-    added_at: new Date().toISOString(),
-  };
+  if (!createdProject) {
+    // Local store fallback
+    const { profiles, projects } = getLocalData();
+    const newProj: ShowcasedProject = {
+      id: `local-proj-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      profile_id: params.profileId,
+      repo_full_name: params.repoFullName,
+      repo_url: params.repoUrl,
+      custom_title: params.customTitle || null,
+      custom_description: params.customDescription || null,
+      is_featured: Boolean(params.isFeatured),
+      display_order: projects.filter(p => p.profile_id === params.profileId).length + 1,
+      added_at: new Date().toISOString(),
+    };
 
-  projects.unshift(newProj);
-  saveLocalDemoData(profiles, projects);
-  return newProj;
+    projects.unshift(newProj);
+    saveLocalData(profiles, projects);
+    createdProject = newProj;
+  }
+
+  if (createdProject) {
+    // Fetch live stats immediately for the newly added repo
+    const stats = await fetchLiveRepoStats(createdProject.repo_full_name, undefined, true);
+    createdProject.live_stats = stats || undefined;
+  }
+
+  return createdProject;
 }
 
 /**
@@ -428,9 +411,9 @@ export async function removeProjectFromShowcase(projectId: string): Promise<bool
     }
   }
 
-  const { profiles, projects } = getLocalDemoData();
+  const { profiles, projects } = getLocalData();
   const filtered = projects.filter(p => p.id !== projectId);
-  saveLocalDemoData(profiles, filtered);
+  saveLocalData(profiles, filtered);
   return true;
 }
 
@@ -461,11 +444,11 @@ export async function updateShowcaseProject(
     }
   }
 
-  const { profiles, projects } = getLocalDemoData();
+  const { profiles, projects } = getLocalData();
   const index = projects.findIndex(p => p.id === projectId);
   if (index >= 0) {
     projects[index] = { ...projects[index], ...updates };
-    saveLocalDemoData(profiles, projects);
+    saveLocalData(profiles, projects);
     return projects[index];
   }
   return null;
@@ -501,7 +484,7 @@ export async function updateStudentProfile(
     }
   }
 
-  const { profiles, projects } = getLocalDemoData();
+  const { profiles, projects } = getLocalData();
   let foundKey = Object.keys(profiles).find(key => profiles[key].id === profileId);
   if (!foundKey && updates.github_username) {
     foundKey = updates.github_username.toLowerCase();
@@ -509,17 +492,29 @@ export async function updateStudentProfile(
 
   if (foundKey && profiles[foundKey]) {
     profiles[foundKey] = { ...profiles[foundKey], ...updates, updated_at: new Date().toISOString() };
-    saveLocalDemoData(profiles, projects);
+    saveLocalData(profiles, projects);
     return profiles[foundKey];
   } else {
     const newProfile: Profile = {
-      ...defaultDemoProfile,
       id: profileId,
-      ...updates,
+      github_username: updates.github_username || '',
+      full_name: updates.full_name || null,
+      headline: updates.headline || null,
+      avatar_url: updates.avatar_url || null,
+      bio: updates.bio || null,
+      program: updates.program || 'BS Computer Science',
+      year_level: updates.year_level || '1st Year',
+      is_onboarded: updates.is_onboarded ?? false,
+      created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      ...updates,
     };
-    profiles[(newProfile.github_username || 'isabela-coder').toLowerCase()] = newProfile;
-    saveLocalDemoData(profiles, projects);
+    if (newProfile.github_username) {
+      profiles[newProfile.github_username.toLowerCase()] = newProfile;
+    } else {
+      profiles[profileId] = newProfile;
+    }
+    saveLocalData(profiles, projects);
     return newProfile;
   }
 }

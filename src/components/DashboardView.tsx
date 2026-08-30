@@ -23,7 +23,7 @@ interface DashboardViewProps {
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGuide }) => {
-  const { user, profile, githubToken, isDemoMode } = useAuth();
+  const { user, profile, githubToken } = useAuth();
 
   // State
   const [showcased, setShowcased] = useState<ShowcasedProject[]>([]);
@@ -63,16 +63,45 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
   // Load GitHub repos when switching to 'repos' tab or initial mount
   useEffect(() => {
-    if (user && availableRepos.length === 0) {
+    if (user && (activeTab === 'repos' || availableRepos.length === 0)) {
       loadGitHubRepos();
     }
   }, [user, activeTab]);
 
-  const loadShowcasedProjects = async () => {
+  // Near real-time synchronization on tab focus or visibility change
+  useEffect(() => {
+    if (!user) return;
+
+    const handleFocus = () => {
+      loadShowcasedProjects(true);
+      if (activeTab === 'repos') {
+        loadGitHubRepos(true);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadShowcasedProjects(true);
+        if (activeTab === 'repos') {
+          loadGitHubRepos(true);
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, activeTab, githubToken]);
+
+  const loadShowcasedProjects = async (force = false) => {
     if (!user) return;
     setLoadingShowcase(true);
     try {
-      const items = await getStudentShowcasedProjects(user.id);
+      const items = await getStudentShowcasedProjects(user.id, githubToken, force);
       setShowcased(items);
     } catch (err) {
       console.error('Error fetching showcase projects:', err);
@@ -81,10 +110,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     }
   };
 
-  const loadGitHubRepos = async () => {
+  const loadGitHubRepos = async (force = false) => {
     setLoadingRepos(true);
     try {
-      const repos = await fetchUserRepos(githubToken, profile?.github_username || 'isabela-coder');
+      const repos = await fetchUserRepos(githubToken, profile?.github_username || '', force);
       setAvailableRepos(repos);
     } catch (err) {
       console.error('Error loading GitHub repos:', err);
@@ -194,7 +223,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     );
   });
 
-  const username = profile?.github_username || 'isabela-coder';
+  const username = profile?.github_username || '';
   const featuredCount = showcased.filter(p => p.is_featured).length;
 
   return (
@@ -221,17 +250,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               Open SQL Setup Guide
             </button>
           )}
-        </div>
-      )}
-
-      {isDemoMode && (
-        <div className="p-2 sm:p-2.5 bg-[#EFE9DB] paper-card text-[#212121] flex items-center justify-between text-xs font-mono">
-          <div className="flex items-center space-x-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-stone-800 flex-shrink-0" />
-            <span className="text-[10px] sm:text-xs">
-              <strong>DEMO MODE ACTIVE</strong>: You can test adding, editing, pinning, and unpublishing showcase projects.
-            </span>
-          </div>
         </div>
       )}
 
@@ -347,12 +365,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
           <button
             onClick={() => {
-              if (activeTab === 'showcase') loadShowcasedProjects();
-              else loadGitHubRepos();
+              loadShowcasedProjects(true);
+              loadGitHubRepos(true);
             }}
             className="paper-button-icon min-w-[34px] min-h-[34px] p-1.5 flex-shrink-0 cursor-pointer"
-            title="Refresh List"
-            aria-label="Refresh List"
+            title="Refresh List from GitHub"
+            aria-label="Refresh List from GitHub"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-stone-800 ${(loadingShowcase || loadingRepos) ? 'animate-spin' : ''}`} />
           </button>
@@ -366,7 +384,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             <div className="text-center py-12 paper-card bg-[#FEFCF6]">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto text-stone-700" />
               <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 mt-2 font-bold">
-                Loading published projects...
+                Fetching latest project stats from GitHub...
               </p>
             </div>
           ) : showcased.length === 0 ? (
@@ -464,8 +482,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
                     {/* Description */}
                     <p className="text-xs font-serif-body text-stone-700 line-clamp-2 leading-relaxed">
-                      {proj.custom_description || 'No custom description provided.'}
+                      {proj.custom_description || proj.live_stats?.description || 'No custom description provided.'}
                     </p>
+
+                    {/* Live GitHub Telemetry (Stars, Forks, Language) */}
+                    <div className="flex items-center space-x-2 font-mono text-[10px] text-stone-700 font-bold pt-0.5">
+                      {proj.live_stats?.language && (
+                        <span className="paper-badge text-[9px] bg-stone-200">
+                          {proj.live_stats.language}
+                        </span>
+                      )}
+                      <span className="flex items-center space-x-0.5" title="Actual GitHub Stars">
+                        <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-700" />
+                        <span>{proj.live_stats !== undefined ? proj.live_stats.stars : '...'}</span>
+                      </span>
+                      {proj.live_stats && (
+                        <span className="flex items-center space-x-0.5" title="GitHub Forks">
+                          <GitFork className="w-2.5 h-2.5 text-stone-600" />
+                          <span>{proj.live_stats.forks}</span>
+                        </span>
+                      )}
+                    </div>
 
                     {/* Live Tags if available */}
                     {proj.live_stats?.topics && proj.live_stats.topics.length > 0 && (
@@ -853,6 +890,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             </div>
 
             <div className="space-y-3">
+              {/* Live GitHub Telemetry */}
+              <div className="flex items-center space-x-3 text-xs font-mono text-stone-800 font-bold py-1 border-b border-dashed border-[#212121]/50 pb-2">
+                <span className="flex items-center space-x-1" title="Actual GitHub Stars">
+                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-700" />
+                  <span>{previewProject.live_stats?.stars ?? 0} stars</span>
+                </span>
+                <span className="flex items-center space-x-1" title="GitHub Forks">
+                  <GitFork className="w-3.5 h-3.5 text-stone-600" />
+                  <span>{previewProject.live_stats?.forks ?? 0} forks</span>
+                </span>
+                {previewProject.live_stats?.language && (
+                  <span className="paper-badge text-[10px] bg-stone-200">
+                    {previewProject.live_stats.language}
+                  </span>
+                )}
+              </div>
+
               <p className="text-xs sm:text-sm font-serif-body text-stone-800 leading-relaxed">
                 {previewProject.custom_description || previewProject.live_stats?.description || 'No description provided.'}
               </p>

@@ -23,13 +23,31 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
   } | null>(null);
 
   useEffect(() => {
-    loadAllStudents();
+    loadAllStudents(false);
+
+    const handleFocus = () => {
+      loadAllStudents(true);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadAllStudents(true);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
-  const loadAllStudents = async () => {
+  const loadAllStudents = async (force = false) => {
     setLoading(true);
     try {
-      const data = await getAllStudentsShowcase();
+      const data = await getAllStudentsShowcase(undefined, force);
       setStudents(data);
     } catch (err) {
       console.error('Error loading students:', err);
@@ -212,15 +230,20 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                               onClick={() => setSelectedModalItem({ project: proj, student })}
                               className="px-2.5 py-1.5 bg-[#FAF6EC] hover:bg-[#F3EDE0] border border-[#212121] text-xs flex items-center justify-between font-serif-body cursor-pointer transition-all paper-card shadow-[1px_1px_0px_#212121]"
                             >
-                              <span className="text-[#212121] truncate max-w-[150px] text-xs font-bold">
+                              <span className="text-[#212121] truncate max-w-[130px] text-xs font-bold">
                                 {proj.custom_title || proj.repo_full_name.split('/')[1]}
                               </span>
-                              {proj.is_featured && (
-                                <span className="paper-badge text-[9px] font-mono py-0 px-1 bg-amber-200 text-amber-900 border-amber-800 flex items-center font-bold">
-                                  <Star className="w-2.5 h-2.5 fill-amber-900 text-amber-900 mr-0.5" />
-                                  Featured
+                              <div className="flex items-center space-x-1.5 flex-shrink-0">
+                                <span className="flex items-center text-[10px] font-mono font-bold text-stone-800" title="Actual GitHub Stars">
+                                  <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-700 mr-0.5" />
+                                  <span>{proj.live_stats?.stars ?? 0}</span>
                                 </span>
-                              )}
+                                {proj.is_featured && (
+                                  <span className="paper-badge text-[8px] font-mono py-0 px-1 bg-amber-200 text-amber-900 border-amber-800 flex items-center font-bold">
+                                    Featured
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           ))}
                           {projects.length > 2 && (
@@ -277,6 +300,25 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                         {project.custom_description || project.live_stats?.description || 'No description provided.'}
                       </p>
 
+                      {/* Live GitHub Telemetry (Stars, Forks, Language) */}
+                      <div className="flex items-center space-x-2 font-mono text-[10px] text-stone-700 font-bold pt-0.5">
+                        {project.live_stats?.language && (
+                          <span className="paper-badge text-[9px] bg-stone-200">
+                            {project.live_stats.language}
+                          </span>
+                        )}
+                        <span className="flex items-center space-x-0.5" title="Actual GitHub Stars">
+                          <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-700" />
+                          <span>{project.live_stats !== undefined ? project.live_stats.stars : '...'}</span>
+                        </span>
+                        {project.live_stats && (
+                          <span className="flex items-center space-x-0.5" title="GitHub Forks">
+                            <GitFork className="w-2.5 h-2.5 text-stone-600" />
+                            <span>{project.live_stats.forks}</span>
+                          </span>
+                        )}
+                      </div>
+
                       {project.live_stats?.topics && project.live_stats.topics.length > 0 && (
                         <div className="flex flex-wrap gap-1 pt-0.5">
                           {project.live_stats.topics.slice(0, 3).map((topic, i) => (
@@ -294,11 +336,11 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                           e.stopPropagation();
                           navigate(`/u/${student.profile.github_username}`);
                         }}
-                        className="text-[10px] font-sketch uppercase tracking-wider text-stone-700 font-bold hover:underline"
+                        className="text-[10px] font-sketch uppercase tracking-wider text-stone-700 font-bold hover:underline truncate max-w-[130px]"
                       >
                         By {student.profile.full_name || student.profile.github_username}
                       </span>
-                      <span className="text-[10px] font-headline uppercase font-bold text-stone-600 hover:text-black">
+                      <span className="text-[10px] font-headline uppercase font-bold text-stone-600 hover:text-black flex-shrink-0">
                         Details &rarr;
                       </span>
                     </div>
@@ -317,7 +359,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
           onClick={() => setSelectedModalItem(null)}
         >
           <div 
-            className="bg-[#FEFCF6] paper-card max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col"
+            className="bg-[#FEFCF6] paper-card max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col shadow-[6px_6px_0px_#000]"
             onClick={e => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -331,10 +373,13 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                 <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
                   {selectedModalItem.project.custom_title || selectedModalItem.project.repo_full_name.split('/')[1]}
                 </h2>
+                <p className="text-xs font-mono text-stone-700 mt-0.5">
+                  {selectedModalItem.project.repo_full_name}
+                </p>
               </div>
               <button 
                 onClick={() => setSelectedModalItem(null)} 
-                className="p-1 hover:bg-stone-200 rounded-sm transition-colors cursor-pointer"
+                className="paper-button-icon min-w-[32px] min-h-[32px] p-1 flex items-center justify-center text-stone-800 cursor-pointer"
                 aria-label="Close modal"
               >
                 <X className="w-5 h-5 text-stone-700" />
@@ -377,6 +422,23 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                   <User className="w-3 h-3 mr-1" />
                   <span>View Profile</span>
                 </button>
+              </div>
+
+              {/* Live GitHub Telemetry Bar */}
+              <div className="flex items-center space-x-3 text-xs font-mono text-stone-800 font-bold py-1 border-b border-dashed border-[#212121]/50 pb-2">
+                <span className="flex items-center space-x-1" title="Actual GitHub Stars">
+                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-700" />
+                  <span>{selectedModalItem.project.live_stats?.stars ?? 0} stars</span>
+                </span>
+                <span className="flex items-center space-x-1" title="GitHub Forks">
+                  <GitFork className="w-3.5 h-3.5 text-stone-600" />
+                  <span>{selectedModalItem.project.live_stats?.forks ?? 0} forks</span>
+                </span>
+                {selectedModalItem.project.live_stats?.language && (
+                  <span className="paper-badge text-[10px] bg-stone-200">
+                    {selectedModalItem.project.live_stats.language}
+                  </span>
+                )}
               </div>
 
               {/* Description */}

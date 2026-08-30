@@ -47,13 +47,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [avatarUrl, setAvatarUrl] = useState(
     profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'
   );
-  const [headline, setHeadline] = useState(profile.headline || 'BS Computer Science • Developer');
+  const [headline, setHeadline] = useState(profile.headline || 'Student Developer');
   const [aboutMe, setAboutMe] = useState(
-    (profile.bio || 'Passionate student crafting web & IoT systems.').slice(0, 50)
+    (profile.bio || '').slice(0, 50)
   );
   const [selectedProgramOption, setSelectedProgramOption] = useState(initialProg.selectedOptionValue);
   const [customProgramName, setCustomProgramName] = useState(initialProg.customProgramName);
-  const [yearLevel, setYearLevel] = useState(profile.year_level || '3rd Year');
+  const [yearLevel, setYearLevel] = useState(profile.year_level || '1st Year');
   const [step1Error, setStep1Error] = useState<string | null>(null);
   const [isSyncingGitHubUser, setIsSyncingGitHubUser] = useState(false);
   const [githubSyncSuccess, setGithubSyncSuccess] = useState(false);
@@ -414,7 +414,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g. Mark Anthony Reyes"
+                  placeholder="e.g. Juan dela Cruz"
                   className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px]"
                 />
               </div>

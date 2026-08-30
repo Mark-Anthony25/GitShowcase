@@ -13,52 +13,22 @@ interface LandingViewProps {
   onOpenGuide: () => void;
 }
 
-const initialProjects = [
-  {
-    id: 'proj-1',
-    title: 'Campus Navigator & Event Hub',
-    repo: 'isu-student/campus-event-navigator',
-    author: 'isabela-coder',
-    badge: 'CAMPUS UTILITY',
-    desc: 'Interactive campus map and real-time seminar schedule manager with offline support for students and visitors.',
-    stars: 18,
-    url: 'https://github.com/isu-student/campus-event-navigator'
-  },
-  {
-    id: 'proj-2',
-    title: 'AI Code Reviewer Engine (Rust)',
-    repo: 'isu-student/ai-code-reviewer-cli',
-    author: 'isabela-coder',
-    badge: 'CAPSTONE',
-    desc: 'High performance CLI that executes automated AST scans on git diffs before merging.',
-    stars: 24,
-    url: 'https://github.com/isu-student/ai-code-reviewer-cli'
-  },
-  {
-    id: 'proj-3',
-    title: 'Regional Agri-Vision AI',
-    repo: 'isu-student/agri-crop-vision',
-    author: 'isabela-coder',
-    badge: 'RESEARCH AI',
-    desc: 'Deep learning model trained to classify leaf blights in regional crops with 94.2% accuracy.',
-    stars: 12,
-    url: 'https://github.com/isu-student/agri-crop-vision'
-  },
-  {
-    id: 'proj-4',
-    title: 'Disaster Prep & Alert Mesh',
-    repo: 'isu-student/disaster-prep-alert-mesh',
-    author: 'isabela-coder',
-    badge: 'COMMUNITY AID',
-    desc: 'Decentralized SMS and emergency dispatch gateway for flood-prone barangays during typhoons.',
-    stars: 19,
-    url: 'https://github.com/isu-student/disaster-prep-alert-mesh'
-  }
-];
+interface ProjectPreviewItem {
+  id: string;
+  title: string;
+  repo: string;
+  author: string;
+  badge: string;
+  desc: string;
+  stars: number;
+  url: string;
+  isFeatured?: boolean;
+}
 
 export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide }) => {
-  const { user, signInWithGitHub, signInAsDemoStudent, authError, clearAuthError } = useAuth();
-  const [previewProjects, setPreviewProjects] = useState(initialProjects);
+  const { user, signInWithGitHub, authError, clearAuthError } = useAuth();
+  const [previewProjects, setPreviewProjects] = useState<ProjectPreviewItem[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
 
   const handleGitHubSignIn = async () => {
     try {
@@ -72,31 +42,62 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
 
   useEffect(() => {
     let isMounted = true;
-    getAllStudentsShowcase().then((students) => {
-      if (!isMounted || !students || students.length === 0) return;
-      const collected: typeof initialProjects = [];
-      for (const s of students) {
-        for (const p of s.projects) {
-          collected.push({
-            id: p.id,
-            title: p.custom_title || p.repo_full_name.split('/')[1] || p.repo_full_name,
-            repo: p.repo_full_name,
-            author: s.profile.github_username,
-            badge: p.is_featured ? 'FEATURED' : 'PROJECT',
-            desc: p.custom_description || 'Student repository project showcased on GitShowcase.',
-            stars: p.live_stats?.stars ?? (p.is_featured ? 15 : 8),
-            url: p.repo_url,
-          });
-          if (collected.length >= 4) break;
+
+    const loadProjects = (force = false) => {
+      getAllStudentsShowcase(undefined, force).then((students) => {
+        if (!isMounted) return;
+        if (!students || students.length === 0) {
+          setPreviewProjects([]);
+          setLoadingProjects(false);
+          return;
         }
-        if (collected.length >= 4) break;
-      }
-      if (collected.length > 0) {
+        const collected: ProjectPreviewItem[] = [];
+        for (const s of students) {
+          for (const p of s.projects) {
+            collected.push({
+              id: p.id,
+              title: p.custom_title || p.repo_full_name.split('/')[1] || p.repo_full_name,
+              repo: p.repo_full_name,
+              author: s.profile.github_username,
+              badge: p.is_featured ? 'FEATURED' : 'PROJECT',
+              desc: p.custom_description || p.live_stats?.description || 'Student repository project showcased on GitShowcase.',
+              stars: p.live_stats?.stars ?? 0,
+              url: p.repo_url,
+              isFeatured: p.is_featured,
+            });
+          }
+        }
         setPreviewProjects(collected);
+        setLoadingProjects(false);
+      }).catch(() => {
+        if (isMounted) setLoadingProjects(false);
+      });
+    };
+
+    loadProjects(false);
+
+    // Near real-time synchronization on tab focus / visibility return
+    const handleFocus = () => {
+      loadProjects(true);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadProjects(true);
       }
-    });
-    return () => { isMounted = false; };
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
+
+  const featuredProjects = previewProjects.filter(p => p.isFeatured);
 
   return (
     <div className="space-y-5 sm:space-y-7 pb-8 sm:pb-10 text-[#212121] w-full max-w-full">
@@ -169,15 +170,12 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                 </button>
 
                 <button
-                  id="hero-demo-login-btn"
-                  onClick={() => {
-                    signInAsDemoStudent();
-                    navigate('/dashboard');
-                  }}
-                  className="paper-button text-xs lg:text-sm py-2 lg:py-2.5 px-4 justify-center min-h-[38px] lg:min-h-[42px] font-bold text-[#212121]"
+                  id="hero-github-signin-btn"
+                  onClick={handleGitHubSignIn}
+                  className="paper-button text-xs lg:text-sm py-2 lg:py-2.5 px-4 justify-center min-h-[38px] lg:min-h-[42px] font-bold text-[#212121] bg-[#FEFCF6]"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-stone-800 mr-1.5 flex-shrink-0 stroke-[2]" />
-                  <span>Try Guest Demo</span>
+                  <Github className="w-3.5 h-3.5 text-[#212121] mr-1.5 flex-shrink-0 stroke-[2]" />
+                  <span>Sign In with GitHub</span>
                 </button>
               </>
             )}
@@ -185,7 +183,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
         </div>
       </section>
 
-      {/* 2-3 Real Student Projects Preview Strip (Directly after Hero CTAs, before How It Works) */}
+      {/* Real Student Projects Preview Strip */}
       <section className="space-y-2.5 sm:space-y-3.5">
         <div className="border-b border-dashed border-[#212121] pb-2 flex items-center justify-between">
           <div className="flex items-center space-x-2 min-w-0">
@@ -194,60 +192,80 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               Latest Student Dispatches
             </h3>
           </div>
-          <button
-            onClick={() => navigate('/explore')}
-            className="text-[11px] sm:text-xs lg:text-sm font-headline uppercase tracking-wider text-stone-800 hover:text-black underline cursor-pointer font-bold flex-shrink-0 ml-2"
-          >
-            Explore All ({previewProjects.length}+) &rarr;
-          </button>
+          {previewProjects.length > 0 && (
+            <button
+              onClick={() => navigate('/explore')}
+              className="text-[11px] sm:text-xs lg:text-sm font-headline uppercase tracking-wider text-stone-800 hover:text-black underline cursor-pointer font-bold flex-shrink-0 ml-2"
+            >
+              Explore All ({previewProjects.length}) &rarr;
+            </button>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">
-          {previewProjects.map((proj) => (
-            <div
-              key={proj.id}
-              className="p-3 sm:p-3.5 paper-card bg-[#FAF6EC] flex flex-col justify-between space-y-2 hover:bg-[#FAF8F2] transition-colors"
-            >
-              <div className="space-y-1">
-                <div className="flex items-center justify-between gap-1 text-[9px]">
-                  <span className="paper-badge text-[8px] font-bold bg-[#EFE9DB] truncate max-w-[140px]">
-                    {proj.badge}
-                  </span>
-                  <div className="flex items-center space-x-1 text-stone-800 font-mono text-[10px] font-bold flex-shrink-0">
-                    <Star className="w-3 h-3 text-[#212121] stroke-[2]" />
-                    <span>{proj.stars}</span>
+        {loadingProjects ? (
+          <div className="p-8 text-center paper-card bg-[#FEFCF6]">
+            <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 font-bold">
+              Loading dispatches...
+            </p>
+          </div>
+        ) : previewProjects.length === 0 ? (
+          <div className="p-8 text-center paper-card bg-[#FEFCF6] border-dashed space-y-2">
+            <FolderGit2 className="w-8 h-8 text-stone-500 mx-auto" />
+            <h4 className="text-sm font-[900] uppercase font-newspaper-title text-[#212121]">
+              No student projects published yet
+            </h4>
+            <p className="text-xs font-serif-body text-stone-600 max-w-md mx-auto">
+              Sign in with your GitHub account to publish and showcase your capstones and repositories.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">
+            {previewProjects.slice(0, 4).map((proj) => (
+              <div
+                key={proj.id}
+                className="p-3 sm:p-3.5 paper-card bg-[#FAF6EC] flex flex-col justify-between space-y-2 hover:bg-[#FAF8F2] transition-colors"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between gap-1 text-[9px]">
+                    <span className="paper-badge text-[8px] font-bold bg-[#EFE9DB] truncate max-w-[140px]">
+                      {proj.badge}
+                    </span>
+                    <div className="flex items-center space-x-1 text-stone-800 font-mono text-[10px] font-bold flex-shrink-0">
+                      <Star className="w-3 h-3 text-[#212121] stroke-[2]" />
+                      <span>{proj.stars}</span>
+                    </div>
                   </div>
+
+                  <h4 className="text-xs sm:text-sm font-[900] uppercase font-newspaper-title text-[#212121] line-clamp-1 leading-snug">
+                    {proj.title}
+                  </h4>
+                  <p className="text-[11.5px] sm:text-xs font-serif-body text-[#212121] font-semibold sm:font-medium line-clamp-2 leading-relaxed">
+                    {proj.desc}
+                  </p>
                 </div>
 
-                <h4 className="text-xs sm:text-sm font-[900] uppercase font-newspaper-title text-[#212121] line-clamp-1 leading-snug">
-                  {proj.title}
-                </h4>
-                <p className="text-[11.5px] sm:text-xs font-serif-body text-[#212121] font-semibold sm:font-medium line-clamp-2 leading-relaxed">
-                  {proj.desc}
-                </p>
+                <div className="pt-1.5 border-t border-dashed border-[#212121]/50 flex items-center justify-between text-[11px]">
+                  <button
+                    onClick={() => navigate(`/u/${proj.author}`)}
+                    className="text-stone-800 hover:text-black font-headline uppercase tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold truncate max-w-[150px]"
+                  >
+                    <span>@{proj.author}</span>
+                  </button>
+                  <a
+                    href={proj.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-stone-700 hover:text-black flex items-center space-x-0.5 font-mono text-[10px] font-bold cursor-pointer"
+                    title="View GitHub Repository"
+                  >
+                    <span>Repo</span>
+                    <ArrowUpRight className="w-3 h-3 flex-shrink-0 stroke-[2]" />
+                  </a>
+                </div>
               </div>
-
-              <div className="pt-1.5 border-t border-dashed border-[#212121]/50 flex items-center justify-between text-[11px]">
-                <button
-                  onClick={() => navigate(`/u/${proj.author}`)}
-                  className="text-stone-800 hover:text-black font-headline uppercase tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold truncate max-w-[150px]"
-                >
-                  <span>@{proj.author}</span>
-                </button>
-                <a
-                  href={proj.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-stone-700 hover:text-black flex items-center space-x-0.5 font-mono text-[10px] font-bold cursor-pointer"
-                  title="View GitHub Repository"
-                >
-                  <span>Repo</span>
-                  <ArrowUpRight className="w-3 h-3 flex-shrink-0 stroke-[2]" />
-                </a>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* 3 Step Workflow Cards */}
@@ -312,129 +330,69 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
         </div>
       </section>
 
-      {/* Featured Student Capstones Spotlight */}
-      <section className="space-y-3">
-        <div className="border-b border-dashed border-[#212121] pb-1.5 flex items-center justify-between">
-          <div className="flex items-center space-x-1.5">
-            <Star className="w-3.5 h-3.5 text-[#212121] stroke-[2]" />
-            <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121]">
-              Featured Student Projects
-            </h3>
-          </div>
-          <button
-            onClick={() => navigate('/explore')}
-            className="text-xs font-headline uppercase tracking-wider text-stone-800 hover:text-black underline cursor-pointer font-bold"
-          >
-            View All Projects &rarr;
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5 md:gap-4">
-          {/* Card 1 */}
-          <div className="p-3 sm:p-4 paper-card bg-[#FEFCF6] flex flex-col justify-between space-y-3 min-w-0">
-            <div className="space-y-1.5">
-              <span className="paper-badge text-[9px] font-bold">
-                CAMPUS UTILITY
-              </span>
-
-              <h4 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121]">
-                Campus Navigator &amp; Event Hub
-              </h4>
-              <p className="text-xs sm:text-sm font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed line-clamp-3">
-                Interactive campus map and real-time seminar schedule manager with offline support for students and visitors.
-              </p>
+      {/* Featured Student Capstones Spotlight (Dynamic only) */}
+      {featuredProjects.length > 0 && (
+        <section className="space-y-3">
+          <div className="border-b border-dashed border-[#212121] pb-1.5 flex items-center justify-between">
+            <div className="flex items-center space-x-1.5">
+              <Star className="w-3.5 h-3.5 text-[#212121] stroke-[2]" />
+              <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121]">
+                Featured Student Projects
+              </h3>
             </div>
-
-            <div className="pt-2 border-t border-dashed border-[#212121] flex items-center justify-end text-xs">
-              <button
-                onClick={() => navigate('/u/isabela-coder')}
-                className="text-stone-800 hover:text-black font-headline text-xs uppercase tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold py-0.5 px-1 min-h-[30px]"
-              >
-                <span>By @isabela-coder</span>
-                <ArrowUpRight className="w-3 h-3 flex-shrink-0" />
-              </button>
-            </div>
+            <button
+              onClick={() => navigate('/explore')}
+              className="text-xs font-headline uppercase tracking-wider text-stone-800 hover:text-black underline cursor-pointer font-bold"
+            >
+              View All Projects &rarr;
+            </button>
           </div>
 
-          {/* Card 2 */}
-          <div className="p-3 sm:p-4 paper-card bg-[#FEFCF6] flex flex-col justify-between space-y-3 min-w-0">
-            <div className="space-y-1.5">
-              <span className="paper-badge text-[9px] font-bold">
-                CAPSTONE PROJECT
-              </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5 md:gap-4">
+            {featuredProjects.slice(0, 4).map((proj) => (
+              <div key={proj.id} className="p-3 sm:p-4 paper-card bg-[#FEFCF6] flex flex-col justify-between space-y-3 min-w-0">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-1 text-[9px]">
+                    <span className="paper-badge text-[8px] font-bold bg-amber-200 text-amber-950 border-amber-800">
+                      FEATURED PROJECT
+                    </span>
+                    <div className="flex items-center space-x-1 text-stone-800 font-mono text-[10px] font-bold flex-shrink-0">
+                      <Star className="w-3 h-3 text-[#212121] stroke-[2]" />
+                      <span>{proj.stars}</span>
+                    </div>
+                  </div>
 
-              <h4 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] break-words">
-                AI Code Reviewer Engine
-              </h4>
-              <p className="text-xs sm:text-sm font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed line-clamp-3">
-                Automated pull-request scanner that checks coding standards, security vulnerabilities, and logic flaws prior to thesis defense.
-              </p>
-            </div>
+                  <h4 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
+                    {proj.title}
+                  </h4>
+                  <p className="text-xs sm:text-sm font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed line-clamp-3">
+                    {proj.desc}
+                  </p>
+                </div>
 
-            <div className="pt-2 border-t border-dashed border-[#212121] flex items-center justify-end text-xs">
-              <button
-                onClick={() => navigate('/u/isabela-coder')}
-                className="text-stone-800 hover:text-black font-headline text-xs uppercase tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold py-0.5 px-1 min-h-[30px]"
-              >
-                <span>By @isabela-coder</span>
-                <ArrowUpRight className="w-3 h-3 flex-shrink-0" />
-              </button>
-            </div>
+                <div className="pt-2 border-t border-dashed border-[#212121] flex items-center justify-between text-xs">
+                  <button
+                    onClick={() => navigate(`/u/${proj.author}`)}
+                    className="text-stone-800 hover:text-black font-headline text-xs uppercase tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold py-0.5 px-1 min-h-[30px]"
+                  >
+                    <span>By @{proj.author}</span>
+                    <ArrowUpRight className="w-3 h-3 flex-shrink-0" />
+                  </button>
+                  <a
+                    href={proj.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-stone-700 hover:text-black flex items-center space-x-0.5 font-mono text-[10px] font-bold cursor-pointer"
+                  >
+                    <span>Repo</span>
+                    <ArrowUpRight className="w-3 h-3 flex-shrink-0 stroke-[2]" />
+                  </a>
+                </div>
+              </div>
+            ))}
           </div>
-
-          {/* Card 3 */}
-          <div className="p-3 sm:p-4 paper-card bg-[#FEFCF6] flex flex-col justify-between space-y-3 min-w-0">
-            <div className="space-y-1.5">
-              <span className="paper-badge text-[9px] font-bold">
-                RESEARCH AI
-              </span>
-
-              <h4 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] break-words">
-                Regional Agri-Vision AI
-              </h4>
-              <p className="text-xs sm:text-sm font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed line-clamp-3">
-                Deep learning model trained to classify leaf blights in regional crops with 94.2% diagnostic accuracy.
-              </p>
-            </div>
-
-            <div className="pt-2 border-t border-dashed border-[#212121] flex items-center justify-end text-xs">
-              <button
-                onClick={() => navigate('/u/isabela-coder')}
-                className="text-stone-800 hover:text-black font-headline text-xs uppercase tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold py-0.5 px-1 min-h-[30px]"
-              >
-                <span>By @isabela-coder</span>
-                <ArrowUpRight className="w-3 h-3 flex-shrink-0" />
-              </button>
-            </div>
-          </div>
-
-          {/* Card 4 */}
-          <div className="p-3 sm:p-4 paper-card bg-[#FEFCF6] flex flex-col justify-between space-y-3 min-w-0">
-            <div className="space-y-1.5">
-              <span className="paper-badge text-[9px] font-bold">
-                COMMUNITY AID
-              </span>
-
-              <h4 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] break-words">
-                Disaster Prep &amp; Alert Mesh
-              </h4>
-              <p className="text-xs sm:text-sm font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed line-clamp-3">
-                Decentralized SMS and emergency dispatch gateway for flood-prone barangays during severe weather.
-              </p>
-            </div>
-
-            <div className="pt-2 border-t border-dashed border-[#212121] flex items-center justify-end text-xs">
-              <button
-                onClick={() => navigate('/u/isabela-coder')}
-                className="text-stone-800 hover:text-black font-headline text-xs uppercase tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold py-0.5 px-1 min-h-[30px]"
-              >
-                <span>By @isabela-coder</span>
-                <ArrowUpRight className="w-3 h-3 flex-shrink-0" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 };

@@ -9,7 +9,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGuide }) => {
-  const { user, profile, isDemoMode, signInWithGitHub, signInAsDemoStudent, signOut } = useAuth();
+  const { user, profile, signInWithGitHub, signOut } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -24,7 +24,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
     }
   };
 
-  const myUsername = profile?.github_username || 'isabela-coder';
+  const myUsername = profile?.github_username || '';
 
   const getFormattedDate = () => {
     const today = new Date();
@@ -158,7 +158,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
               >
                 <div className="w-5 h-5 border border-[#212121] bg-stone-300 overflow-hidden flex-shrink-0 rounded-xs">
                   <img
-                    src={profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
+                    src={profile?.avatar_url || `https://github.com/${profile?.github_username || 'ghost'}.png`}
                     alt={profile?.github_username || 'Student Avatar'}
                     className="w-full h-full object-cover"
                   />
@@ -176,8 +176,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                   <div className="w-full bg-[#FEFCF6] border-2 border-[#212121] shadow-[4px_4px_0px_#212121] p-1.5 rounded-[255px_15px_225px_15px/15px_225px_15px_255px]">
                     <div className="p-2 border-b border-dashed border-[#212121] mb-1 bg-[#FAF6EC] rounded-xs">
                       <p className="text-xs font-bold font-headline uppercase text-[#212121] truncate">{profile?.full_name || 'Student Author'}</p>
-                      <p className="text-[10px] font-mono text-stone-700 truncate">@{profile?.github_username || 'isabela-coder'}</p>
-                      {isDemoMode && <span className="paper-badge mt-1 text-[9px]">Guest Mode</span>}
+                      <p className="text-[10px] font-mono text-stone-700 truncate">@{profile?.github_username || 'student'}</p>
                     </div>
                     <div className="flex flex-col gap-0.5" role="none">
                       <button
@@ -187,13 +186,15 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                       >
                         <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" /><span>My Projects</span>
                       </button>
-                      <button
-                        role="menuitem"
-                        onClick={() => { setDropdownOpen(false); navigate(`/u/${myUsername}`); }}
-                        className="w-full text-left px-2.5 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] focus:bg-[#EAE4D4] focus:outline-none flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[32px] rounded-xs transition-colors"
-                      >
-                        <User className="w-3.5 h-3.5 flex-shrink-0" /><span>My Profile</span>
-                      </button>
+                      {profile?.github_username && (
+                        <button
+                          role="menuitem"
+                          onClick={() => { setDropdownOpen(false); navigate(`/u/${myUsername}`); }}
+                          className="w-full text-left px-2.5 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] focus:bg-[#EAE4D4] focus:outline-none flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[32px] rounded-xs transition-colors"
+                        >
+                          <User className="w-3.5 h-3.5 flex-shrink-0" /><span>My Profile</span>
+                        </button>
+                      )}
                     </div>
                     <div className="border-t border-dashed border-[#212121] my-1" role="separator"></div>
                     <button
@@ -214,11 +215,8 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
             </div>
           ) : (
             <div className="flex items-center space-x-2">
-              <button id="demo-student-login-btn" onClick={() => { signInAsDemoStudent(); navigate('/dashboard'); }} className="paper-button text-xs py-1.5 px-3 cursor-pointer min-h-[34px] text-stone-800 hover:text-black font-bold">
-                <Sparkles className="w-3.5 h-3.5 text-stone-700 mr-1 flex-shrink-0" /><span>Guest Demo</span>
-              </button>
               <button id="github-login-btn" onClick={handleGitHubSignIn} className="paper-button text-xs py-1.5 px-3.5 font-bold cursor-pointer min-h-[34px] bg-[#FEFCF6] text-[#212121] hover:bg-[#FAF6EC]">
-                <Github className="w-3.5 h-3.5 text-[#212121] mr-1 flex-shrink-0" /><span>GitHub Sign In</span>
+                <Github className="w-3.5 h-3.5 text-[#212121] mr-1 flex-shrink-0" /><span>Sign In with GitHub</span>
               </button>
             </div>
           )}
@@ -229,7 +227,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
           {user && (
             <div className="w-7 h-7 border-1.5 border-[#212121] bg-stone-300 overflow-hidden flex-shrink-0 rounded-xs shadow-[1px_1px_0px_#212121]">
               <img
-                src={profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
+                src={profile?.avatar_url || `https://github.com/${profile?.github_username || 'ghost'}.png`}
                 alt={profile?.github_username || 'Avatar'}
                 className="w-full h-full object-cover"
               />
@@ -299,7 +297,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
               )}
               {user && profile?.github_username && (
                 <button
-                  onClick={() => { setMobileMenuOpen(false); navigate(`/u/${profile.github_username}`); }}
+                  onClick={() => { setMobileMenuOpen(false); navigate(`/u/${profile.github_username}`)} }
                   className={`${navBtnClass(`/u/${profile.github_username}`)} w-full min-h-[38px] text-xs justify-start px-3`}
                 >
                   <User className="w-3.5 h-3.5 mr-2 flex-shrink-0" /><span>My Profile</span>
@@ -317,7 +315,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                     {profile?.full_name || 'Student Author'}
                   </p>
                   <p className="text-[10px] font-mono text-stone-700">
-                    @{profile?.github_username || 'student'}{isDemoMode ? ' · Guest' : ''}
+                    @{profile?.github_username || 'student'}
                   </p>
                 </div>
                 <button
@@ -331,18 +329,11 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
             ) : (
               <div className="flex flex-col gap-2 pt-0.5">
                 <button
-                  id="demo-mobile"
-                  onClick={() => { setMobileMenuOpen(false); signInAsDemoStudent(); navigate('/dashboard'); }}
-                  className="paper-button text-xs py-2 px-3 cursor-pointer justify-center min-h-[36px] font-bold w-full text-stone-800"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-stone-700 mr-1.5 flex-shrink-0" /><span>Guest Demo</span>
-                </button>
-                <button
                   id="github-mobile"
                   onClick={async () => { setMobileMenuOpen(false); await handleGitHubSignIn(); }}
                   className="paper-button text-xs py-2 px-3 font-bold cursor-pointer justify-center min-h-[36px] w-full bg-[#FEFCF6] text-[#212121] hover:bg-[#FAF6EC]"
                 >
-                  <Github className="w-3.5 h-3.5 text-[#212121] mr-1.5 flex-shrink-0" /><span>GitHub Sign In</span>
+                  <Github className="w-3.5 h-3.5 text-[#212121] mr-1.5 flex-shrink-0" /><span>Sign In with GitHub</span>
                 </button>
               </div>
             )}
