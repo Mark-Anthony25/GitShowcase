@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Copy, Check, ExternalLink, X, Database, Key, ShieldCheck, Github, Sparkles } from 'lucide-react';
-import { isSupabaseConfigured, updateSupabaseConfig, supabaseUrl, supabaseAnonKey } from '../lib/supabase';
+import { Copy, Check, ExternalLink, X, Database, Key, ShieldCheck, Github, Sparkles, AlertTriangle, RefreshCw } from 'lucide-react';
+import { isSupabaseConfigured, updateSupabaseConfig, supabaseUrl, supabaseAnonKey, supabase } from '../lib/supabase';
 
 interface SupabaseGuideModalProps {
   isOpen: boolean;
@@ -8,13 +8,51 @@ interface SupabaseGuideModalProps {
 }
 
 export const SupabaseGuideModal: React.FC<SupabaseGuideModalProps> = ({ isOpen, onClose }) => {
-  const [copiedSql, setCopiedSql] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [inputUrl, setInputUrl] = useState(supabaseUrl || '');
   const [inputKey, setInputKey] = useState(supabaseAnonKey || '');
   const [activeTab, setActiveTab] = useState<'quick' | 'sql' | 'oauth'>('quick');
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [testStatus, setTestStatus] = useState<{ testing: boolean; success?: boolean; message?: string } | null>(null);
 
   if (!isOpen) return null;
+
+  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://git-showcase-black.vercel.app';
+  const vercelOrigin = 'https://git-showcase-black.vercel.app';
+  const devOrigin = 'https://ais-dev-6hghiy2ibtd4dkiwerjb4k-158947777253.asia-east1.run.app';
+  const preOrigin = 'https://ais-pre-6hghiy2ibtd4dkiwerjb4k-158947777253.asia-east1.run.app';
+
+  const copyToClipboard = (text: string, keyName: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(keyName);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const handleTestConnection = async () => {
+    setTestStatus({ testing: true });
+    try {
+      if (!isSupabaseConfigured || !supabase) {
+        setTestStatus({ testing: false, success: false, message: 'Please save valid Supabase URL and Anon Key first.' });
+        return;
+      }
+      const { data, error } = await supabase.from('profiles').select('id').limit(1);
+      if (error) {
+        if (error.message.includes('relation') || error.message.includes('does not exist') || error.message.includes('schema cache')) {
+          setTestStatus({
+            testing: false,
+            success: true,
+            message: 'Connected to Supabase! Note: Please run the SQL schema in Tab 2 to create the tables.'
+          });
+        } else {
+          setTestStatus({ testing: false, success: false, message: `Connected with notice: ${error.message}` });
+        }
+      } else {
+        setTestStatus({ testing: false, success: true, message: 'Supabase connection & tables verified successfully!' });
+      }
+    } catch (err: any) {
+      setTestStatus({ testing: false, success: false, message: err?.message || 'Failed to connect to Supabase.' });
+    }
+  };
 
   const sqlSchemaCode = `-- ==============================================================================
 -- Student GitHub Project Showcase: Initial Schema & RLS Policies
@@ -108,12 +146,6 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();`;
 
-  const copySql = () => {
-    navigator.clipboard.writeText(sqlSchemaCode);
-    setCopiedSql(true);
-    setTimeout(() => setCopiedSql(false), 2000);
-  };
-
   const handleSaveCredentials = (e: React.FormEvent) => {
     e.preventDefault();
     updateSupabaseConfig(inputUrl.trim(), inputKey.trim());
@@ -134,7 +166,7 @@ create trigger on_auth_user_created
                 Supabase &amp; GitHub OAuth Setup
               </h2>
               <p className="text-xs font-serif-body text-stone-700">
-                Setup guide &amp; quick connection for your free Student Showcase database
+                Live configuration and connection guide for GitShowcase
               </p>
             </div>
           </div>
@@ -231,18 +263,31 @@ create trigger on_auth_user_created
                   <p className="text-[10px] font-mono text-stone-600 mt-0.5">Project API key with `anon` `public` role.</p>
                 </div>
 
-                <div className="flex items-center justify-between pt-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setInputUrl('');
-                      setInputKey('');
-                      updateSupabaseConfig('', '');
-                    }}
-                    className="text-xs font-headline uppercase text-rose-700 hover:underline cursor-pointer min-h-[30px] py-0.5"
-                  >
-                    Reset to Demo Sandbox
-                  </button>
+                <div className="flex items-center justify-between pt-1.5 gap-2 flex-wrap">
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInputUrl('');
+                        setInputKey('');
+                        updateSupabaseConfig('', '');
+                      }}
+                      className="text-xs font-headline uppercase text-rose-700 hover:underline cursor-pointer min-h-[30px] py-0.5"
+                    >
+                      Reset to Sandbox
+                    </button>
+                    {isSupabaseConfigured && (
+                      <button
+                        type="button"
+                        onClick={handleTestConnection}
+                        disabled={testStatus?.testing}
+                        className="paper-button text-xs py-1 px-2.5 min-h-[30px] font-bold flex items-center space-x-1"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${testStatus?.testing ? 'animate-spin' : ''}`} />
+                        <span>Test DB Connection</span>
+                      </button>
+                    )}
+                  </div>
 
                   <button
                     id="save-credentials-btn"
@@ -252,6 +297,14 @@ create trigger on_auth_user_created
                     Save &amp; Reload Client
                   </button>
                 </div>
+
+                {testStatus && (
+                  <div className={`p-2 rounded-xs border text-xs font-mono mt-2 ${
+                    testStatus.success ? 'bg-emerald-50 border-emerald-500 text-emerald-900' : 'bg-amber-50 border-amber-500 text-amber-900'
+                  }`}>
+                    {testStatus.message}
+                  </div>
+                )}
               </form>
             </div>
           )}
@@ -269,10 +322,10 @@ create trigger on_auth_user_created
                 </div>
                 <button
                   id="copy-sql-btn"
-                  onClick={copySql}
+                  onClick={() => copyToClipboard(sqlSchemaCode, 'sql')}
                   className="paper-button flex items-center space-x-1 px-3 py-1.5 text-xs font-bold uppercase tracking-wider min-h-[32px] flex-shrink-0"
                 >
-                  {copiedSql ? (
+                  {copiedKey === 'sql' ? (
                     <>
                       <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
                       <span>Copied!</span>
@@ -301,26 +354,125 @@ create trigger on_auth_user_created
                 <span>GitHub OAuth Provider Configuration</span>
               </h3>
 
-              <ol className="list-decimal list-inside space-y-2 text-xs leading-relaxed text-stone-800">
+              <ol className="list-decimal list-inside space-y-3 text-xs leading-relaxed text-stone-800">
                 <li>
                   Go to <a href="https://github.com/settings/developers" target="_blank" rel="noreferrer" className="text-blue-800 underline font-bold inline-flex items-center">GitHub Developer Settings &gt; OAuth Apps <ExternalLink className="w-3 h-3 ml-1" /></a> and click <strong>New OAuth App</strong>.
                 </li>
+
                 <li>
-                  Set <strong>Homepage URL</strong> to: <code className="bg-[#FAF6EC] text-black px-1.5 py-0.5 border border-black font-mono text-[10px]">{typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.app'}</code>
-                </li>
-                <li>
-                  Set <strong>Authorization callback URL</strong> to your Supabase Auth callback URL:
-                  <div className="mt-1 p-1.5 bg-white paper-card font-mono text-black break-all select-all text-[10px]">
-                    {supabaseUrl ? `${supabaseUrl}/auth/v1/callback` : 'https://<your-project-ref>.supabase.co/auth/v1/callback'}
+                  Set <strong>Homepage URL</strong> to your Vercel or Dev URL:
+                  <div className="mt-1 space-y-1.5">
+                    <div className="flex items-center justify-between p-1.5 bg-white paper-card border border-stone-400 gap-2">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="text-[10px] font-bold uppercase px-1 py-0.2 bg-stone-200">Vercel</span>
+                        <code className="font-mono text-black text-[11px] truncate select-all font-bold">
+                          {vercelOrigin}
+                        </code>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(vercelOrigin, 'vercel_home')}
+                        className="paper-button text-[10px] py-0.5 px-2 min-h-[26px] flex-shrink-0 font-bold"
+                      >
+                        {copiedKey === 'vercel_home' ? 'Copied' : 'Copy'}
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between p-1.5 bg-white paper-card border border-stone-400 gap-2">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="text-[10px] font-bold uppercase px-1 py-0.2 bg-stone-200">AI Studio</span>
+                        <code className="font-mono text-black text-[11px] truncate select-all font-bold">
+                          {devOrigin}
+                        </code>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(devOrigin, 'dev_home')}
+                        className="paper-button text-[10px] py-0.5 px-2 min-h-[26px] flex-shrink-0 font-bold"
+                      >
+                        {copiedKey === 'dev_home' ? 'Copied' : 'Copy'}
+                      </button>
+                    </div>
                   </div>
                 </li>
+
                 <li>
-                  Copy your <strong>Client ID</strong> and generated <strong>Client Secret</strong> from GitHub into your Supabase Dashboard &gt; <strong>Authentication &gt; Providers &gt; GitHub</strong>, and toggle <strong>Enable GitHub</strong>.
+                  Set <strong>Authorization callback URL</strong> to your Supabase Auth callback URL:
+                  <div className="mt-1 flex items-center justify-between p-1.5 bg-white paper-card border border-stone-400 gap-2">
+                    <code className="font-mono text-black break-all text-[11px] select-all font-bold">
+                      {supabaseUrl ? `${supabaseUrl}/auth/v1/callback` : 'https://<your-project-ref>.supabase.co/auth/v1/callback'}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(supabaseUrl ? `${supabaseUrl}/auth/v1/callback` : 'https://<your-project-ref>.supabase.co/auth/v1/callback', 'callback')}
+                      className="paper-button text-[10px] py-0.5 px-2 min-h-[26px] flex-shrink-0 font-bold"
+                    >
+                      {copiedKey === 'callback' ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
                 </li>
+
                 <li>
-                  Under <strong>Authentication &gt; URL Configuration</strong> in Supabase, add your app origin as a <strong>Redirect URL</strong>:
-                  <div className="mt-1 p-1.5 bg-white paper-card font-mono text-black break-all select-all text-[10px]">
-                    {typeof window !== 'undefined' ? `${window.location.origin}/**` : 'https://your-app.run.app/**'}
+                  In your GitHub OAuth App, copy your <strong>Client ID</strong> and click <strong>"Generate a new client secret"</strong>. Copy the secret.
+                </li>
+
+                <li>
+                  In your <strong>Supabase Dashboard &gt; Authentication &gt; Providers &gt; GitHub</strong>:
+                  <ul className="list-disc list-inside ml-3 mt-1 space-y-1 text-stone-700">
+                    <li>Toggle <strong>Enable GitHub</strong>: ON</li>
+                    <li>Paste your <strong>Client ID</strong></li>
+                    <li>Paste your <strong>Client Secret</strong></li>
+                    <li>Click <strong>Save</strong></li>
+                  </ul>
+                </li>
+
+                <li>
+                  In <strong>Supabase Dashboard &gt; Authentication &gt; URL Configuration</strong>, add all deployment URLs to <strong>Redirect URLs</strong>:
+                  <div className="mt-1 space-y-1.5">
+                    <div className="flex items-center justify-between p-1.5 bg-white paper-card border border-stone-400 gap-2">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="text-[10px] font-bold uppercase px-1 py-0.2 bg-stone-200">Vercel</span>
+                        <code className="font-mono text-black text-[11px] truncate select-all font-bold">
+                          {`${vercelOrigin}/**`}
+                        </code>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(`${vercelOrigin}/**`, 'vercel_redirect')}
+                        className="paper-button text-[10px] py-0.5 px-2 min-h-[26px] flex-shrink-0 font-bold"
+                      >
+                        {copiedKey === 'vercel_redirect' ? 'Copied' : 'Copy'}
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between p-1.5 bg-white paper-card border border-stone-400 gap-2">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="text-[10px] font-bold uppercase px-1 py-0.2 bg-stone-200">AI Dev</span>
+                        <code className="font-mono text-black text-[11px] truncate select-all font-bold">
+                          {`${devOrigin}/**`}
+                        </code>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(`${devOrigin}/**`, 'dev_redirect')}
+                        className="paper-button text-[10px] py-0.5 px-2 min-h-[26px] flex-shrink-0 font-bold"
+                      >
+                        {copiedKey === 'dev_redirect' ? 'Copied' : 'Copy'}
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between p-1.5 bg-white paper-card border border-stone-400 gap-2">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="text-[10px] font-bold uppercase px-1 py-0.2 bg-stone-200">AI Share</span>
+                        <code className="font-mono text-black text-[11px] truncate select-all font-bold">
+                          {`${preOrigin}/**`}
+                        </code>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(`${preOrigin}/**`, 'pre_redirect')}
+                        className="paper-button text-[10px] py-0.5 px-2 min-h-[26px] flex-shrink-0 font-bold"
+                      >
+                        {copiedKey === 'pre_redirect' ? 'Copied' : 'Copy'}
+                      </button>
+                    </div>
                   </div>
                 </li>
               </ol>

@@ -8,11 +8,21 @@ interface HeaderProps {
   onOpenGuide: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
+export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGuide }) => {
   const { user, profile, isDemoMode, signInWithGitHub, signInAsDemoStudent, signOut } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleGitHubSignIn = async () => {
+    try {
+      await signInWithGitHub();
+    } catch (err: any) {
+      if (err?.message === 'CONFIG_REQUIRED') {
+        onOpenGuide();
+      }
+    }
+  };
 
   const myUsername = profile?.github_username || 'isabela-coder';
 
@@ -207,7 +217,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
               <button id="demo-student-login-btn" onClick={() => { signInAsDemoStudent(); navigate('/dashboard'); }} className="paper-button text-xs py-1.5 px-3 cursor-pointer min-h-[34px] text-stone-800 hover:text-black font-bold">
                 <Sparkles className="w-3.5 h-3.5 text-stone-700 mr-1 flex-shrink-0" /><span>Guest Demo</span>
               </button>
-              <button id="github-login-btn" onClick={async () => { await signInWithGitHub(); navigate('/dashboard'); }} className="paper-button text-xs py-1.5 px-3.5 font-bold cursor-pointer min-h-[34px] bg-[#FEFCF6] text-[#212121] hover:bg-[#FAF6EC]">
+              <button id="github-login-btn" onClick={handleGitHubSignIn} className="paper-button text-xs py-1.5 px-3.5 font-bold cursor-pointer min-h-[34px] bg-[#FEFCF6] text-[#212121] hover:bg-[#FAF6EC]">
                 <Github className="w-3.5 h-3.5 text-[#212121] mr-1 flex-shrink-0" /><span>GitHub Sign In</span>
               </button>
             </div>
@@ -329,7 +339,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate }) => {
                 </button>
                 <button
                   id="github-mobile"
-                  onClick={async () => { setMobileMenuOpen(false); await signInWithGitHub(); navigate('/dashboard'); }}
+                  onClick={async () => { setMobileMenuOpen(false); await handleGitHubSignIn(); }}
                   className="paper-button text-xs py-2 px-3 font-bold cursor-pointer justify-center min-h-[36px] w-full bg-[#FEFCF6] text-[#212121] hover:bg-[#FAF6EC]"
                 >
                   <Github className="w-3.5 h-3.5 text-[#212121] mr-1.5 flex-shrink-0" /><span>GitHub Sign In</span>

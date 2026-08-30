@@ -56,9 +56,19 @@ const initialProjects = [
   }
 ];
 
-export const LandingView: React.FC<LandingViewProps> = ({ navigate }) => {
+export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide }) => {
   const { user, signInWithGitHub, signInAsDemoStudent, authError, clearAuthError } = useAuth();
   const [previewProjects, setPreviewProjects] = useState(initialProjects);
+
+  const handleGitHubSignIn = async () => {
+    try {
+      await signInWithGitHub();
+    } catch (err: any) {
+      if (err?.message === 'CONFIG_REQUIRED') {
+        onOpenGuide();
+      }
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;

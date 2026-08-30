@@ -9,6 +9,9 @@ const envSupabaseUrl =
 const envSupabaseAnonKey = 
   import.meta.env.VITE_SUPABASE_ANON_KEY || 
   import.meta.env.SUPABASE_ANON_KEY || 
+  import.meta.env.SUPABASE_KEY || 
+  import.meta.env.SUPABASE_PUBLIC_KEY || 
+  import.meta.env.SUPABASE_PUBLISHABLE_KEY || 
   import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Allow local overrides if user enters them in the UI config drawer

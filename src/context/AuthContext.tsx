@@ -56,6 +56,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  // Cross-window popup authentication handler
+  useEffect(() => {
+    const handleAuthMessage = async (event: MessageEvent) => {
+      // Listen for popup auth completion
+      if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
+        if (isSupabaseConfigured && supabase) {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+              setSession(session);
+              setUser(session.user);
+              if (session.provider_token) {
+                setGithubToken(session.provider_token);
+              }
+              setIsDemoMode(false);
+              await loadProfile(session.user.id, session.user);
+            }
+          } catch (err) {
+            console.error('Error handling popup auth session:', err);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('message', handleAuthMessage);
+    return () => window.removeEventListener('message', handleAuthMessage);
+  }, []);
+
+  // Popup closer detection: If this window was opened as a popup and contains auth callback tokens
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.opener) {
+      const hash = window.location.hash || '';
+      const search = window.location.search || '';
+      if (
+        hash.includes('access_token=') || 
+        hash.includes('refresh_token=') || 
+        search.includes('code=') ||
+        hash.includes('type=recovery')
+      ) {
+        // Wait a brief tick for Supabase to store session then notify opener & close
+        const timer = setTimeout(() => {
+          try {
+            window.opener.postMessage({ type: 'SUPABASE_AUTH_SUCCESS' }, '*');
+          } catch (e) {
+            console.error('Error communicating with opener window:', e);
+          }
+          try {
+            window.close();
+          } catch (e) {
+            console.error('Error closing popup window:', e);
+          }
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, []);
+
   // Initialize auth state
   useEffect(() => {
     let mounted = true;
@@ -70,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (session.provider_token) {
               setGithubToken(session.provider_token);
             }
-            await loadProfile(session.user.id);
+            await loadProfile(session.user.id, session.user);
           }
         } catch (err) {
           console.error('Error fetching initial Supabase session:', err);
@@ -87,7 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (newSession?.user) {
             setIsDemoMode(false);
-            await loadProfile(newSession.user.id);
+            await loadProfile(newSession.user.id, newSession.user);
           } else if (!isDemoMode) {
             setProfile(null);
           }
@@ -115,10 +172,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const loadProfile = async (userId: string) => {
+  const loadProfile = async (userId: string, authUser?: User) => {
     try {
       const p = await getProfileById(userId);
-      setProfile(p);
+      if (p) {
+        setProfile(p);
+      } else if (authUser) {
+        // Fallback user metadata extraction
+        const meta = authUser.user_metadata || {};
+        const githubHandle = meta.user_name || meta.preferred_username || meta.name || authUser.email?.split('@')[0] || 'student';
+        const newProfile: Profile = {
+          id: userId,
+          github_username: githubHandle,
+          full_name: meta.full_name || meta.name || githubHandle,
+          headline: 'Student Developer',
+          avatar_url: meta.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+          bio: 'Student at ISU Cauayan Campus.',
+          program: 'BS Computer Science',
+          year_level: '3rd Year',
+          is_onboarded: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        setProfile(newProfile);
+      }
     } catch (err) {
       console.error('Error loading profile:', err);
     }
@@ -156,23 +233,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGitHub = async () => {
     if (!isSupabaseConfigured || !supabase) {
-      // If not configured yet, activate Demo student mode and inform user
-      activateDemoSession();
-      return;
+      throw new Error('CONFIG_REQUIRED');
     }
 
-    const redirectUrl = `${window.location.origin}/dashboard`;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        scopes: 'read:user repo',
-        redirectTo: redirectUrl,
-      },
-    });
+    try {
+      const redirectUrl = `${window.location.origin}/dashboard`;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          scopes: 'read:user repo',
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: true,
+        },
+      });
 
-    if (error) {
-      console.error('GitHub OAuth error:', error.message);
-      throw error;
+      if (error) {
+        console.error('GitHub OAuth error:', error.message);
+        throw error;
+      }
+
+      if (data?.url) {
+        // Open OAuth authorization in popup window (required for iframe environments to avoid X-Frame-Options blocking)
+        const width = 600;
+        const height = 750;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+
+        const authWindow = window.open(
+          data.url,
+          'github_oauth_popup',
+          `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes`
+        );
+
+        if (!authWindow || authWindow.closed || typeof authWindow.closed === 'undefined') {
+          // If popup blocker intervened, fallback to top level redirect if outside iframe or alert user
+          if (window.top === window.self) {
+            window.location.href = data.url;
+          } else {
+            alert('Please allow popups for this site in your browser to sign in with GitHub.');
+          }
+        }
+      }
+    } catch (err) {
+      console.error('signInWithGitHub failed:', err);
+      throw err;
     }
   };
 
