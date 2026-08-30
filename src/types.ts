@@ -25,6 +25,25 @@ export interface ContributionCalendar {
   }[];
   currentStreak: number;
   longestStreak: number;
+  activeDaysCount: number;
+  totalTrackedDays: number;
+  weeklyAverage: string;
+  activePercent: number;
+  levelCounts: Record<0 | 1 | 2 | 3 | 4, number>;
+}
+
+export interface GitHubUserData {
+  login: string;
+  name: string | null;
+  avatar_url: string;
+  bio: string | null;
+  public_repos: number;
+  followers: number;
+  following: number;
+  company?: string | null;
+  location?: string | null;
+  blog?: string | null;
+  html_url: string;
 }
 
 export interface ShowcasedProject {

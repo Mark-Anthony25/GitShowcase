@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase, isSupabaseConfigured, User, Session } from '../lib/supabase';
 import { Profile } from '../types';
 import { getProfileById, updateStudentProfile } from '../lib/showcaseStore';
+import { fetchGitHubUserData } from '../lib/github';
 
 interface AuthContextType {
   user: User | null;
@@ -56,10 +57,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const loadProfile = useCallback(async (userId: string, authUser?: User, token?: string | null) => {
+    try {
+      const p = await getProfileById(userId);
+      if (p) {
+        setProfile(p);
+      } else if (authUser) {
+        // New user after GitHub signup: Extract metadata & sync from GitHub API
+        const meta = authUser.user_metadata || {};
+        const githubHandle = meta.user_name || meta.preferred_username || meta.name || authUser.email?.split('@')[0] || 'student';
+        
+        let initialAvatar = meta.avatar_url || `https://github.com/${githubHandle}.png`;
+        let initialName = meta.full_name || meta.name || githubHandle;
+        let initialBio = 'Passionate student crafting web systems.';
+
+        // Try live GitHub user fetch for richest info
+        try {
+          const liveGitUser = await fetchGitHubUserData(token || null, githubHandle);
+          if (liveGitUser) {
+            if (liveGitUser.avatar_url) initialAvatar = liveGitUser.avatar_url;
+            if (liveGitUser.name) initialName = liveGitUser.name;
+            if (liveGitUser.bio) initialBio = liveGitUser.bio.slice(0, 50);
+          }
+        } catch (e) {
+          console.warn('Could not enrich new user from GitHub:', e);
+        }
+
+        const newProfile: Profile = {
+          id: userId,
+          github_username: githubHandle,
+          full_name: initialName,
+          headline: 'BS Computer Science • Developer',
+          avatar_url: initialAvatar,
+          bio: initialBio.slice(0, 50),
+          program: 'BS Computer Science',
+          year_level: '3rd Year',
+          is_onboarded: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        // Save initial profile draft to database/store
+        await updateStudentProfile(userId, newProfile);
+        setProfile(newProfile);
+      }
+    } catch (err) {
+      console.error('Error loading profile in AuthContext:', err);
+    }
+  }, []);
+
   // Cross-window popup authentication handler
   useEffect(() => {
     const handleAuthMessage = async (event: MessageEvent) => {
-      // Listen for popup auth completion
       if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
         if (isSupabaseConfigured && supabase) {
           try {
@@ -67,11 +116,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (session) {
               setSession(session);
               setUser(session.user);
-              if (session.provider_token) {
-                setGithubToken(session.provider_token);
+              const tok = session.provider_token || null;
+              if (tok) {
+                setGithubToken(tok);
               }
               setIsDemoMode(false);
-              await loadProfile(session.user.id, session.user);
+              await loadProfile(session.user.id, session.user, tok);
             }
           } catch (err) {
             console.error('Error handling popup auth session:', err);
@@ -82,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     window.addEventListener('message', handleAuthMessage);
     return () => window.removeEventListener('message', handleAuthMessage);
-  }, []);
+  }, [loadProfile]);
 
   // Popup closer detection: If this window was opened as a popup and contains auth callback tokens
   useEffect(() => {
@@ -95,7 +145,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         search.includes('code=') ||
         hash.includes('type=recovery')
       ) {
-        // Wait a brief tick for Supabase to store session then notify opener & close
         const timer = setTimeout(() => {
           try {
             window.opener.postMessage({ type: 'SUPABASE_AUTH_SUCCESS' }, '*');
@@ -124,10 +173,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (session && mounted) {
             setSession(session);
             setUser(session.user);
-            if (session.provider_token) {
-              setGithubToken(session.provider_token);
+            const tok = session.provider_token || null;
+            if (tok) {
+              setGithubToken(tok);
             }
-            await loadProfile(session.user.id, session.user);
+            await loadProfile(session.user.id, session.user, tok);
           }
         } catch (err) {
           console.error('Error fetching initial Supabase session:', err);
@@ -138,13 +188,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(newSession);
           setUser(newSession?.user || null);
 
-          if (newSession?.provider_token) {
-            setGithubToken(newSession.provider_token);
+          const tok = newSession?.provider_token || null;
+          if (tok) {
+            setGithubToken(tok);
           }
 
           if (newSession?.user) {
             setIsDemoMode(false);
-            await loadProfile(newSession.user.id, newSession.user);
+            await loadProfile(newSession.user.id, newSession.user, tok);
           } else if (!isDemoMode) {
             setProfile(null);
           }
@@ -170,36 +221,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       mounted = false;
     };
-  }, []);
-
-  const loadProfile = async (userId: string, authUser?: User) => {
-    try {
-      const p = await getProfileById(userId);
-      if (p) {
-        setProfile(p);
-      } else if (authUser) {
-        // Fallback user metadata extraction
-        const meta = authUser.user_metadata || {};
-        const githubHandle = meta.user_name || meta.preferred_username || meta.name || authUser.email?.split('@')[0] || 'student';
-        const newProfile: Profile = {
-          id: userId,
-          github_username: githubHandle,
-          full_name: meta.full_name || meta.name || githubHandle,
-          headline: 'Student Developer',
-          avatar_url: meta.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-          bio: 'Student at ISU Cauayan Campus.',
-          program: 'BS Computer Science',
-          year_level: '3rd Year',
-          is_onboarded: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        setProfile(newProfile);
-      }
-    } catch (err) {
-      console.error('Error loading profile:', err);
-    }
-  };
+  }, [loadProfile, isDemoMode]);
 
   const activateDemoSession = () => {
     setIsDemoMode(true);
@@ -253,7 +275,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data?.url) {
-        // Open OAuth authorization in popup window (required for iframe environments to avoid X-Frame-Options blocking)
         const width = 600;
         const height = 750;
         const left = window.screenX + (window.outerWidth - width) / 2;
@@ -266,7 +287,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
 
         if (!authWindow || authWindow.closed || typeof authWindow.closed === 'undefined') {
-          // If popup blocker intervened, fallback to top level redirect if outside iframe or alert user
           if (window.top === window.self) {
             window.location.href = data.url;
           } else {
@@ -300,7 +320,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshProfile = async () => {
     if (user) {
-      await loadProfile(user.id);
+      await loadProfile(user.id, user, githubToken);
     }
   };
 

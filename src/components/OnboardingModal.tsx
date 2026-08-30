@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Check, ArrowRight, ArrowLeft, Github, User, Code2, Star, 
   GitFork, Sparkles, CheckCircle2, AlertCircle, BookmarkPlus,
-  ExternalLink, Layers
+  ExternalLink, Layers, RefreshCw, Eye, Edit3, Image as ImageIcon
 } from 'lucide-react';
-import { Profile, GitHubRepoItem } from '../types';
-import { fetchUserRepos } from '../lib/github';
+import { Profile, GitHubRepoItem, GitHubUserData } from '../types';
+import { fetchUserRepos, fetchGitHubUserData } from '../lib/github';
 import { addProjectToShowcase, getStudentShowcasedProjects } from '../lib/showcaseStore';
 import { DEGREE_PROGRAM_OPTIONS, getCanonicalProgram } from '../lib/programs';
 
@@ -34,7 +34,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   onComplete,
   onCancel,
 }) => {
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const draftKey = `gitshowcase_onboarding_draft_${profile.id}`;
+
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
 
   // Canonical degree program extraction
   const initialProg = getCanonicalProgram(profile.program);
@@ -42,6 +44,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   // Step 1: Profile fields
   const [username, setUsername] = useState(profile.github_username || '');
   const [fullName, setFullName] = useState(profile.full_name || '');
+  const [avatarUrl, setAvatarUrl] = useState(
+    profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'
+  );
   const [headline, setHeadline] = useState(profile.headline || 'BS Computer Science • Developer');
   const [aboutMe, setAboutMe] = useState(
     (profile.bio || 'Passionate student crafting web & IoT systems.').slice(0, 50)
@@ -50,69 +55,163 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [customProgramName, setCustomProgramName] = useState(initialProg.customProgramName);
   const [yearLevel, setYearLevel] = useState(profile.year_level || '3rd Year');
   const [step1Error, setStep1Error] = useState<string | null>(null);
+  const [isSyncingGitHubUser, setIsSyncingGitHubUser] = useState(false);
+  const [githubSyncSuccess, setGithubSyncSuccess] = useState(false);
 
   // Step 2: Repository selection
   const [repos, setRepos] = useState<GitHubRepoItem[]>([]);
   const [loadingRepos, setLoadingRepos] = useState(false);
+  const [repoError, setRepoError] = useState<string | null>(null);
   const [repoSearch, setRepoSearch] = useState('');
   const [selectedRepoMap, setSelectedRepoMap] = useState<Record<string, {
     customTitle: string;
     customDescription: string;
     isFeatured: boolean;
   }>>({});
-  const [savingRepos, setSavingRepos] = useState(false);
+  const [savingShowcase, setSavingShowcase] = useState(false);
+
+  // Restore draft from localStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const savedDraft = localStorage.getItem(draftKey);
+      if (savedDraft) {
+        const draft = JSON.parse(savedDraft);
+        if (draft.step) setCurrentStep(draft.step);
+        if (draft.username) setUsername(draft.username);
+        if (draft.fullName) setFullName(draft.fullName);
+        if (draft.avatarUrl) setAvatarUrl(draft.avatarUrl);
+        if (draft.headline) setHeadline(draft.headline);
+        if (draft.aboutMe) setAboutMe(draft.aboutMe);
+        if (draft.selectedProgramOption) setSelectedProgramOption(draft.selectedProgramOption);
+        if (draft.customProgramName) setCustomProgramName(draft.customProgramName);
+        if (draft.yearLevel) setYearLevel(draft.yearLevel);
+        if (draft.selectedRepoMap) setSelectedRepoMap(draft.selectedRepoMap);
+      }
+    } catch (e) {
+      console.warn('Failed to load onboarding draft:', e);
+    }
+  }, [draftKey]);
+
+  // Persist draft to localStorage on change
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isOpen || currentStep === 4) return;
+    try {
+      const draft = {
+        step: currentStep,
+        username,
+        fullName,
+        avatarUrl,
+        headline,
+        aboutMe,
+        selectedProgramOption,
+        customProgramName,
+        yearLevel,
+        selectedRepoMap,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+    } catch (e) {
+      console.warn('Failed to save onboarding draft:', e);
+    }
+  }, [
+    draftKey,
+    isOpen,
+    currentStep,
+    username,
+    fullName,
+    avatarUrl,
+    headline,
+    aboutMe,
+    selectedProgramOption,
+    customProgramName,
+    yearLevel,
+    selectedRepoMap,
+  ]);
+
+  // Pre-fill / Synchronize from real GitHub profile
+  const syncFromGitHub = useCallback(async (isInitial = false) => {
+    setIsSyncingGitHubUser(true);
+    setGithubSyncSuccess(false);
+    try {
+      const gitUser = await fetchGitHubUserData(githubToken, username || profile.github_username);
+      if (gitUser) {
+        if (gitUser.login) setUsername(gitUser.login);
+        if (gitUser.name && (!fullName || !isInitial)) setFullName(gitUser.name);
+        if (gitUser.avatar_url) setAvatarUrl(gitUser.avatar_url);
+        if (gitUser.bio && (!aboutMe || !isInitial || aboutMe.length === 0)) {
+          setAboutMe(gitUser.bio.slice(0, 50));
+        }
+        setGithubSyncSuccess(true);
+        setTimeout(() => setGithubSyncSuccess(false), 3000);
+      }
+    } catch (err) {
+      console.error('Failed to sync from GitHub user profile:', err);
+    } finally {
+      setIsSyncingGitHubUser(false);
+    }
+  }, [githubToken, username, profile.github_username, fullName, aboutMe]);
+
+  // On first open, auto-sync from GitHub if avatar or name looks default
+  useEffect(() => {
+    if (isOpen && (!profile.full_name || profile.full_name === 'student' || !profile.avatar_url)) {
+      syncFromGitHub(true);
+    }
+  }, [isOpen, profile.full_name, profile.avatar_url, syncFromGitHub]);
 
   // Load repositories when advancing to Step 2
-  useEffect(() => {
-    if (isOpen && currentStep === 2) {
-      loadRepos();
-    }
-  }, [isOpen, currentStep]);
-
-  if (!isOpen) return null;
-
-  const loadRepos = async () => {
+  const loadRepos = useCallback(async () => {
     setLoadingRepos(true);
+    setRepoError(null);
     try {
       const fetched = await fetchUserRepos(githubToken, username || profile.github_username);
       setRepos(fetched);
 
-      // Pre-select already showcased or top 2 repos
-      const existing = await getStudentShowcasedProjects(profile.id);
-      const preSelected: Record<string, any> = {};
-      
-      if (existing.length > 0) {
-        existing.forEach(p => {
-          preSelected[p.repo_full_name] = {
-            customTitle: p.custom_title || '',
-            customDescription: p.custom_description || '',
-            isFeatured: p.is_featured,
-          };
-        });
-      } else if (fetched.length > 0) {
-        // Pre-check the first 2 repos by default to help student get started quickly
-        fetched.slice(0, 2).forEach((r, idx) => {
-          preSelected[r.full_name] = {
-            customTitle: r.name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
-            customDescription: r.description ? r.description.slice(0, 120) : '',
-            isFeatured: idx === 0,
-          };
-        });
+      // Pre-select already showcased repos or first 2 if none selected yet
+      if (Object.keys(selectedRepoMap).length === 0) {
+        const existing = await getStudentShowcasedProjects(profile.id);
+        const preSelected: Record<string, any> = {};
+        
+        if (existing.length > 0) {
+          existing.forEach(p => {
+            preSelected[p.repo_full_name] = {
+              customTitle: p.custom_title || '',
+              customDescription: p.custom_description || '',
+              isFeatured: p.is_featured,
+            };
+          });
+        } else if (fetched.length > 0) {
+          fetched.slice(0, 2).forEach((r, idx) => {
+            preSelected[r.full_name] = {
+              customTitle: r.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+              customDescription: r.description ? r.description.slice(0, 120) : '',
+              isFeatured: idx === 0,
+            };
+          });
+        }
+        setSelectedRepoMap(preSelected);
       }
-      setSelectedRepoMap(preSelected);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading repos in onboarding:', err);
+      setRepoError(err?.message || 'Unable to retrieve repositories from GitHub.');
     } finally {
       setLoadingRepos(false);
     }
-  };
+  }, [githubToken, username, profile.github_username, profile.id, selectedRepoMap]);
+
+  useEffect(() => {
+    if (isOpen && currentStep === 2 && repos.length === 0) {
+      loadRepos();
+    }
+  }, [isOpen, currentStep, repos.length, loadRepos]);
+
+  if (!isOpen) return null;
 
   const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault();
     setStep1Error(null);
 
     if (!username.trim()) {
-      setStep1Error('Username is required.');
+      setStep1Error('GitHub Username is required.');
       return;
     }
 
@@ -130,7 +229,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       delete updated[repo.full_name];
     } else {
       updated[repo.full_name] = {
-        customTitle: repo.name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        customTitle: repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
         customDescription: repo.description ? repo.description.slice(0, 120) : '',
         isFeatured: Object.keys(updated).length === 0, // First selected is featured
       };
@@ -138,10 +237,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     setSelectedRepoMap(updated);
   };
 
+  const handleProceedToReview = () => {
+    setCurrentStep(3);
+  };
+
   const handleFinishOnboarding = async () => {
-    setSavingRepos(true);
+    setSavingShowcase(true);
     try {
-      // 1. Save projects selected
+      // 1. Save all selected projects
       for (const [repoFullName, meta] of Object.entries(selectedRepoMap) as [string, { customTitle: string; customDescription: string; isFeatured: boolean }][]) {
         const repoObj = repos.find(r => r.full_name === repoFullName);
         await addProjectToShowcase({
@@ -164,6 +267,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         ...profile,
         github_username: username.trim().toLowerCase(),
         full_name: fullName.trim() || username.trim(),
+        avatar_url: avatarUrl.trim(),
         headline: headline.trim(),
         bio: aboutMe.trim().slice(0, 50),
         program: effectiveProgram,
@@ -172,14 +276,19 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         updated_at: new Date().toISOString(),
       };
 
-      setCurrentStep(3);
+      // 3. Clear draft from localStorage
+      try {
+        localStorage.removeItem(draftKey);
+      } catch {}
+
+      setCurrentStep(4);
       setTimeout(() => {
         onComplete(updatedProfile);
-      }, 1400);
+      }, 1200);
     } catch (err) {
       console.error('Error saving onboarding data:', err);
     } finally {
-      setSavingRepos(false);
+      setSavingShowcase(false);
     }
   };
 
@@ -191,13 +300,18 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
   const selectedCount = Object.keys(selectedRepoMap).length;
 
+  const effectiveProgramDisplay =
+    selectedProgramOption === 'Other Programs'
+      ? (customProgramName.trim() || 'Other Programs')
+      : selectedProgramOption;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs overflow-y-auto">
-      <div className="bg-[#FEFCF6] paper-card max-w-xl w-full p-3.5 sm:p-5 shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] my-auto text-[#212121] max-h-[90dvh] overflow-y-auto">
+      <div className="bg-[#FEFCF6] paper-card max-w-2xl w-full p-3.5 sm:p-5 shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] my-auto text-[#212121] max-h-[90dvh] overflow-y-auto">
         
         {/* Step Indicator Header */}
-        <div className="border-b border-dashed border-[#212121] pb-2.5 mb-3.5">
-          <div className="flex items-center justify-between">
+        <div className="border-b border-dashed border-[#212121] pb-3 mb-3.5">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center space-x-1.5">
               <span className="paper-badge bg-[#212121] text-white text-[9px] font-bold">
                 GITSHOWCASE ONBOARDING
@@ -206,32 +320,70 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 ISU Cauayan Campus
               </span>
             </div>
-            <span className="text-xs font-mono font-bold text-stone-800">
-              Step {currentStep} of 2
-            </span>
+            <div className="flex items-center space-x-1 font-mono text-xs font-bold text-stone-800">
+              <span className={`px-1.5 py-0.5 rounded-xs ${currentStep === 1 ? 'bg-[#212121] text-white' : 'bg-stone-200'}`}>1. Profile</span>
+              <span>→</span>
+              <span className={`px-1.5 py-0.5 rounded-xs ${currentStep === 2 ? 'bg-[#212121] text-white' : 'bg-stone-200'}`}>2. Repositories</span>
+              <span>→</span>
+              <span className={`px-1.5 py-0.5 rounded-xs ${currentStep === 3 ? 'bg-[#212121] text-white' : 'bg-stone-200'}`}>3. Review</span>
+            </div>
           </div>
 
-          <h2 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title mt-1.5 text-[#212121]">
-            {currentStep === 1 && 'Set Up Your Student Profile'}
-            {currentStep === 2 && 'Select Projects to Showcase'}
-            {currentStep === 3 && 'Publishing Your Profile...'}
+          <h2 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title mt-2 text-[#212121]">
+            {currentStep === 1 && 'Step 1: Set Up Student Identity & Profile'}
+            {currentStep === 2 && 'Step 2: Select Real Repositories from GitHub'}
+            {currentStep === 3 && 'Step 3: Review & Publish Your Showcase'}
+            {currentStep === 4 && 'Publishing Your Portfolio...'}
           </h2>
           <p className="text-xs font-serif-body text-stone-700 mt-0.5">
-            {currentStep === 1 && 'Configure your name, headline, degree program, and a short 50-character bio.'}
-            {currentStep === 2 && 'Pick your best capstones, assignments, and projects from GitHub to showcase.'}
-            {currentStep === 3 && 'Finalizing your project showcase page.'}
+            {currentStep === 1 && 'Information is pre-filled from your authenticated GitHub account. Review and adjust your details.'}
+            {currentStep === 2 && 'Choose which public repositories to showcase, write custom project summaries, and pin your top spotlight.'}
+            {currentStep === 3 && 'Double-check all imported information before launching your public showcase page.'}
+            {currentStep === 4 && 'Saving your verified student identity and linking live GitHub telemetry.'}
           </p>
         </div>
 
         {/* STEP 1: Profile Setup Form */}
         {currentStep === 1 && (
-          <form onSubmit={handleStep1Submit} className="space-y-3">
+          <form onSubmit={handleStep1Submit} className="space-y-3.5">
             {step1Error && (
-              <div className="p-2 bg-red-100 border border-red-500 text-red-950 text-xs font-mono flex items-center space-x-1.5 rounded-xs">
+              <div className="p-2.5 bg-red-100 border border-red-500 text-red-950 text-xs font-mono flex items-center space-x-1.5 rounded-xs">
                 <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                 <span>{step1Error}</span>
               </div>
             )}
+
+            {/* GitHub Auto-Sync Banner */}
+            <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+              <div className="flex items-center space-x-2">
+                <div className="w-10 h-10 rounded-xs border border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 shadow-[1px_1px_0px_#212121]">
+                  <img src={avatarUrl} alt="Avatar Preview" className="w-full h-full object-cover" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-sketch uppercase font-bold text-stone-700 block">Connected Account</span>
+                  <span className="font-mono font-bold text-[#212121]">@{username || 'github-user'}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2 self-stretch sm:self-auto justify-end">
+                {githubSyncSuccess && (
+                  <span className="text-[10px] font-mono text-emerald-800 flex items-center space-x-1">
+                    <Check className="w-3 h-3 text-emerald-700" />
+                    <span>Imported from GitHub!</span>
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => syncFromGitHub(false)}
+                  disabled={isSyncingGitHubUser}
+                  className="paper-button text-xs py-1 px-2.5 font-bold flex items-center space-x-1 cursor-pointer"
+                  title="Re-import latest avatar, name, and bio from GitHub"
+                >
+                  <RefreshCw className={`w-3 h-3 text-stone-800 ${isSyncingGitHubUser ? 'animate-spin' : ''}`} />
+                  <span>Re-sync GitHub</span>
+                </button>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* GitHub Username */}
@@ -246,7 +398,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="username"
+                    placeholder="github_username"
                     className="w-full pl-7 pr-2.5 py-1.5 paper-input text-xs font-mono text-[#212121] min-h-[34px]"
                   />
                 </div>
@@ -255,7 +407,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               {/* Full Name */}
               <div>
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
-                  Full Name <span className="text-stone-600">*</span>
+                  Display / Full Name <span className="text-stone-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -268,13 +420,37 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               </div>
             </div>
 
+            {/* Avatar URL (Customizable) */}
+            <div>
+              <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
+                Profile Avatar URL
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="url"
+                  value={avatarUrl}
+                  onChange={(e) => setAvatarUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full px-2.5 py-1.5 paper-input text-xs font-mono text-[#212121] min-h-[34px]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setAvatarUrl(`https://github.com/${username}.png`)}
+                  className="paper-button text-xs py-1 px-2.5 font-bold whitespace-nowrap min-h-[34px]"
+                  title="Reset to GitHub avatar"
+                >
+                  Use GitHub Avatar
+                </button>
+              </div>
+            </div>
+
             {/* Headline */}
             <div>
               <div className="flex items-center justify-between mb-0.5">
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
                   Professional / Student Headline
                 </label>
-                <span className="text-[9px] font-sketch text-stone-600 font-bold">e.g. Program &amp; Focus</span>
+                <span className="text-[9px] font-sketch text-stone-600 font-bold">e.g. Program &amp; Specialization</span>
               </div>
               <input
                 type="text"
@@ -304,7 +480,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             <div>
               <div className="flex items-center justify-between mb-0.5">
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
-                  About Me <span className="text-stone-600 font-normal">(Max 50 Characters)</span>
+                  About Me <span className="text-stone-600 font-normal">(Strict Max 50 Characters)</span>
                 </label>
                 <span
                   className={`text-[11px] font-mono font-bold ${
@@ -321,13 +497,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 onChange={(e) => setAboutMe(e.target.value.slice(0, 50))}
                 placeholder="Crisp 50-character summary of your tech passion..."
                 className={`w-full px-2.5 py-1.5 paper-input text-xs font-serif-body min-h-[34px] ${
-                  aboutMe.length >= 50
-                    ? 'border-amber-600 ring-1 ring-amber-600'
-                    : ''
+                  aboutMe.length >= 50 ? 'border-amber-600 ring-1 ring-amber-600' : ''
                 }`}
               />
               <p className="text-[10px] font-serif-body italic text-stone-600 mt-0.5">
-                Keep it punchy and memorable for visiting students and faculty advisors.
+                Keep it concise and punchy for visiting students and faculty mentors.
               </p>
             </div>
 
@@ -336,7 +510,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
-                    Degree Program
+                    ISU Degree Program
                   </label>
                   <select
                     id="onboarding-program-select"
@@ -373,7 +547,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               {selectedProgramOption === 'Other Programs' && (
                 <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] space-y-1 animate-in fade-in duration-100">
                   <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
-                    Specify Degree Program Name <span className="text-stone-600 font-normal">(e.g. BS Information Systems)</span>
+                    Specify Degree Program Name
                   </label>
                   <input
                     id="onboarding-custom-program-input"
@@ -383,9 +557,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     placeholder="e.g. BS Information Systems"
                     className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px]"
                   />
-                  <p className="text-[10px] font-serif-body italic text-stone-600">
-                    Your custom degree program will be shown on your public profile card and project dispatches.
-                  </p>
                 </div>
               )}
             </div>
@@ -404,7 +575,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               <button
                 type="submit"
                 id="onboarding-step1-next-btn"
-                className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold min-h-[34px] justify-center"
+                className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold min-h-[34px] justify-center flex items-center space-x-1"
               >
                 <span>Continue to Select Repositories</span>
                 <ArrowRight className="w-3.5 h-3.5 ml-1 flex-shrink-0" />
@@ -415,34 +586,57 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
         {/* STEP 2: Choose Repositories to Showcase */}
         {currentStep === 2 && (
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="relative flex-1">
                 <input
                   type="text"
-                  placeholder="Filter connected repositories by name or language..."
+                  placeholder="Filter repositories by name or language..."
                   value={repoSearch}
                   onChange={(e) => setRepoSearch(e.target.value)}
                   className="w-full px-2.5 py-1.5 paper-input text-xs font-mono min-h-[34px]"
                 />
               </div>
               <div className="flex items-center space-x-2 font-mono text-xs text-stone-700">
+                <button
+                  onClick={loadRepos}
+                  disabled={loadingRepos}
+                  className="paper-button text-xs py-1 px-2.5 font-bold flex items-center space-x-1"
+                  title="Reload GitHub Repositories"
+                >
+                  <RefreshCw className={`w-3 h-3 text-stone-800 ${loadingRepos ? 'animate-spin' : ''}`} />
+                  <span>Refresh</span>
+                </button>
                 <span className="paper-badge bg-stone-200 text-[#212121] font-bold">
                   {selectedCount} Selected
                 </span>
               </div>
             </div>
 
+            {repoError && (
+              <div className="p-2.5 bg-amber-50 border border-amber-600 text-amber-950 text-xs font-mono flex items-center justify-between gap-2">
+                <span>{repoError}</span>
+                <button onClick={loadRepos} className="paper-button text-xs py-1 px-2 font-bold">
+                  Retry
+                </button>
+              </div>
+            )}
+
             {/* Repos List */}
-            <div className="paper-card bg-[#FEFCF6] max-h-60 overflow-y-auto divide-y divide-dashed divide-stone-300 p-1.5">
+            <div className="paper-card bg-[#FEFCF6] max-h-64 overflow-y-auto divide-y divide-dashed divide-stone-300 p-1.5">
               {loadingRepos ? (
-                <div className="p-6 text-center space-y-1.5">
-                  <div className="animate-spin w-5 h-5 border-2 border-black border-t-transparent mx-auto"></div>
-                  <p className="text-xs font-sketch uppercase text-stone-700 font-bold">Connecting to GitHub repositories...</p>
+                <div className="p-8 text-center space-y-2">
+                  <RefreshCw className="w-5 h-5 animate-spin mx-auto text-stone-700" />
+                  <p className="text-xs font-sketch uppercase text-stone-700 font-bold">
+                    Connecting to GitHub repositories for @{username}...
+                  </p>
                 </div>
               ) : filteredRepos.length === 0 ? (
-                <div className="p-6 text-center text-xs font-mono text-stone-600">
-                  No repositories found. You can add them later or adjust your search.
+                <div className="p-8 text-center text-xs font-mono text-stone-600 space-y-2">
+                  <p>No repositories found on GitHub for @{username}.</p>
+                  <p className="text-[11px] text-stone-500">
+                    You can still continue setup and publish repositories anytime from your dashboard.
+                  </p>
                 </div>
               ) : (
                 filteredRepos.map((repo) => {
@@ -470,7 +664,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                                 {repo.name}
                               </span>
                               {repo.language && (
-                                <span className="paper-badge text-[9px] font-mono">
+                                <span className="paper-badge text-[9px] font-mono bg-stone-200">
                                   {repo.language}
                                 </span>
                               )}
@@ -497,11 +691,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                                 },
                               });
                             }}
-                            title="Pin as Lead Capstone Project"
+                            title="Pin as Featured Spotlight"
                             className={`paper-button text-xs py-1 px-2 min-h-[30px] font-bold flex-shrink-0 ${
-                              meta?.isFeatured
-                                ? 'paper-button-dark'
-                                : ''
+                              meta?.isFeatured ? 'paper-button-dark' : ''
                             }`}
                           >
                             <Star className={`w-3 h-3 mr-0.5 inline-block ${meta?.isFeatured ? 'fill-amber-300 text-amber-300' : ''}`} />
@@ -509,6 +701,42 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                           </button>
                         )}
                       </div>
+
+                      {/* Inline title/desc customizer if selected */}
+                      {isSelected && (
+                        <div className="mt-2 pt-2 border-t border-dashed border-stone-300 pl-6 space-y-1.5">
+                          <input
+                            type="text"
+                            value={meta?.customTitle || ''}
+                            onChange={(e) => {
+                              setSelectedRepoMap({
+                                ...selectedRepoMap,
+                                [repo.full_name]: {
+                                  ...meta,
+                                  customTitle: e.target.value,
+                                },
+                              });
+                            }}
+                            placeholder="Custom Display Title..."
+                            className="w-full px-2 py-1 paper-input text-[11px] font-mono min-h-[28px]"
+                          />
+                          <input
+                            type="text"
+                            value={meta?.customDescription || ''}
+                            onChange={(e) => {
+                              setSelectedRepoMap({
+                                ...selectedRepoMap,
+                                [repo.full_name]: {
+                                  ...meta,
+                                  customDescription: e.target.value,
+                                },
+                              });
+                            }}
+                            placeholder="Custom summary description for portfolio..."
+                            className="w-full px-2 py-1 paper-input text-[11px] font-serif-body min-h-[28px]"
+                          />
+                        </div>
+                      )}
                     </div>
                   );
                 })
@@ -528,17 +756,125 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
               <button
                 type="button"
-                id="complete-onboarding-btn"
-                disabled={savingRepos}
-                onClick={handleFinishOnboarding}
-                className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold disabled:opacity-50 min-h-[34px] justify-center"
+                id="onboarding-step2-next-btn"
+                onClick={handleProceedToReview}
+                className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold min-h-[34px] justify-center flex items-center space-x-1"
               >
-                {savingRepos ? (
-                  <span>Publishing Showcase...</span>
+                <span>Review &amp; Publish</span>
+                <ArrowRight className="w-3.5 h-3.5 ml-1 flex-shrink-0" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: Review & Confirmation Screen */}
+        {currentStep === 3 && (
+          <div className="space-y-3.5">
+            <div className="bg-[#FAF6EC] paper-card p-3.5 sm:p-4 border border-[#212121] space-y-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-14 h-14 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[2px_2px_0px_#212121]">
+                  <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
+                </div>
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <span className="text-[9px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
+                    STUDENT IDENTITY PREVIEW
+                  </span>
+                  <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
+                    {fullName || username}
+                  </h3>
+                  <p className="text-xs font-mono font-bold text-stone-800">
+                    @{username} • {yearLevel}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-1 pt-2 border-t border-dashed border-[#212121] text-xs">
+                <div className="flex items-center space-x-2">
+                  <span className="font-sketch font-bold uppercase text-stone-600 text-[10px]">Program:</span>
+                  <span className="font-serif-body font-bold text-[#212121]">{effectiveProgramDisplay}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="font-sketch font-bold uppercase text-stone-600 text-[10px]">Headline:</span>
+                  <span className="font-mono text-[#212121] text-[11px] truncate">{headline}</span>
+                </div>
+                <div className="flex items-start space-x-2 pt-0.5">
+                  <span className="font-sketch font-bold uppercase text-stone-600 text-[10px] flex-shrink-0">About Me:</span>
+                  <span className="font-serif-body text-stone-800 italic">"{aboutMe}"</span>
+                </div>
+              </div>
+
+              {/* Showcased Repos Review */}
+              <div className="pt-2 border-t border-dashed border-[#212121] space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-sketch font-bold uppercase text-stone-700">
+                    Showcased Repositories ({selectedCount})
+                  </span>
+                  <button
+                    onClick={() => setCurrentStep(2)}
+                    className="text-stone-700 hover:text-black text-[11px] underline font-mono font-bold"
+                  >
+                    Change selection
+                  </button>
+                </div>
+
+                {selectedCount === 0 ? (
+                  <p className="text-xs font-serif-body text-stone-600 italic">
+                    No repositories selected yet. You can add them anytime after setup.
+                  </p>
+                ) : (
+                  <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
+                    {(Object.entries(selectedRepoMap) as [string, { customTitle: string; customDescription: string; isFeatured: boolean }][]).map(([repoName, meta]) => (
+                      <div
+                        key={repoName}
+                        className="p-1.5 bg-[#FEFCF6] paper-card text-xs flex items-center justify-between border border-[#212121]"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <span className="font-newspaper-title font-[900] text-[11px] uppercase block truncate">
+                            {meta.customTitle || repoName}
+                          </span>
+                          <span className="text-[10px] font-mono text-stone-600 truncate block">
+                            {repoName}
+                          </span>
+                        </div>
+                        {meta.isFeatured && (
+                          <span className="paper-badge bg-amber-200 text-amber-950 text-[9px] font-bold ml-2">
+                            Featured Spotlight
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-3 border-t border-dashed border-[#212121]">
+              <button
+                type="button"
+                onClick={() => setCurrentStep(2)}
+                className="paper-button text-xs py-1.5 px-3 min-h-[34px] font-bold justify-center"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
+                <span>Back to Repositories</span>
+              </button>
+
+              <button
+                type="button"
+                id="complete-onboarding-btn"
+                disabled={savingShowcase}
+                onClick={handleFinishOnboarding}
+                className="paper-button paper-button-dark text-xs py-1.5 px-5 font-bold disabled:opacity-50 min-h-[34px] justify-center flex items-center space-x-1.5"
+              >
+                {savingShowcase ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Publishing Showcase...</span>
+                  </>
                 ) : (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400 mr-1 flex-shrink-0" />
-                    <span>Complete Setup &amp; Launch</span>
+                    <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                    <span>Confirm &amp; Launch Profile</span>
                   </>
                 )}
               </button>
@@ -546,17 +882,17 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
           </div>
         )}
 
-        {/* STEP 3: Success Confirmation */}
-        {currentStep === 3 && (
+        {/* STEP 4: Success Confirmation */}
+        {currentStep === 4 && (
           <div className="py-10 text-center space-y-3">
             <div className="w-12 h-12 paper-card bg-emerald-100 border-emerald-600 flex items-center justify-center mx-auto text-emerald-800">
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <h3 className="text-lg sm:text-xl font-[900] uppercase font-newspaper-title text-[#212121]">
-              GitShowcase Portfolio Created!
+              GitShowcase Portfolio Published!
             </h3>
             <p className="text-xs font-serif-body text-stone-700 max-w-sm mx-auto">
-              Your student profile, curated repositories, and GitHub commit boxes are now published and live.
+              Your profile, verified GitHub commit telemetry, and curated repositories are live. Redirecting to your showcase...
             </p>
           </div>
         )}

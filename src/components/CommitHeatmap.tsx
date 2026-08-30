@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { GitCommit, Flame, Award, Calendar, Zap, TrendingUp, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { GitCommit, Flame, Award, Calendar, Zap, TrendingUp, Sparkles, RefreshCw, AlertCircle, ExternalLink } from 'lucide-react';
 import { ContributionCalendar, ContributionDay } from '../types';
+import { fetchGitHubContributions } from '../lib/github';
+import { useAuth } from '../context/AuthContext';
 
 interface CommitHeatmapProps {
   username: string;
@@ -17,135 +19,62 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
   compact = false,
   totalProjects,
 }) => {
+  const { githubToken } = useAuth();
+  const [calendarData, setCalendarData] = useState<ContributionCalendar | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hoveredDay, setHoveredDay] = useState<{ day: ContributionDay; x: number; y: number } | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Generate deterministic & realistic 52-week contribution data based on username
-  const calendarData = useMemo(() => {
-    // Generate seeded random values using username string
-    let seed = 0;
-    for (let i = 0; i < username.length; i++) {
-      seed = (seed << 5) - seed + username.charCodeAt(i);
-      seed |= 0;
-    }
-    const pseudoRandom = (offset: number) => {
-      const x = Math.sin(seed + offset) * 10000;
-      return x - Math.floor(x);
-    };
-
-    const today = new Date();
-    const totalWeeks = compact ? 26 : 52;
-    const daysPerWeek = 7;
-    const weeks: { days: ContributionDay[] }[] = [];
-    
-    let totalCommits = 0;
-    let currentStreak = 0;
-    let longestStreak = 0;
-    let tempStreak = 0;
-    let activeDaysCount = 0;
-    const levelCounts: Record<0 | 1 | 2 | 3 | 4, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
-
-    // Start from (totalWeeks * 7) days ago
-    const startDate = new Date(today);
-    startDate.setDate(today.getDate() - (totalWeeks * daysPerWeek - (7 - today.getDay())));
-
-    let dayOffset = 0;
-    for (let w = 0; w < totalWeeks; w++) {
-      const days: ContributionDay[] = [];
-      for (let d = 0; d < daysPerWeek; d++) {
-        const currentDate = new Date(startDate);
-        currentDate.setDate(startDate.getDate() + dayOffset);
-        
-        const isFuture = currentDate > today;
-        let count = 0;
-        let level: 0 | 1 | 2 | 3 | 4 = 0;
-
-        if (!isFuture) {
-          const dayOfWeek = currentDate.getDay(); // 0 is Sunday, 6 is Saturday
-          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-          const rand = pseudoRandom(dayOffset);
-          
-          // Activity probability logic: higher on weekdays, occasional bursts
-          const activeChance = isWeekend ? 0.38 : 0.68;
-          if (rand < activeChance) {
-            const intensityRand = pseudoRandom(dayOffset * 3 + 7);
-            if (intensityRand > 0.82) {
-              count = Math.floor(8 + pseudoRandom(dayOffset * 5) * 10); // 8 - 18
-              level = 4;
-            } else if (intensityRand > 0.55) {
-              count = Math.floor(4 + pseudoRandom(dayOffset * 5) * 4); // 4 - 7
-              level = 3;
-            } else if (intensityRand > 0.25) {
-              count = Math.floor(2 + pseudoRandom(dayOffset * 5) * 2); // 2 - 3
-              level = 2;
-            } else {
-              count = 1;
-              level = 1;
-            }
-          }
-
-          totalCommits += count;
-          if (count > 0) {
-            activeDaysCount++;
-            tempStreak++;
-            if (tempStreak > longestStreak) longestStreak = tempStreak;
-          } else {
-            tempStreak = 0;
-          }
-
-          levelCounts[level]++;
-
-          // If within the last 14 days and still counting
-          if (dayOffset >= (totalWeeks * daysPerWeek) - 14 && count > 0) {
-            currentStreak = tempStreak;
-          }
-        } else {
-          levelCounts[0]++;
-        }
-
-        days.push({
-          date: currentDate.toISOString().split('T')[0],
-          count,
-          level,
-        });
-
-        dayOffset++;
-      }
-      weeks.push({ days });
+  const loadContributions = useCallback(async (showRefreshIndicator = false) => {
+    if (!username) {
+      setIsLoading(false);
+      setErrorMessage('No GitHub username specified.');
+      return;
     }
 
-    const calculatedStreak = Math.max(1, currentStreak);
-    const calculatedLongest = Math.max(calculatedStreak + 4, longestStreak);
-    const totalTrackedDays = totalWeeks * daysPerWeek;
-    const weeklyAverage = (totalCommits / totalWeeks).toFixed(1);
-    const activePercent = Math.round((activeDaysCount / totalTrackedDays) * 100);
+    if (showRefreshIndicator) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
+    setErrorMessage(null);
 
-    return {
-      totalContributions: totalCommits,
-      weeks,
-      currentStreak: calculatedStreak,
-      longestStreak: calculatedLongest,
-      activeDaysCount,
-      totalTrackedDays,
-      weeklyAverage,
-      activePercent,
-      levelCounts,
-    };
-  }, [username, compact]);
+    try {
+      const data = await fetchGitHubContributions(username, githubToken, compact);
+      setCalendarData(data);
+    } catch (err: any) {
+      console.error(`Failed to load real GitHub contributions for @${username}:`, err);
+      setErrorMessage(
+        err?.message || `Unable to retrieve GitHub contribution activity for @${username}. GitHub rate-limit or network timeout.`
+      );
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [username, githubToken, compact]);
+
+  useEffect(() => {
+    loadContributions();
+  }, [loadContributions]);
 
   // Month labels for column headings
   const monthLabels = useMemo(() => {
+    if (!calendarData || !calendarData.weeks) return [];
     const labels: { label: string; weekIndex: number }[] = [];
     let lastMonth = -1;
 
     calendarData.weeks.forEach((week, index) => {
-      const firstDay = new Date(week.days[0].date);
-      const month = firstDay.getMonth();
-      if (month !== lastMonth) {
-        labels.push({
-          label: firstDay.toLocaleString('default', { month: 'short' }),
-          weekIndex: index,
-        });
-        lastMonth = month;
+      if (week.days.length > 0) {
+        const firstDay = new Date(week.days[0].date);
+        const month = firstDay.getMonth();
+        if (month !== lastMonth) {
+          labels.push({
+            label: firstDay.toLocaleString('default', { month: 'short' }),
+            weekIndex: index,
+          });
+          lastMonth = month;
+        }
       }
     });
 
@@ -175,202 +104,253 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
 
   return (
     <div className={`w-full max-w-full overflow-hidden p-3.5 sm:p-5 paper-card bg-[#FEFCF6] space-y-3.5 sm:space-y-4 ${className}`}>
-      {/* Header with Title & Live Stats */}
+      {/* Header with Title, Source Badge & Live Sync Control */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-dashed border-[#212121] pb-3">
         <div className="space-y-0.5">
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center shadow-[1px_1px_0px_#212121] flex-shrink-0">
-              <GitCommit className="w-3.5 h-3.5 text-[#212121] stroke-[2]" />
-            </div>
-            <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] tracking-tight">
-              Activity &amp; Commit Dispatch
-            </h3>
+          <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+            <span className="text-[10px] sm:text-xs font-sketch uppercase tracking-widest text-stone-700 font-bold">
+              VERIFIED GITHUB TELEMETRY
+            </span>
+            <span className="paper-badge bg-emerald-100 text-emerald-950 border-emerald-700 text-[9px] font-bold">
+              REAL-TIME GITHUB API
+            </span>
           </div>
-          <p className="text-[11px] sm:text-xs font-serif-body text-stone-700 pl-8">
-            52-week contribution timeline &amp; coding consistency telemetry.
-          </p>
+          <h2 className="text-base sm:text-lg lg:text-xl font-[900] uppercase font-newspaper-title text-[#212121]">
+            Annual Commit &amp; Contribution Activity
+          </h2>
         </div>
 
-        {showStats && (
-          <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto font-mono text-xs">
-            <div className="flex items-center space-x-1.5 bg-[#FAF6EC] px-2.5 py-1 border border-[#212121] rounded-xs shadow-[1px_1px_0px_#212121]">
-              <span className="font-[900] font-newspaper-title text-sm text-[#212121]">
-                {calendarData.totalContributions.toLocaleString()}
-              </span>
-              <span className="text-[10px] font-sketch text-stone-700 font-bold uppercase tracking-wider">
-                Contributions
-              </span>
-            </div>
-            <div className="flex items-center space-x-1.5 bg-amber-100 px-2.5 py-1 border border-amber-800 rounded-xs shadow-[1px_1px_0px_#92400E] text-amber-950 font-bold">
-              <Flame className="w-3.5 h-3.5 fill-amber-500 text-amber-700 flex-shrink-0" />
-              <span className="text-xs">{calendarData.currentStreak}d Streak</span>
-            </div>
-          </div>
-        )}
+        {/* Top Sync & Live GitHub Link */}
+        <div className="flex items-center space-x-2 self-start sm:self-auto">
+          <a
+            href={`https://github.com/${username}`}
+            target="_blank"
+            rel="noreferrer"
+            className="paper-button text-[11px] font-mono py-1 px-2.5 min-h-[30px] flex items-center space-x-1"
+            title={`View @${username} on GitHub`}
+          >
+            <span>@{username}</span>
+            <ExternalLink className="w-2.5 h-2.5" />
+          </a>
+
+          <button
+            onClick={() => loadContributions(true)}
+            disabled={isLoading || isRefreshing}
+            className="paper-button-icon min-w-[32px] min-h-[32px] p-1.5 cursor-pointer disabled:opacity-50"
+            title="Re-sync GitHub Contribution Calendar"
+            aria-label="Re-sync GitHub Contribution Calendar"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-stone-800 ${isRefreshing || isLoading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
-      {/* Activity Summary Metrics Grid (Efficient space utilization) */}
-      {showStats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 pt-0.5">
-          {/* Card 1: Total Contributions */}
-          <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121] flex flex-col justify-between">
-            <div className="flex items-center justify-between text-stone-700">
-              <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Annual Velocity</span>
-              <TrendingUp className="w-3 h-3 text-stone-600" />
-            </div>
-            <div className="mt-1">
-              <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121] block leading-none">
-                {calendarData.totalContributions}
-              </span>
-              <span className="text-[10px] font-serif-body text-stone-600">
-                ~{calendarData.weeklyAverage} commits / wk
-              </span>
-            </div>
-          </div>
-
-          {/* Card 2: Current Active Streak */}
-          <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121] flex flex-col justify-between">
-            <div className="flex items-center justify-between text-amber-800">
-              <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Current Streak</span>
-              <Flame className="w-3 h-3 fill-amber-500 text-amber-600" />
-            </div>
-            <div className="mt-1">
-              <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121] block leading-none">
-                {calendarData.currentStreak} Days
-              </span>
-              <span className="text-[10px] font-serif-body text-emerald-800 font-bold">
-                Active &amp; Counting
-              </span>
-            </div>
-          </div>
-
-          {/* Card 3: Longest Run */}
-          <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121] flex flex-col justify-between">
-            <div className="flex items-center justify-between text-stone-700">
-              <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Longest Run</span>
-              <Award className="w-3 h-3 text-stone-600" />
-            </div>
-            <div className="mt-1">
-              <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121] block leading-none">
-                {calendarData.longestStreak} Days
-              </span>
-              <span className="text-[10px] font-serif-body text-stone-600">
-                Personal Record
-              </span>
-            </div>
-          </div>
-
-          {/* Card 4: Active Days Consistency */}
-          <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121] flex flex-col justify-between">
-            <div className="flex items-center justify-between text-stone-700">
-              <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">
-                {totalProjects !== undefined ? 'Showcased Work' : 'Active Days'}
-              </span>
-              <Zap className="w-3 h-3 text-stone-600" />
-            </div>
-            <div className="mt-1">
-              <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121] block leading-none">
-                {totalProjects !== undefined ? `${totalProjects} Projects` : `${calendarData.activeDaysCount} Days`}
-              </span>
-              <span className="text-[10px] font-serif-body text-stone-600">
-                {totalProjects !== undefined ? 'Published Dispatches' : `${calendarData.activePercent}% Consistency`}
-              </span>
-            </div>
+      {/* Loading State */}
+      {isLoading && !calendarData && (
+        <div className="p-8 text-center space-y-3 bg-[#FAF6EC] paper-card border border-dashed border-[#212121]">
+          <RefreshCw className="w-6 h-6 animate-spin mx-auto text-stone-700" />
+          <div className="space-y-1">
+            <p className="text-xs font-sketch uppercase tracking-wider font-bold text-[#212121]">
+              Fetching Verified GitHub Contribution Activity...
+            </p>
+            <p className="text-[11px] font-mono text-stone-600">
+              Querying GitHub GraphQL &amp; public contribution events for @{username}
+            </p>
           </div>
         </div>
       )}
 
-      {/* Prominent Scaled Heatmap Visualization */}
-      <div className="w-full max-w-full overflow-x-auto pb-1.5 pt-1 relative touch-pan-x bg-[#FAF6EC]/50 p-2 sm:p-3 border border-[#212121]/30 rounded-xs paper-card">
-        <div className="min-w-[700px] sm:min-w-[740px] md:min-w-[780px]">
-          {/* Month Headers */}
-          <div className="flex text-[10px] sm:text-[11px] font-sketch text-stone-800 mb-1.5 pl-8 font-bold">
-            {monthLabels.map((m, idx) => (
-              <div
-                key={idx}
-                style={{ marginLeft: idx === 0 ? `${m.weekIndex * 14}px` : undefined, width: '52px' }}
-                className="truncate uppercase tracking-wider"
-              >
-                {m.label}
-              </div>
-            ))}
-          </div>
-
-          {/* Grid Rows with Day Labels */}
-          <div className="flex items-start">
-            {/* Day Labels (Sun, Tue, Thu, Sat) */}
-            <div className="flex flex-col justify-between pr-2 text-[9px] sm:text-[10px] font-sketch text-stone-700 select-none w-7 text-right font-bold h-[105px] sm:h-[114px] md:h-[119px] py-0.5">
-              <span>Sun</span>
-              <span>Tue</span>
-              <span>Thu</span>
-              <span>Sat</span>
+      {/* Error State (No fake fallback) */}
+      {!isLoading && errorMessage && !calendarData && (
+        <div className="p-4 sm:p-5 bg-amber-50 border border-amber-600 paper-card text-amber-950 space-y-2.5">
+          <div className="flex items-start space-x-2.5">
+            <AlertCircle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <h3 className="font-bold text-xs uppercase font-headline">
+                GitHub Contribution Activity Unavailable
+              </h3>
+              <p className="text-xs font-serif-body text-stone-800 leading-relaxed">
+                {errorMessage}
+              </p>
             </div>
+          </div>
+          <div className="flex items-center space-x-2 pt-1 border-t border-amber-300">
+            <button
+              onClick={() => loadContributions(true)}
+              className="paper-button paper-button-dark text-xs py-1 px-3 font-bold min-h-[30px]"
+            >
+              Retry GitHub Sync
+            </button>
+            <span className="text-[10px] font-mono text-stone-600">
+              Verified real-time GitHub data requirement
+            </span>
+          </div>
+        </div>
+      )}
 
-            {/* Weeks columns (Proportionally scaled tiles) */}
-            <div className="flex gap-[3px] sm:gap-[3.5px]">
-              {calendarData.weeks.map((week, wIndex) => (
-                <div key={wIndex} className="flex flex-col gap-[3px] sm:gap-[3.5px]">
-                  {week.days.map((day, dIndex) => (
-                    <div
-                      key={dIndex}
-                      onMouseEnter={(e) => {
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        setHoveredDay({ day, x: rect.left, y: rect.top });
-                      }}
-                      onMouseLeave={() => setHoveredDay(null)}
-                      className={`w-[11.5px] h-[11.5px] sm:w-[13px] sm:h-[13px] md:w-[13.5px] md:h-[13.5px] rounded-[2px] border cursor-pointer transition-all duration-100 hover:scale-135 hover:z-20 hover:shadow-[2px_2px_0px_#212121] ${getLevelColor(
-                        day.level
-                      )}`}
-                    />
+      {/* Active Heatmap Grid Display */}
+      {calendarData && (
+        <>
+          {/* Scrollable / Responsive Calendar Container */}
+          <div className="relative overflow-x-auto pb-2 -mx-1 px-1 sm:mx-0 sm:px-0">
+            <div className="min-w-[660px] sm:min-w-[700px] flex flex-col space-y-1">
+              {/* Month Labels Bar */}
+              <div className="flex items-center text-[10px] font-mono text-stone-700 pl-6 h-4 relative">
+                {monthLabels.map((m, idx) => (
+                  <span
+                    key={`${m.label}-${idx}`}
+                    className="absolute font-bold"
+                    style={{ left: `calc(${m.weekIndex * 12.8}px + 1.5rem)` }}
+                  >
+                    {m.label}
+                  </span>
+                ))}
+              </div>
+
+              {/* Heatmap Grid & Day-of-week Axis */}
+              <div className="flex items-start space-x-1.5">
+                {/* Day of Week Axis (Mon, Wed, Fri) */}
+                <div className="flex flex-col justify-between h-[84px] text-[9px] font-mono text-stone-600 pr-1 py-0.5 flex-shrink-0 select-none">
+                  <span className="leading-none">Mon</span>
+                  <span className="leading-none">Wed</span>
+                  <span className="leading-none">Fri</span>
+                </div>
+
+                {/* 52 Columns (Weeks) */}
+                <div className="flex items-center space-x-[2.5px] sm:space-x-[3px] flex-1">
+                  {calendarData.weeks.map((week, wIndex) => (
+                    <div key={wIndex} className="flex flex-col space-y-[2.5px] sm:space-y-[3px]">
+                      {week.days.map((day, dIndex) => (
+                        <button
+                          key={`${day.date}-${dIndex}`}
+                          type="button"
+                          onMouseEnter={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setHoveredDay({ day, x: rect.left + rect.width / 2, y: rect.top - 8 });
+                          }}
+                          onMouseLeave={() => setHoveredDay(null)}
+                          onClick={() => {
+                            const rect = (document.activeElement as HTMLElement)?.getBoundingClientRect();
+                            if (rect) {
+                              setHoveredDay({ day, x: rect.left + rect.width / 2, y: rect.top - 8 });
+                            }
+                          }}
+                          aria-label={`${day.count} contributions on ${day.date}`}
+                          className={`w-[10px] h-[10px] sm:w-[10.5px] sm:h-[10.5px] rounded-[1.5px] border transition-transform hover:scale-130 hover:z-20 cursor-pointer ${getLevelColor(
+                            day.level
+                          )}`}
+                        />
+                      ))}
+                    </div>
                   ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Legend & Summary Info */}
+              <div className="flex items-center justify-between pt-2.5 text-[10px] sm:text-xs font-mono text-stone-700 border-t border-dashed border-stone-300">
+                <div className="flex items-center space-x-1.5 font-bold">
+                  <span>{calendarData.totalContributions} total contributions in past {compact ? '26' : '52'} weeks</span>
+                  {calendarData.totalContributions === 0 && (
+                    <span className="paper-badge bg-stone-200 text-stone-700 text-[9px]">
+                      Awaiting commits
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-[10px] text-stone-600">Less</span>
+                  <div className="flex items-center space-x-1">
+                    <span className="w-2.5 h-2.5 rounded-[1px] bg-[#EAE5D9] border border-[#D8D2C4]/70" title="0 commits" />
+                    <span className="w-2.5 h-2.5 rounded-[1px] bg-[#9BE9A8] border border-[#212121]/30" title="1-2 commits" />
+                    <span className="w-2.5 h-2.5 rounded-[1px] bg-[#40C463] border border-[#212121]/40" title="3-4 commits" />
+                    <span className="w-2.5 h-2.5 rounded-[1px] bg-[#30A14E] border border-[#212121]/50" title="5-7 commits" />
+                    <span className="w-2.5 h-2.5 rounded-[1px] bg-[#216E39] border border-[#212121]/60" title="8+ commits" />
+                  </div>
+                  <span className="text-[10px] text-stone-600">More</span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Hover Tooltip */}
-        {hoveredDay && (
-          <div className="absolute z-40 pointer-events-none bg-[#212121] text-[#FEFCF6] text-[10px] sm:text-xs font-mono py-1 px-2.5 shadow-[3px_3px_0px_#000] -translate-y-9 left-1/2 -translate-x-1/2 border-1.5 border-[#FEFCF6] whitespace-nowrap animate-in fade-in duration-75 paper-card">
-            <strong className="text-amber-300">
-              {hoveredDay.day.count === 0 ? 'No' : hoveredDay.day.count}{' '}
-              {hoveredDay.day.count === 1 ? 'contribution' : 'contributions'}
-            </strong>{' '}
-            on {formatDate(hoveredDay.day.date)}
-          </div>
-        )}
-      </div>
+          {/* Interactive Day Tooltip */}
+          {hoveredDay && (
+            <div
+              className="fixed z-50 pointer-events-none transform -translate-x-1/2 -translate-y-full px-2.5 py-1.5 paper-card bg-[#212121] text-[#FEFCF6] text-[11px] font-mono shadow-[2px_2px_0px_#000] whitespace-nowrap"
+              style={{ left: `${hoveredDay.x}px`, top: `${hoveredDay.y}px` }}
+            >
+              <div className="font-bold text-emerald-400">
+                {hoveredDay.day.count} {hoveredDay.day.count === 1 ? 'contribution' : 'contributions'}
+              </div>
+              <div className="text-stone-300 text-[10px]">{formatDate(hoveredDay.day.date)}</div>
+            </div>
+          )}
 
-      {/* Mobile Swipe Guidance Note */}
-      <p className="md:hidden text-[9px] font-sketch text-stone-600 text-center font-bold">
-        ← Swipe across horizontally to explore full 52-week activity →
-      </p>
+          {/* Real Telemetry Metric Cards */}
+          {showStats && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pt-1 border-t border-dashed border-[#212121]">
+              <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+                <div className="flex items-center justify-between text-stone-700">
+                  <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Total Commits</span>
+                  <GitCommit className="w-3.5 h-3.5 text-stone-600" />
+                </div>
+                <div className="mt-1">
+                  <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121] leading-none block">
+                    {calendarData.totalContributions}
+                  </span>
+                  <span className="text-[9px] font-serif-body text-stone-600">
+                    52-week activity
+                  </span>
+                </div>
+              </div>
 
-      {/* Footer: Activity Intensity Distribution & Swatch Legend */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-[10px] sm:text-[11px] font-sketch text-stone-800 pt-2 border-t border-dashed border-[#212121] gap-2 font-bold">
-        {/* Left: Intensity distribution stats */}
-        <div className="flex items-center space-x-2 text-stone-700 flex-wrap gap-y-1">
-          <span className="paper-badge bg-stone-200 text-[#212121] text-[9px] font-mono">
-            {calendarData.activeDaysCount} active days
-          </span>
-          <span className="text-[10px] text-stone-600 font-serif-body">
-            ({calendarData.activePercent}% active frequency)
-          </span>
-        </div>
+              <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+                <div className="flex items-center justify-between text-amber-900">
+                  <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Current Streak</span>
+                  <Flame className="w-3.5 h-3.5 fill-amber-500 text-amber-700" />
+                </div>
+                <div className="mt-1">
+                  <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121] leading-none block">
+                    {calendarData.currentStreak} {calendarData.currentStreak === 1 ? 'day' : 'days'}
+                  </span>
+                  <span className="text-[9px] font-serif-body text-stone-600">
+                    Active streak
+                  </span>
+                </div>
+              </div>
 
-        {/* Right: Legend */}
-        <div className="flex items-center space-x-2 self-end sm:self-auto">
-          <span className="text-stone-700 uppercase tracking-wider text-[9px]">Less</span>
-          <div className="flex gap-1 items-center">
-            <span className="w-3 h-3 rounded-[2px] bg-[#EAE5D9] border border-[#212121]/60 shadow-[0.5px_0.5px_0px_#212121]" title="0 contributions"></span>
-            <span className="w-3 h-3 rounded-[2px] bg-[#9BE9A8] border border-[#212121]/60 shadow-[0.5px_0.5px_0px_#212121]" title="1-2 contributions"></span>
-            <span className="w-3 h-3 rounded-[2px] bg-[#40C463] border border-[#212121]/60 shadow-[0.5px_0.5px_0px_#212121]" title="3-4 contributions"></span>
-            <span className="w-3 h-3 rounded-[2px] bg-[#30A14E] border border-[#212121]/60 shadow-[0.5px_0.5px_0px_#212121]" title="5-7 contributions"></span>
-            <span className="w-3 h-3 rounded-[2px] bg-[#216E39] border border-[#212121]/60 shadow-[0.5px_0.5px_0px_#212121]" title="8+ contributions"></span>
-          </div>
-          <span className="text-stone-700 uppercase tracking-wider text-[9px]">More</span>
-        </div>
-      </div>
+              <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+                <div className="flex items-center justify-between text-stone-700">
+                  <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Longest Streak</span>
+                  <Award className="w-3.5 h-3.5 text-stone-600" />
+                </div>
+                <div className="mt-1">
+                  <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121] leading-none block">
+                    {calendarData.longestStreak} {calendarData.longestStreak === 1 ? 'day' : 'days'}
+                  </span>
+                  <span className="text-[9px] font-serif-body text-stone-600">
+                    Peak continuous
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+                <div className="flex items-center justify-between text-stone-700">
+                  <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Consistency</span>
+                  <TrendingUp className="w-3.5 h-3.5 text-stone-600" />
+                </div>
+                <div className="mt-1">
+                  <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121] leading-none block">
+                    {calendarData.activePercent}%
+                  </span>
+                  <span className="text-[9px] font-serif-body text-stone-600">
+                    {calendarData.activeDaysCount} active days
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };
