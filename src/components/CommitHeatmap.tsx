@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { GitCommit, Flame, Award, Calendar, Zap, TrendingUp, Sparkles, RefreshCw, AlertCircle, ExternalLink } from 'lucide-react';
+import { GitCommit, Flame, Award, TrendingUp, RefreshCw, AlertCircle, ExternalLink } from 'lucide-react';
 import { ContributionCalendar, ContributionDay } from '../types';
 import { fetchGitHubContributions } from '../lib/github';
 import { useAuth } from '../context/AuthContext';
@@ -44,7 +44,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
       const data = await fetchGitHubContributions(username, githubToken, compact);
       setCalendarData(data);
     } catch (err: any) {
-      console.error(`Failed to load real GitHub contributions for @${username}:`, err);
+      console.error(`Failed to load GitHub contributions for @${username}:`, err);
       setErrorMessage(
         err?.message || `Unable to retrieve GitHub contribution activity for @${username}. GitHub rate-limit or network timeout.`
       );
@@ -103,24 +103,19 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
   };
 
   return (
-    <div className={`w-full max-w-full overflow-hidden p-3.5 sm:p-5 paper-card bg-[#FEFCF6] space-y-3.5 sm:space-y-4 ${className}`}>
-      {/* Header with Title, Source Badge & Live Sync Control */}
+    <div className={`w-full max-w-full overflow-hidden p-3.5 sm:p-5 paper-card bg-[#FEFCF6] space-y-4 ${className}`}>
+      {/* Header with Title & GitHub Link */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-dashed border-[#212121] pb-3">
         <div className="space-y-0.5">
-          <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-            <span className="text-[10px] sm:text-xs font-sketch uppercase tracking-widest text-stone-700 font-bold">
-              VERIFIED GITHUB TELEMETRY
-            </span>
-            <span className="paper-badge bg-emerald-100 text-emerald-950 border-emerald-700 text-[9px] font-bold">
-              REAL-TIME GITHUB API
-            </span>
-          </div>
           <h2 className="text-base sm:text-lg lg:text-xl font-[900] uppercase font-newspaper-title text-[#212121]">
-            Annual Commit &amp; Contribution Activity
+            Annual Contribution Activity
           </h2>
+          <p className="text-[11px] font-mono text-stone-600">
+            GitHub public contributions over the past {compact ? '26' : '52'} weeks
+          </p>
         </div>
 
-        {/* Top Sync & Live GitHub Link */}
+        {/* Top Sync & GitHub Link */}
         <div className="flex items-center space-x-2 self-start sm:self-auto">
           <a
             href={`https://github.com/${username}`}
@@ -137,8 +132,8 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
             onClick={() => loadContributions(true)}
             disabled={isLoading || isRefreshing}
             className="paper-button-icon min-w-[32px] min-h-[32px] p-1.5 cursor-pointer disabled:opacity-50"
-            title="Re-sync GitHub Contribution Calendar"
-            aria-label="Re-sync GitHub Contribution Calendar"
+            title="Refresh GitHub Contributions"
+            aria-label="Refresh GitHub Contributions"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-stone-800 ${isRefreshing || isLoading ? 'animate-spin' : ''}`} />
           </button>
@@ -151,16 +146,16 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
           <RefreshCw className="w-6 h-6 animate-spin mx-auto text-stone-700" />
           <div className="space-y-1">
             <p className="text-xs font-sketch uppercase tracking-wider font-bold text-[#212121]">
-              Fetching Verified GitHub Contribution Activity...
+              Fetching GitHub Contribution Activity...
             </p>
             <p className="text-[11px] font-mono text-stone-600">
-              Querying GitHub GraphQL &amp; public contribution events for @{username}
+              Retrieving public contribution events for @{username}
             </p>
           </div>
         </div>
       )}
 
-      {/* Error State (No fake fallback) */}
+      {/* Error State */}
       {!isLoading && errorMessage && !calendarData && (
         <div className="p-4 sm:p-5 bg-amber-50 border border-amber-600 paper-card text-amber-950 space-y-2.5">
           <div className="flex items-start space-x-2.5">
@@ -181,9 +176,6 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
             >
               Retry GitHub Sync
             </button>
-            <span className="text-[10px] font-mono text-stone-600">
-              Verified real-time GitHub data requirement
-            </span>
           </div>
         </div>
       )}
@@ -191,16 +183,16 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
       {/* Active Heatmap Grid Display */}
       {calendarData && (
         <>
-          {/* Scrollable / Responsive Calendar Container */}
+          {/* Scrollable / Responsive Calendar Container with Maximized Cell Spacing */}
           <div className="relative overflow-x-auto pb-2 -mx-1 px-1 sm:mx-0 sm:px-0">
-            <div className="min-w-[660px] sm:min-w-[700px] flex flex-col space-y-1">
+            <div className="min-w-[780px] sm:min-w-[880px] flex flex-col space-y-1.5">
               {/* Month Labels Bar */}
-              <div className="flex items-center text-[10px] font-mono text-stone-700 pl-6 h-4 relative">
+              <div className="relative text-[10px] font-mono font-bold text-stone-700 pl-7 sm:pl-8 h-4 select-none">
                 {monthLabels.map((m, idx) => (
                   <span
                     key={`${m.label}-${idx}`}
                     className="absolute font-bold"
-                    style={{ left: `calc(${m.weekIndex * 12.8}px + 1.5rem)` }}
+                    style={{ left: `calc(${m.weekIndex} * (13px + 4px) + 2rem)` }}
                   >
                     {m.label}
                   </span>
@@ -208,18 +200,36 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
               </div>
 
               {/* Heatmap Grid & Day-of-week Axis */}
-              <div className="flex items-start space-x-1.5">
-                {/* Day of Week Axis (Mon, Wed, Fri) */}
-                <div className="flex flex-col justify-between h-[84px] text-[9px] font-mono text-stone-600 pr-1 py-0.5 flex-shrink-0 select-none">
-                  <span className="leading-none">Mon</span>
-                  <span className="leading-none">Wed</span>
-                  <span className="leading-none">Fri</span>
+              <div className="flex items-start space-x-2">
+                {/* Day of Week Axis with exact row alignment (Mon, Wed, Fri) */}
+                <div
+                  className="relative w-6 sm:w-7 text-[9px] font-mono text-stone-600 select-none flex-shrink-0"
+                  style={{ height: 'calc(7 * 13px + 6 * 4px)' }}
+                >
+                  <span
+                    className="absolute leading-none right-1"
+                    style={{ top: 'calc(1 * (13px + 4px) + 1px)' }}
+                  >
+                    Mon
+                  </span>
+                  <span
+                    className="absolute leading-none right-1"
+                    style={{ top: 'calc(3 * (13px + 4px) + 1px)' }}
+                  >
+                    Wed
+                  </span>
+                  <span
+                    className="absolute leading-none right-1"
+                    style={{ top: 'calc(5 * (13px + 4px) + 1px)' }}
+                  >
+                    Fri
+                  </span>
                 </div>
 
-                {/* 52 Columns (Weeks) */}
-                <div className="flex items-center space-x-[2.5px] sm:space-x-[3px] flex-1">
+                {/* 52 Columns (Weeks) with generous gap and cell dimensions */}
+                <div className="flex items-center gap-1 sm:gap-[4px] flex-1">
                   {calendarData.weeks.map((week, wIndex) => (
-                    <div key={wIndex} className="flex flex-col space-y-[2.5px] sm:space-y-[3px]">
+                    <div key={wIndex} className="flex flex-col gap-1 sm:gap-[4px]">
                       {week.days.map((day, dIndex) => (
                         <button
                           key={`${day.date}-${dIndex}`}
@@ -236,7 +246,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                             }
                           }}
                           aria-label={`${day.count} contributions on ${day.date}`}
-                          className={`w-[10px] h-[10px] sm:w-[10.5px] sm:h-[10.5px] rounded-[1.5px] border transition-transform hover:scale-130 hover:z-20 cursor-pointer ${getLevelColor(
+                          className={`w-[11.5px] h-[11.5px] sm:w-[13px] sm:h-[13px] rounded-[2px] border transition-transform hover:scale-125 hover:z-20 cursor-pointer ${getLevelColor(
                             day.level
                           )}`}
                         />
@@ -247,12 +257,12 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
               </div>
 
               {/* Legend & Summary Info */}
-              <div className="flex items-center justify-between pt-2.5 text-[10px] sm:text-xs font-mono text-stone-700 border-t border-dashed border-stone-300">
+              <div className="flex items-center justify-between pt-3 text-[10px] sm:text-xs font-mono text-stone-700 border-t border-dashed border-stone-300">
                 <div className="flex items-center space-x-1.5 font-bold">
                   <span>{calendarData.totalContributions} total contributions in past {compact ? '26' : '52'} weeks</span>
                   {calendarData.totalContributions === 0 && (
                     <span className="paper-badge bg-stone-200 text-stone-700 text-[9px]">
-                      Awaiting commits
+                      No recorded contributions
                     </span>
                   )}
                 </div>
@@ -260,11 +270,11 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                 <div className="flex items-center space-x-1.5">
                   <span className="text-[10px] text-stone-600">Less</span>
                   <div className="flex items-center space-x-1">
-                    <span className="w-2.5 h-2.5 rounded-[1px] bg-[#EAE5D9] border border-[#D8D2C4]/70" title="0 commits" />
-                    <span className="w-2.5 h-2.5 rounded-[1px] bg-[#9BE9A8] border border-[#212121]/30" title="1-2 commits" />
-                    <span className="w-2.5 h-2.5 rounded-[1px] bg-[#40C463] border border-[#212121]/40" title="3-4 commits" />
-                    <span className="w-2.5 h-2.5 rounded-[1px] bg-[#30A14E] border border-[#212121]/50" title="5-7 commits" />
-                    <span className="w-2.5 h-2.5 rounded-[1px] bg-[#216E39] border border-[#212121]/60" title="8+ commits" />
+                    <span className="w-2.5 h-2.5 rounded-[1px] bg-[#EAE5D9] border border-[#D8D2C4]/70" title="0 contributions" />
+                    <span className="w-2.5 h-2.5 rounded-[1px] bg-[#9BE9A8] border border-[#212121]/30" title="1-2 contributions" />
+                    <span className="w-2.5 h-2.5 rounded-[1px] bg-[#40C463] border border-[#212121]/40" title="3-4 contributions" />
+                    <span className="w-2.5 h-2.5 rounded-[1px] bg-[#30A14E] border border-[#212121]/50" title="5-7 contributions" />
+                    <span className="w-2.5 h-2.5 rounded-[1px] bg-[#216E39] border border-[#212121]/60" title="8+ contributions" />
                   </div>
                   <span className="text-[10px] text-stone-600">More</span>
                 </div>
@@ -285,7 +295,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
             </div>
           )}
 
-          {/* Real Telemetry Metric Cards */}
+          {/* Metric Summary Cards */}
           {showStats && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pt-1 border-t border-dashed border-[#212121]">
               <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">

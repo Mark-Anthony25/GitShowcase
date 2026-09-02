@@ -369,7 +369,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                   </span>
                 </div>
                 <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
-                  <span className="text-[8.5px] sm:text-[9px] font-sketch uppercase text-stone-600 block font-bold truncate">Spotlight</span>
+                  <span className="text-[8.5px] sm:text-[9px] font-sketch uppercase text-stone-600 block font-bold truncate">Featured</span>
                   <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121]">{featuredProjects.length}</span>
                 </div>
               </div>
@@ -384,7 +384,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                     title="Open My Projects workbench"
                   >
                     <FolderGit2 className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                    <span>View All Projects</span>
+                    <span>Manage My Projects</span>
                     <ArrowUpRight className="w-3.5 h-3.5 ml-1 flex-shrink-0" />
                   </button>
                 )}
@@ -403,9 +403,9 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             </div>
           </aside>
 
-          {/* Right Column: Coding Telemetry & Public Projects Spotlight */}
+          {/* Right Column: Coding Activity & Public Projects Spotlight */}
           <main className="flex-1 min-w-0 space-y-4 sm:space-y-5 w-full">
-            {/* 52-Week Commit Activity Heatmap & Consistency Telemetry */}
+            {/* 52-Week Commit Activity Heatmap */}
             <CommitHeatmap username={profile.github_username} totalProjects={projects.length} />
 
             {/* Public Projects Preview & Spotlight Section */}
@@ -424,7 +424,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                     className="paper-button text-xs py-1 px-3 font-bold min-h-[32px] flex items-center space-x-1 self-start sm:self-auto cursor-pointer"
                   >
                     <span>Manage Projects</span>
-                    <ArrowUpRight className="w-3 h-3 ml-0.5" />
+                    <ArrowUpRight className="w-3.5 h-3.5 ml-0.5" />
                   </button>
                 )}
               </div>
@@ -467,12 +467,12 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                   <div className="p-3.5 sm:p-4 bg-[#FAF6EC] paper-card border border-[#212121] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[1.5px_1.5px_0px_#212121]">
                     <div className="space-y-0.5">
                       <h3 className="text-xs sm:text-sm font-[900] uppercase font-newspaper-title text-[#212121]">
-                        {isOwner ? 'Want to manage or publish more projects?' : `Explore more projects by ${profile.full_name || profile.github_username}`}
+                        {isOwner ? 'Want to manage or publish more projects?' : 'Discover More Student Projects & Portfolios'}
                       </h3>
                       <p className="text-xs font-serif-body text-stone-700">
                         {isOwner
-                          ? `You currently have ${projects.length} project ${projects.length === 1 ? 'dispatch' : 'dispatches'} published. Visit My Projects for full management tools.`
-                          : 'Discover other campus capstones, research repositories, and student developers across ISU.'}
+                          ? `You currently have ${projects.length} ${projects.length === 1 ? 'project' : 'projects'} published. Visit My Projects for full management tools.`
+                          : 'Explore portfolios, capstones, and repositories from other student developers across Isabela State University - Cauayan Campus.'}
                       </p>
                     </div>
 
@@ -482,7 +482,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                         className="paper-button paper-button-dark text-xs py-2 px-4 font-bold min-h-[36px] whitespace-nowrap flex-shrink-0 flex items-center space-x-1.5"
                       >
                         <FolderGit2 className="w-3.5 h-3.5" />
-                        <span>View All Projects</span>
+                        <span>Go to My Projects</span>
                         <ArrowUpRight className="w-3.5 h-3.5" />
                       </button>
                     ) : (
@@ -676,7 +676,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
               <div>
                 {selectedProject.is_featured && (
                   <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold mb-2 inline-block">
-                    Featured Spotlight
+                    FEATURED PROJECT
                   </span>
                 )}
                 <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
@@ -813,7 +813,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isFeatured = false, 
             {isFeatured && (
               <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold mb-0.5 inline-block">
                 <Pin className="w-2 h-2 mr-0.5 inline-block" />
-                Featured
+                FEATURED PROJECT
               </span>
             )}
             <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] leading-snug truncate">

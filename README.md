@@ -22,7 +22,7 @@
 
 **GitShowcase** is a specialized portfolio and repository directory designed for computing students (BS Computer Science, BS Information Technology, BS Entertainment and Multimedia Computing, BS Accounting Information Systems) at **Isabela State University — Cauayan Campus**.
 
-Traditional generic portfolio sites often require manual project metric entry and lack academic context. GitShowcase bridges academic identity with real-world developer output by directly integrating with **GitHub OAuth** and **Supabase**. Students can authenticate with one click, curate spotlight capstone repositories, display live GitHub metrics (stars, forks, languages, topics), and present a verified 52-week commit activity heatmap—all wrapped in an authentic, tactile **PaperCSS** newspaper editorial motif.
+Traditional generic portfolio sites often require manual project metric entry and lack academic context. GitShowcase bridges academic identity with real-world developer output by directly integrating with **GitHub OAuth** and **Supabase**. Students can authenticate with one click, curate projects, display GitHub repository stats (stars, forks, languages, topics), and present a 52-week commit activity heatmap—all wrapped in an authentic, tactile **PaperCSS** newspaper editorial motif.
 
 ```
                   ┌────────────────────────────────────────┐
@@ -33,8 +33,8 @@ Traditional generic portfolio sites often require manual project metric entry an
         ┌─────────────────────────────┼─────────────────────────────┐
         ▼                             ▼                             ▼
  ┌──────────────┐              ┌──────────────┐              ┌──────────────┐
- │   Academic   │              │ Live GitHub  │              │ Verified 52W │
- │   Identity   │              │  Telemetry   │              │Commit Heatmap│
+ │   Academic   │              │ GitHub Stats │              │    52-Week   │
+ │   Identity   │              │  & Languages │              │Commit Heatmap│
  │Program & Year│              │Stars & Forks │              │Streak Tracker│
  └──────────────┘              └──────────────┘              └──────────────┘
 ```
@@ -51,14 +51,14 @@ The front page highlights featured campus capstones, latest student dispatches, 
 ---
 
 ### 2. Public Student Showcase Profile & 52-Week Commit Heatmap
-Each student gets a shareable public URL (`/u/:username`) featuring their academic program, year level, verified 52-week GitHub contribution heatmap with real-time streak calculations, and curated project cards.
+Each student gets a shareable public URL (`/u/:username`) featuring their academic program, year level, 52-week GitHub contribution heatmap with streak calculations, and curated project cards.
 
 ![Student Profile and Commit Heatmap](docs/screenshots/profile.png)
 
 ---
 
 ### 3. Student Project Workbench (Dashboard)
-Authenticated student creators can manage published projects, pin featured capstones to their spotlight section, edit custom titles/descriptions, and import repositories directly from their connected GitHub account.
+Authenticated student creators can manage published projects, pin featured projects, edit custom titles/descriptions, and import repositories directly from their connected GitHub account.
 
 ![Project Workbench Dashboard](docs/screenshots/dashboard.png)
 
@@ -72,7 +72,7 @@ Search and filter student projects and developers across all computing degree pr
 ---
 
 ### 5. Interactive Project Details Modal
-View in-depth project descriptions, live GitHub telemetry (stars, forks, languages, topics, open issues), creator details, and direct links to live deployments and GitHub repositories.
+View in-depth project descriptions, GitHub stats (stars, forks, languages, topics, open issues), creator details, and direct links to live deployments and GitHub repositories.
 
 ![Project Detail Modal](docs/screenshots/project-details.png)
 
@@ -94,15 +94,15 @@ Designed with an adaptive layout that renders on smartphones, tablets, and deskt
   - Automatic profile seeding with GitHub username, name, and avatar.
   - Structured academic configuration: Degree program selector, year level, academic headline, and a strict 50-character bio constraint.
 
-- **Verified 52-Week Commit Telemetry & Activity Heatmap:**
-  - Real-time GitHub commit calendar rendered directly from the GitHub GraphQL and REST Events APIs.
+- **52-Week Commit Activity Heatmap & Consistency Meter:**
+  - GitHub contribution calendar rendered directly from the GitHub GraphQL and REST Events APIs.
   - Computes total annual commits, active streaks, longest historical streak, and coding consistency percentages.
   - Interactive day-by-day contribution count tooltips.
 
-- **Curated Repository Showcase & Spotlight Pinning:**
+- **Curated Project Showcase & Spotlight Pinning:**
   - Import repositories directly from the student's connected GitHub account.
   - Override default repository titles and descriptions with academic context, role explanations, or thesis defense summaries.
-  - Pin featured capstones to top spotlight positions.
+  - Pin featured projects to top positions.
 
 - **Campus Directory & Multi-Program Filtering:**
   - Full-text search matching student names, usernames, headlines, project titles, technologies, and descriptions.
@@ -421,14 +421,14 @@ GitShowcase is engineered for speed, low latency, and efficient API quota manage
 3. Navigate to **My Projects** (`/dashboard`).
 4. Switch to the **Add from GitHub** tab and click **Publish** on the repositories you wish to feature.
 5. Add custom titles and short role descriptions for each project.
-6. Click the star icon to pin your top 2 capstones as **Featured Spotlight** projects.
+6. Click the star icon to pin your top capstones as **FEATURED PROJECT** items.
 7. Share your profile link (`https://gitshowcase.vercel.app/u/your-github-username`).
 
 ### For Faculty Advisers & Recruiters
-1. Navigate to **Browse Projects** (`/explore`).
-2. Use the search bar to locate specific thesis topics, algorithms, or student names.
-3. Filter by academic degree program (e.g., *BS Computer Science* or *BS Entertainment and Multimedia Computing*).
-4. Click on any project card to inspect the live telemetry, open issues, repository topics, and student creator profiles.
+1. Navigate to **Campus Directory** (`/explore`).
+2. Use the search bar to locate specific capstone topics, technologies, or student names.
+3. Filter by academic degree program (e.g., *BS Computer Science* or *BS Information Technology*).
+4. Click on any project card to inspect the repository stats, open issues, topics, and student creator profiles.
 
 ---
 

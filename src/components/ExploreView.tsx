@@ -224,7 +224,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                                 </span>
                                 {proj.is_featured && (
                                   <span className="paper-badge text-[8px] font-mono py-0 px-1 bg-amber-200 text-amber-900 border-amber-800 flex items-center font-bold">
-                                    Featured
+                                    FEATURED PROJECT
                                   </span>
                                 )}
                               </div>
@@ -275,7 +275,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                         {project.is_featured && (
                           <span className="paper-badge text-[9px] font-mono py-0 px-1 bg-amber-200 text-amber-900 border-amber-800 flex items-center font-bold flex-shrink-0 ml-2">
                             <Star className="w-2.5 h-2.5 fill-amber-900 text-amber-900 mr-0.5" />
-                            Featured
+                            FEATURED PROJECT
                           </span>
                         )}
                       </div>
@@ -351,7 +351,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
               <div>
                 {selectedModalItem.project.is_featured && (
                   <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold mb-2 inline-block">
-                    Featured Project
+                    FEATURED PROJECT
                   </span>
                 )}
                 <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">

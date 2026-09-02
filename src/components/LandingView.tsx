@@ -59,7 +59,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               title: p.custom_title || p.repo_full_name.split('/')[1] || p.repo_full_name,
               repo: p.repo_full_name,
               author: s.profile.github_username,
-              badge: p.is_featured ? 'FEATURED' : 'PROJECT',
+              badge: p.is_featured ? 'FEATURED PROJECT' : 'PROJECT',
               desc: p.custom_description || p.live_stats?.description || 'Student repository project showcased on GitShowcase.',
               stars: p.live_stats?.stars ?? 0,
               url: p.repo_url,
@@ -149,7 +149,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                   className="paper-button paper-button-dark text-xs lg:text-sm py-2 lg:py-2.5 px-4 text-white justify-center min-h-[38px] lg:min-h-[42px] font-bold"
                 >
                   <Compass className="w-4 h-4 mr-1.5 flex-shrink-0 stroke-[2]" />
-                  <span>Browse Projects</span>
+                  <span>Browse Campus Directory</span>
                   <ArrowRight className="w-3.5 h-3.5 ml-1.5 flex-shrink-0 stroke-[2]" />
                 </button>
 
@@ -181,7 +181,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               onClick={() => navigate('/explore')}
               className="text-[11px] sm:text-xs lg:text-sm font-headline uppercase tracking-wider text-stone-800 hover:text-black underline cursor-pointer font-bold flex-shrink-0 ml-2"
             >
-              Explore All ({previewProjects.length}) &rarr;
+              Browse Campus Directory ({previewProjects.length}) &rarr;
             </button>
           )}
         </div>
@@ -308,7 +308,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               3. Add Your Projects
             </h4>
             <p className="text-xs sm:text-sm font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed">
-              Select which projects to display and highlight your best work.
+              Select which projects to display and pin featured projects to your profile.
             </p>
           </div>
         </div>
@@ -328,7 +328,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               onClick={() => navigate('/explore')}
               className="text-xs font-headline uppercase tracking-wider text-stone-800 hover:text-black underline cursor-pointer font-bold"
             >
-              View All Projects &rarr;
+              Browse Campus Directory &rarr;
             </button>
           </div>
 

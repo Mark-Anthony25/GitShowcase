@@ -331,15 +331,15 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
           <h2 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title mt-2 text-[#212121]">
             {currentStep === 1 && 'Step 1: Set Up Student Identity & Profile'}
-            {currentStep === 2 && 'Step 2: Select Real Repositories from GitHub'}
+            {currentStep === 2 && 'Step 2: Select Repositories from GitHub'}
             {currentStep === 3 && 'Step 3: Review & Publish Your Showcase'}
             {currentStep === 4 && 'Publishing Your Portfolio...'}
           </h2>
           <p className="text-xs font-serif-body text-stone-700 mt-0.5">
             {currentStep === 1 && 'Information is pre-filled from your authenticated GitHub account. Review and adjust your details.'}
-            {currentStep === 2 && 'Choose which public repositories to showcase, write custom project summaries, and pin your top spotlight.'}
+            {currentStep === 2 && 'Choose which public repositories to showcase, write custom project summaries, and pin your featured project.'}
             {currentStep === 3 && 'Double-check all imported information before launching your public showcase page.'}
-            {currentStep === 4 && 'Saving your verified student identity and linking live GitHub telemetry.'}
+            {currentStep === 4 && 'Saving your student profile and connecting your showcase projects.'}
           </p>
         </div>
 
@@ -420,7 +420,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               </div>
             </div>
 
-            {/* Avatar URL (Customizable) */}
+            {/* Avatar URL */}
             <div>
               <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
                 Profile Avatar URL
@@ -691,13 +691,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                                 },
                               });
                             }}
-                            title="Pin as Featured Spotlight"
+                            title="Pin as Featured Project"
                             className={`paper-button text-xs py-1 px-2 min-h-[30px] font-bold flex-shrink-0 ${
                               meta?.isFeatured ? 'paper-button-dark' : ''
                             }`}
                           >
                             <Star className={`w-3 h-3 mr-0.5 inline-block ${meta?.isFeatured ? 'fill-amber-300 text-amber-300' : ''}`} />
-                            <span>{meta?.isFeatured ? 'Featured' : 'Feature'}</span>
+                            <span>{meta?.isFeatured ? 'FEATURED PROJECT' : 'Pin Feature'}</span>
                           </button>
                         )}
                       </div>
@@ -838,7 +838,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                         </div>
                         {meta.isFeatured && (
                           <span className="paper-badge bg-amber-200 text-amber-950 text-[9px] font-bold ml-2">
-                            Featured Spotlight
+                            FEATURED PROJECT
                           </span>
                         )}
                       </div>
@@ -892,7 +892,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               GitShowcase Portfolio Published!
             </h3>
             <p className="text-xs font-serif-body text-stone-700 max-w-sm mx-auto">
-              Your profile, verified GitHub commit telemetry, and curated repositories are live. Redirecting to your showcase...
+              Your profile and showcased projects are published. Redirecting to your public profile...
             </p>
           </div>
         )}

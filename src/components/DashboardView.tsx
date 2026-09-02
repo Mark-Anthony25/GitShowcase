@@ -264,7 +264,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
           <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
             <div className="flex items-center justify-between text-amber-900">
-              <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Featured Spotlight</span>
+              <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Featured Projects</span>
               <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-700" />
             </div>
             <div className="mt-1">
@@ -401,7 +401,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                         {proj.is_featured ? (
                           <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold">
                             <Pin className="w-2.5 h-2.5 mr-0.5 inline-block" />
-                            FEATURED
+                            FEATURED PROJECT
                           </span>
                         ) : (
                           <span className="paper-badge bg-stone-200 text-stone-800 text-[9px] font-bold">
@@ -841,7 +841,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               <div>
                 {previewProject.is_featured && (
                   <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold mb-1.5 inline-block">
-                    Featured Spotlight
+                    FEATURED PROJECT
                   </span>
                 )}
                 <h2 className="text-lg sm:text-xl font-[900] uppercase font-newspaper-title text-[#212121]">
