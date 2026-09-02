@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loadProfile = useCallback(async (userId: string, authUser?: User, token?: string | null) => {
     try {
-      const p = await getProfileById(userId);
+      const p = await getProfileById(userId, true);
       if (p) {
         setProfile(p);
       } else if (authUser) {
@@ -100,8 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
 
         // Save initial profile draft to database/store
-        await updateStudentProfile(userId, newProfile);
-        setProfile(newProfile);
+        const saved = await updateStudentProfile(userId, newProfile);
+        setProfile(saved || newProfile);
       }
     } catch (err) {
       console.error('Error loading profile in AuthContext:', err);
@@ -290,7 +290,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateProfileData = async (updates: Partial<Profile>): Promise<Profile | null> => {
     if (!user) return null;
-    const updated = await updateStudentProfile(user.id, updates);
+    const updated = await updateStudentProfile(user.id, {
+      ...updates,
+      github_username: updates.github_username || profile?.github_username || '',
+    });
     if (updated) {
       setProfile(updated);
     }

@@ -4,7 +4,9 @@ import {
   syncStudentShowcaseProjects, 
   removeProjectFromShowcase,
   updateStudentProfile,
-  deduplicateProjectsList 
+  deduplicateProjectsList,
+  getProfileById,
+  getStudentShowcaseByUsername
 } from '../showcaseStore';
 import { ShowcasedProject, Profile } from '../../types';
 
@@ -37,7 +39,6 @@ async function runTests() {
     repoUrl: 'https://github.com/student-tester/project-alpha',
     customTitle: 'Project Alpha',
     customDescription: 'Initial Description Alpha',
-    isFeatured: true,
   });
 
   if (!projA || projA.repo_full_name !== 'student-tester/project-alpha') {
@@ -57,7 +58,6 @@ async function runTests() {
     repoUrl: 'https://github.com/student-tester/project-alpha',
     customTitle: 'Project Alpha Updated',
     customDescription: 'Updated Description Alpha',
-    isFeatured: true,
   });
 
   showcased = await getStudentShowcasedProjects(testProfileId, null, true);
@@ -76,7 +76,6 @@ async function runTests() {
     repoUrl: 'https://github.com/student-tester/project-alpha',
     customTitle: 'Project Alpha Case Insensitive',
     customDescription: 'Case variation test',
-    isFeatured: true,
   });
 
   showcased = await getStudentShowcasedProjects(testProfileId, null, true);
@@ -92,7 +91,6 @@ async function runTests() {
     repoUrl: 'https://github.com/student-tester/project-beta',
     customTitle: 'Project Beta',
     customDescription: 'Second project',
-    isFeatured: false,
   });
 
   showcased = await getStudentShowcasedProjects(testProfileId, null, true);
@@ -106,12 +104,10 @@ async function runTests() {
     'student-tester/project-alpha': {
       customTitle: 'Project Alpha',
       customDescription: 'Alpha Desc',
-      isFeatured: true,
     },
     'student-tester/project-beta': {
       customTitle: 'Project Beta',
       customDescription: 'Beta Desc',
-      isFeatured: false,
     }
   };
 
@@ -127,7 +123,6 @@ async function runTests() {
     'student-tester/project-beta': {
       customTitle: 'Project Beta',
       customDescription: 'Beta Desc',
-      isFeatured: true,
     }
   };
 
@@ -140,10 +135,10 @@ async function runTests() {
 
   // Test 7: Deduplication array helper
   const dirtyList: ShowcasedProject[] = [
-    { id: '1', profile_id: testProfileId, repo_full_name: 'org/repo1', repo_url: '', custom_title: null, custom_description: null, is_featured: false, display_order: 0 },
-    { id: '2', profile_id: testProfileId, repo_full_name: 'org/repo1', repo_url: '', custom_title: null, custom_description: null, is_featured: false, display_order: 0 },
-    { id: '3', profile_id: testProfileId, repo_full_name: 'ORG/REPO1', repo_url: '', custom_title: null, custom_description: null, is_featured: false, display_order: 0 },
-    { id: '4', profile_id: testProfileId, repo_full_name: 'org/repo2', repo_url: '', custom_title: null, custom_description: null, is_featured: false, display_order: 0 },
+    { id: '1', profile_id: testProfileId, repo_full_name: 'org/repo1', repo_url: '', custom_title: null, custom_description: null, display_order: 0 },
+    { id: '2', profile_id: testProfileId, repo_full_name: 'org/repo1', repo_url: '', custom_title: null, custom_description: null, display_order: 0 },
+    { id: '3', profile_id: testProfileId, repo_full_name: 'ORG/REPO1', repo_url: '', custom_title: null, custom_description: null, display_order: 0 },
+    { id: '4', profile_id: testProfileId, repo_full_name: 'org/repo2', repo_url: '', custom_title: null, custom_description: null, display_order: 0 },
   ];
   const cleaned = deduplicateProjectsList(dirtyList);
   if (cleaned.length !== 2) {
@@ -163,7 +158,48 @@ async function runTests() {
   }
   console.log('✓ Test 8: Skipping optional profile fields leaves existing user data intact');
 
-  console.log('\nAll 8 Profile Update & Project Selection Tests Passed Perfectly!\n');
+  // Test 9: Updating Profile Without github_username in payload preserves username and invalidates showcase cache
+  const updatedWithNewBio = await updateStudentProfile(testProfileId, {
+    full_name: 'Mark Anthony Updated',
+    bio: 'Updated bio 2026',
+    headline: 'Senior Full-Stack Architect',
+    program: 'BS Information Technology',
+    year_level: '4th Year',
+  });
+
+  if (!updatedWithNewBio) {
+    throw new Error('Test 9 Failed: updateStudentProfile returned null');
+  }
+  if (updatedWithNewBio.github_username !== 'student-tester') {
+    throw new Error(`Test 9 Failed: github_username was wiped out! Expected student-tester, got ${updatedWithNewBio.github_username}`);
+  }
+  if (updatedWithNewBio.bio !== 'Updated bio 2026' || updatedWithNewBio.program !== 'BS Information Technology') {
+    throw new Error('Test 9 Failed: Profile fields were not updated');
+  }
+  console.log('✓ Test 9: Partial updates preserve github_username and persist modified fields');
+
+  // Test 10: getProfileById and getStudentShowcaseByUsername reflect updated profile immediately
+  const fetchedProfile = await getProfileById(testProfileId);
+  if (!fetchedProfile || fetchedProfile.bio !== 'Updated bio 2026' || fetchedProfile.full_name !== 'Mark Anthony Updated') {
+    throw new Error(`Test 10 Failed: getProfileById returned stale profile: ${JSON.stringify(fetchedProfile)}`);
+  }
+
+  const showcaseData = await getStudentShowcaseByUsername('student-tester');
+  if (!showcaseData || showcaseData.profile.bio !== 'Updated bio 2026' || showcaseData.profile.full_name !== 'Mark Anthony Updated') {
+    throw new Error(`Test 10 Failed: getStudentShowcaseByUsername returned stale profile data: ${JSON.stringify(showcaseData?.profile)}`);
+  }
+  console.log('✓ Test 10: getProfileById and getStudentShowcaseByUsername synchronize immediately with zero stale cache');
+
+  // Test 11: Idempotent upsert verification
+  const upsertedAgain = await updateStudentProfile(testProfileId, {
+    headline: 'Chief Systems Architect',
+  });
+  if (upsertedAgain?.headline !== 'Chief Systems Architect' || upsertedAgain?.bio !== 'Updated bio 2026') {
+    throw new Error('Test 11 Failed: Successive upsert did not merge fields cleanly');
+  }
+  console.log('✓ Test 11: Successive updates cleanly merge fields without loss');
+
+  console.log('\nAll 11 Profile Update & Project Selection Tests Passed Perfectly!\n');
 }
 
 runTests().catch(err => {

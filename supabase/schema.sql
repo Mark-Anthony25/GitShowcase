@@ -58,8 +58,8 @@ create index if not exists idx_showcased_projects_profile_id
 create unique index if not exists idx_showcased_projects_profile_repo_unique 
   on public.showcased_projects(profile_id, lower(repo_full_name));
 
-create index if not exists idx_showcased_projects_featured_order 
-  on public.showcased_projects(is_featured desc, display_order asc, added_at desc);
+create index if not exists idx_showcased_projects_display_order 
+  on public.showcased_projects(display_order asc, added_at desc);
 
 create index if not exists idx_profiles_program 
   on public.profiles(program);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Github, Plus, Trash2, Edit3, Star, GitFork, ExternalLink, 
-  RefreshCw, Eye, Pin, Search, CheckCircle2, FolderGit2, 
+  RefreshCw, Eye, Search, CheckCircle2, FolderGit2, 
   X, Globe, Sparkles, AlertCircle, Layers
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -38,7 +38,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   const [selectedRepoToAdd, setSelectedRepoToAdd] = useState<GitHubRepoItem | null>(null);
   const [customTitle, setCustomTitle] = useState('');
   const [customDescription, setCustomDescription] = useState('');
-  const [isFeatured, setIsFeatured] = useState(false);
   const [addingInProgress, setAddingInProgress] = useState(false);
 
   // Editing existing showcase project
@@ -97,7 +96,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     setSelectedRepoToAdd(repo);
     setCustomTitle(repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
     setCustomDescription(repo.description || '');
-    setIsFeatured(showcased.length === 0);
   };
 
   const handleConfirmAdd = async (e: React.FormEvent) => {
@@ -112,7 +110,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
         repoUrl: selectedRepoToAdd.html_url,
         customTitle: customTitle.trim() || null,
         customDescription: customDescription.trim() || null,
-        isFeatured: isFeatured,
       });
 
       if (newProj) {
@@ -147,18 +144,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     }
   };
 
-  const handleToggleFeatured = async (project: ShowcasedProject) => {
-    const updatedStatus = !project.is_featured;
-    try {
-      await updateShowcaseProject(project.id, { is_featured: updatedStatus }, user?.id);
-      setShowcased(prev =>
-        prev.map(p => (p.id === project.id ? { ...p, is_featured: updatedStatus } : p))
-      );
-    } catch (err) {
-      console.error('Failed to toggle featured status:', err);
-    }
-  };
-
   const handleSaveProjectEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProject) return;
@@ -167,7 +152,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
       const updated = await updateShowcaseProject(editingProject.id, {
         custom_title: editingProject.custom_title,
         custom_description: editingProject.custom_description,
-        is_featured: editingProject.is_featured,
       }, user?.id);
       if (updated) {
         setShowcased(prev => prev.map(p => (p.id === editingProject.id ? updated : p)));
@@ -200,7 +184,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   });
 
   const username = profile?.github_username || '';
-  const featuredCount = showcased.filter(p => p.is_featured).length;
+  const totalStars = showcased.reduce((acc, p) => acc + (p.live_stats?.stars ?? 0), 0);
 
   return (
     <div className="space-y-4 sm:space-y-5 pb-8 text-[#212121] w-full max-w-full">
@@ -269,15 +253,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
           <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
             <div className="flex items-center justify-between text-amber-900">
-              <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Featured Projects</span>
+              <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Total Stars</span>
               <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-700" />
             </div>
             <div className="mt-1">
               <span className="text-lg sm:text-xl font-[900] font-newspaper-title text-[#212121] leading-none block">
-                {featuredCount}
+                {totalStars}
               </span>
               <span className="text-[10px] font-serif-body text-stone-600">
-                Pinned at top of showcase
+                Across public projects
               </span>
             </div>
           </div>
@@ -393,40 +377,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               {filteredShowcased.map((proj) => (
                 <div
                   key={proj.id}
-                  className={`p-3.5 sm:p-4 paper-card flex flex-col justify-between space-y-3 transition-all ${
-                    proj.is_featured
-                      ? 'bg-[#FAF6EC] shadow-[3px_3px_0px_#212121]'
-                      : 'bg-[#FEFCF6]'
-                  }`}
+                  className="p-3.5 sm:p-4 paper-card bg-[#FEFCF6] flex flex-col justify-between space-y-3 transition-all"
                 >
                   <div className="space-y-2">
                     {/* Status Badges & Controls Header */}
                     <div className="flex items-start justify-between gap-2 border-b border-dashed border-[#212121] pb-2">
                       <div className="flex items-center space-x-1.5 flex-wrap gap-y-1 min-w-0">
-                        {proj.is_featured && (
-                          <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold">
-                            <Pin className="w-2.5 h-2.5 mr-0.5 inline-block" />
-                            FEATURED PROJECT
-                          </span>
-                        )}
-                        <span className="text-[10px] font-mono text-stone-700 truncate max-w-[130px]">
+                        <span className="text-[10px] font-mono text-stone-700 truncate max-w-[170px]">
                           {proj.repo_full_name}
                         </span>
                       </div>
 
                       {/* Quick Action Icons */}
                       <div className="flex items-center space-x-1 flex-shrink-0">
-                        <button
-                          title={proj.is_featured ? 'Unpin from featured spotlight' : 'Pin to top as featured spotlight'}
-                          aria-label={proj.is_featured ? 'Unpin featured project' : 'Pin as featured project'}
-                          onClick={() => handleToggleFeatured(proj)}
-                          className={`paper-button-icon min-w-[28px] min-h-[28px] p-1 cursor-pointer ${
-                            proj.is_featured ? 'paper-button-dark' : ''
-                          }`}
-                        >
-                          <Star className={`w-3 h-3 ${proj.is_featured ? 'fill-amber-300 text-amber-300' : 'text-stone-800'}`} />
-                        </button>
-
                         <button
                           title="Edit project details"
                           aria-label="Edit project details"
@@ -703,19 +666,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                 />
               </div>
 
-              <div className="flex items-center space-x-2 pt-0.5 min-h-[28px]">
-                <input
-                  type="checkbox"
-                  id="add-featured-checkbox"
-                  checked={isFeatured}
-                  onChange={(e) => setIsFeatured(e.target.checked)}
-                  className="w-3.5 h-3.5 border-1.5 border-[#212121] rounded-xs cursor-pointer"
-                />
-                <label htmlFor="add-featured-checkbox" className="text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold select-none">
-                  Pin as Featured Project in Profile Spotlight
-                </label>
-              </div>
-
               <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-dashed border-[#212121]">
                 <button
                   type="button"
@@ -793,21 +743,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                 />
               </div>
 
-              <div className="flex items-center space-x-2 pt-0.5 min-h-[28px]">
-                <input
-                  type="checkbox"
-                  id="edit-featured-checkbox"
-                  checked={editingProject.is_featured}
-                  onChange={(e) =>
-                    setEditingProject({ ...editingProject, is_featured: e.target.checked })
-                  }
-                  className="w-3.5 h-3.5 border-1.5 border-[#212121] rounded-xs cursor-pointer"
-                />
-                <label htmlFor="edit-featured-checkbox" className="text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold select-none">
-                  Pin as Featured Project in Profile Spotlight
-                </label>
-              </div>
-
               <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-dashed border-[#212121]">
                 <button
                   type="button"
@@ -840,11 +775,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
           >
             <div className="flex justify-between items-start border-b border-dashed border-[#212121] pb-3">
               <div>
-                {previewProject.is_featured && (
-                  <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold mb-1.5 inline-block">
-                    FEATURED PROJECT
-                  </span>
-                )}
                 <h2 className="text-lg sm:text-xl font-[900] uppercase font-newspaper-title text-[#212121]">
                   {previewProject.custom_title || previewProject.repo_full_name.split('/')[1]}
                 </h2>

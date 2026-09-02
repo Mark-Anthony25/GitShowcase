@@ -222,11 +222,6 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                                   <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-700 mr-0.5" />
                                   <span>{proj.live_stats?.stars ?? 0}</span>
                                 </span>
-                                {proj.is_featured && (
-                                  <span className="paper-badge text-[8px] font-mono py-0 px-1 bg-amber-200 text-amber-900 border-amber-800 flex items-center font-bold">
-                                    FEATURED PROJECT
-                                  </span>
-                                )}
                               </div>
                             </div>
                           ))}
@@ -272,12 +267,6 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                         <h3 className="text-sm sm:text-base font-[900] font-newspaper-title text-[#212121] line-clamp-2 uppercase">
                           {project.custom_title || project.repo_full_name.split('/')[1]}
                         </h3>
-                        {project.is_featured && (
-                          <span className="paper-badge text-[9px] font-mono py-0 px-1 bg-amber-200 text-amber-900 border-amber-800 flex items-center font-bold flex-shrink-0 ml-2">
-                            <Star className="w-2.5 h-2.5 fill-amber-900 text-amber-900 mr-0.5" />
-                            FEATURED PROJECT
-                          </span>
-                        )}
                       </div>
                       
                       <p className="text-xs font-serif-body text-stone-700 line-clamp-3 leading-relaxed">
@@ -349,11 +338,6 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             {/* Modal Header */}
             <div className="flex justify-between items-start border-b border-dashed border-[#212121] p-4 sm:p-6">
               <div>
-                {selectedModalItem.project.is_featured && (
-                  <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold mb-2 inline-block">
-                    FEATURED PROJECT
-                  </span>
-                )}
                 <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
                   {selectedModalItem.project.custom_title || selectedModalItem.project.repo_full_name.split('/')[1]}
                 </h2>

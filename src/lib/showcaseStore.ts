@@ -124,9 +124,8 @@ export function invalidateShowcaseCaches(profileId?: string, username?: string) 
   }
   if (username) {
     invalidateCache(`showcase_user_${username.toLowerCase()}`);
-  } else {
-    invalidateCache('showcase_user_');
   }
+  invalidateCache('showcase_user_');
 }
 
 /**
@@ -169,7 +168,7 @@ export async function getProfileById(userId: string, forceRefresh = false): Prom
             .from('profiles')
             .select('*')
             .eq('id', userId)
-            .single();
+            .maybeSingle();
 
           if (!error && data) {
             return data as Profile;
@@ -192,7 +191,7 @@ export async function getProfileById(userId: string, forceRefresh = false): Prom
       const match = Object.values(profiles).find(p => p.id === userId);
       return match || null;
     },
-    { ttlMs: CACHE_TTL.USER_SESSION, skipCache: forceRefresh }
+    { ttlMs: CACHE_TTL.USER_SESSION, skipCache: forceRefresh, persistLocal: false }
   );
 }
 
@@ -225,7 +224,6 @@ export async function getStudentShowcaseByUsername(
               .from('showcased_projects')
               .select('*')
               .eq('profile_id', profileData.id)
-              .order('is_featured', { ascending: false })
               .order('display_order', { ascending: true })
               .order('added_at', { ascending: false });
 
@@ -300,7 +298,6 @@ export async function getStudentShowcaseByUsername(
           repo_full_name: repo.full_name,
           custom_title: repo.name,
           custom_description: repo.description || '',
-          is_featured: idx === 0 && (repo.stargazers_count || 0) > 0,
           display_order: idx,
           added_at: repo.updated_at || new Date().toISOString(),
           repo_url: repo.html_url,
@@ -326,7 +323,7 @@ export async function getStudentShowcaseByUsername(
         return null;
       }
     },
-    { ttlMs: CACHE_TTL.PUBLIC_DATA, skipCache: forceRefresh }
+    { ttlMs: CACHE_TTL.PUBLIC_DATA, skipCache: forceRefresh, persistLocal: false }
   );
 }
 
@@ -397,13 +394,10 @@ export async function getAllStudentsShowcase(
         })
       );
     },
-    { ttlMs: CACHE_TTL.PUBLIC_DATA, skipCache: forceRefresh }
+    { ttlMs: CACHE_TTL.PUBLIC_DATA, skipCache: forceRefresh, persistLocal: false }
   );
 }
 
-/**
- * Fetch showcased projects for the logged in student with live enriched stats & user session caching
- */
 /**
  * Fetch showcased projects for the logged in student with live enriched stats & user session caching
  */
@@ -425,7 +419,6 @@ export async function getStudentShowcasedProjects(
             .from('showcased_projects')
             .select('*')
             .eq('profile_id', profileId)
-            .order('is_featured', { ascending: false })
             .order('display_order', { ascending: true })
             .order('added_at', { ascending: false });
 
@@ -450,13 +443,13 @@ export async function getStudentShowcasedProjects(
 
       return await enrichProjectsWithLiveStats(rawProjects, token, forceRefresh);
     },
-    { ttlMs: CACHE_TTL.USER_SESSION, skipCache: forceRefresh }
+    { ttlMs: CACHE_TTL.USER_SESSION, skipCache: forceRefresh, persistLocal: false }
   );
 }
 
 /**
  * Add or update a repository in showcase & invalidate affected caches
- * Protects against duplicate additions at both database and storage layers
+ * Automatically makes the project publicly visible and protects against duplicate additions
  */
 export async function addProjectToShowcase(params: {
   profileId: string;
@@ -464,7 +457,6 @@ export async function addProjectToShowcase(params: {
   repoUrl: string;
   customTitle?: string | null;
   customDescription?: string | null;
-  isFeatured?: boolean;
 }): Promise<ShowcasedProject | null> {
   let createdProject: ShowcasedProject | null = null;
   const normalizedRepoName = params.repoFullName.trim();
@@ -491,7 +483,6 @@ export async function addProjectToShowcase(params: {
           repo_url: params.repoUrl,
           custom_title: params.customTitle !== undefined ? (params.customTitle || null) : primaryRow.custom_title,
           custom_description: params.customDescription !== undefined ? (params.customDescription || null) : primaryRow.custom_description,
-          is_featured: params.isFeatured !== undefined ? Boolean(params.isFeatured) : primaryRow.is_featured,
         };
 
         const { data: updated, error: updateErr } = await supabase
@@ -511,7 +502,6 @@ export async function addProjectToShowcase(params: {
           repo_url: params.repoUrl,
           custom_title: params.customTitle || null,
           custom_description: params.customDescription || null,
-          is_featured: Boolean(params.isFeatured),
           display_order: 0,
         };
 
@@ -557,7 +547,6 @@ export async function addProjectToShowcase(params: {
       repo_url: params.repoUrl,
       custom_title: params.customTitle !== undefined ? (params.customTitle || null) : projects[existingIdx].custom_title,
       custom_description: params.customDescription !== undefined ? (params.customDescription || null) : projects[existingIdx].custom_description,
-      is_featured: params.isFeatured !== undefined ? Boolean(params.isFeatured) : projects[existingIdx].is_featured,
     };
     if (!createdProject) {
       createdProject = projects[existingIdx];
@@ -570,7 +559,6 @@ export async function addProjectToShowcase(params: {
       repo_url: params.repoUrl,
       custom_title: params.customTitle || null,
       custom_description: params.customDescription || null,
-      is_featured: Boolean(params.isFeatured),
       display_order: projects.filter(p => p.profile_id === params.profileId).length + 1,
       added_at: new Date().toISOString(),
     };
@@ -588,7 +576,7 @@ export async function addProjectToShowcase(params: {
     createdProject.live_stats = stats || undefined;
   }
 
-  // Invalidate affected caches immediately
+  // Invalidate affected caches immediately so changes reflect everywhere
   invalidateShowcaseCaches(params.profileId);
 
   return createdProject;
@@ -605,7 +593,6 @@ export async function syncStudentShowcaseProjects(
   selectedReposMap: Record<string, {
     customTitle?: string;
     customDescription?: string;
-    isFeatured?: boolean;
     repoUrl?: string;
   }>
 ): Promise<ShowcasedProject[]> {
@@ -628,7 +615,6 @@ export async function syncStudentShowcaseProjects(
       repoUrl: meta.repoUrl || `https://github.com/${repoFullName.trim()}`,
       customTitle: meta.customTitle || null,
       customDescription: meta.customDescription || null,
-      isFeatured: Boolean(meta.isFeatured),
     });
     if (saved) {
       result.push(saved);
@@ -671,7 +657,7 @@ export async function removeProjectFromShowcase(projectId: string, profileId?: s
 }
 
 /**
- * Update showcase project item (title, description, is_featured, display_order) & invalidate caches
+ * Update showcase project item (title, description, display_order) & invalidate caches
  */
 export async function updateShowcaseProject(
   projectId: string,
@@ -717,66 +703,143 @@ export async function updateStudentProfile(
   profileId: string,
   updates: Partial<Profile>
 ): Promise<Profile | null> {
+  if (!profileId) {
+    console.error('updateStudentProfile called without profileId');
+    return null;
+  }
+
+  let dbResult: Profile | null = null;
+  let dbError: any = null;
+
   if (isSupabaseConfigured && supabase) {
     try {
+      // 1. Fetch current profile from Supabase first to preserve non-updated columns
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', profileId)
+        .maybeSingle();
+
+      const baseUsername = updates.github_username || existingProfile?.github_username || '';
+
+      const payload: Record<string, any> = {
+        id: profileId,
+        github_username: baseUsername || profileId,
+        full_name: updates.full_name !== undefined ? updates.full_name : (existingProfile?.full_name ?? null),
+        headline: updates.headline !== undefined ? updates.headline : (existingProfile?.headline ?? null),
+        avatar_url: updates.avatar_url !== undefined ? updates.avatar_url : (existingProfile?.avatar_url ?? null),
+        bio: updates.bio !== undefined ? updates.bio : (existingProfile?.bio ?? null),
+        program: updates.program !== undefined ? updates.program : (existingProfile?.program ?? null),
+        year_level: updates.year_level !== undefined ? updates.year_level : (existingProfile?.year_level ?? null),
+        is_onboarded: updates.is_onboarded !== undefined ? Boolean(updates.is_onboarded) : Boolean(existingProfile?.is_onboarded),
+        updated_at: new Date().toISOString(),
+      };
+
+      // 2. Perform upsert on public.profiles
       const { data, error } = await supabase
         .from('profiles')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', profileId)
+        .upsert(payload, { onConflict: 'id' })
         .select()
         .single();
 
       if (!error && data) {
-        invalidateShowcaseCaches(profileId, updates.github_username);
-        return data as Profile;
+        dbResult = data as Profile;
+      } else if (error) {
+        dbError = error;
+        // Check if error is due to missing optional columns (e.g. headline / is_onboarded on older schema)
+        const errMsg = (error.message || '').toLowerCase();
+        if (errMsg.includes('headline') || errMsg.includes('is_onboarded')) {
+          console.warn('Retrying profile upsert without optional schema columns:', error.message);
+          const legacyPayload = { ...payload };
+          delete legacyPayload.headline;
+          delete legacyPayload.is_onboarded;
+
+          const { data: legacyData, error: legacyErr } = await supabase
+            .from('profiles')
+            .upsert(legacyPayload, { onConflict: 'id' })
+            .select()
+            .single();
+
+          if (!legacyErr && legacyData) {
+            dbResult = {
+              ...(legacyData as Profile),
+              headline: updates.headline || existingProfile?.headline || null,
+              is_onboarded: updates.is_onboarded ?? existingProfile?.is_onboarded ?? false,
+            };
+            dbError = null;
+          } else if (legacyErr) {
+            dbError = legacyErr;
+          }
+        }
       }
-      isSchemaError(error);
-      console.warn('Error updating profile in Supabase, updating locally:', error?.message);
     } catch (err) {
-      isSchemaError(err);
-      console.warn('Exception updating profile in Supabase:', err);
+      dbError = err;
+      console.error('Exception updating profile in Supabase:', err);
+    }
+
+    if (dbError) {
+      isSchemaError(dbError);
+      console.error('Supabase profile update failed:', dbError?.message || dbError);
+      return null;
     }
   }
 
+  // Local storage synchronization (mirror confirmed database state or offline fallback)
   const { profiles, projects } = getLocalData();
+  const effectiveUsername = (dbResult?.github_username || updates.github_username || '').toLowerCase();
+
   let foundKey = Object.keys(profiles).find(key => profiles[key].id === profileId);
-  if (!foundKey && updates.github_username) {
-    foundKey = updates.github_username.toLowerCase();
+  if (!foundKey && effectiveUsername) {
+    foundKey = effectiveUsername;
   }
 
-  let resultProfile: Profile;
+  let finalProfile: Profile;
 
-  if (foundKey && profiles[foundKey]) {
-    profiles[foundKey] = { ...profiles[foundKey], ...updates, updated_at: new Date().toISOString() };
-    saveLocalData(profiles, projects);
-    resultProfile = profiles[foundKey];
-  } else {
-    const newProfile: Profile = {
-      id: profileId,
-      github_username: updates.github_username || '',
-      full_name: updates.full_name || null,
-      headline: updates.headline || null,
-      avatar_url: updates.avatar_url || null,
-      bio: updates.bio || null,
-      program: updates.program || 'BS Computer Science',
-      year_level: updates.year_level || '1st Year',
-      is_onboarded: updates.is_onboarded ?? false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      ...updates,
-    };
-    if (newProfile.github_username) {
-      profiles[newProfile.github_username.toLowerCase()] = newProfile;
+  if (dbResult) {
+    finalProfile = dbResult;
+    if (foundKey) {
+      profiles[foundKey] = finalProfile;
+    } else if (effectiveUsername) {
+      profiles[effectiveUsername] = finalProfile;
     } else {
-      profiles[profileId] = newProfile;
+      profiles[profileId] = finalProfile;
     }
     saveLocalData(profiles, projects);
-    resultProfile = newProfile;
+  } else {
+    // Offline sandbox mode only (when Supabase is not configured)
+    if (foundKey && profiles[foundKey]) {
+      profiles[foundKey] = {
+        ...profiles[foundKey],
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+      finalProfile = profiles[foundKey];
+    } else {
+      finalProfile = {
+        id: profileId,
+        github_username: updates.github_username || '',
+        full_name: updates.full_name || null,
+        headline: updates.headline || null,
+        avatar_url: updates.avatar_url || null,
+        bio: updates.bio || null,
+        program: updates.program || 'BS Computer Science',
+        year_level: updates.year_level || '1st Year',
+        is_onboarded: updates.is_onboarded ?? false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...updates,
+      };
+      if (finalProfile.github_username) {
+        profiles[finalProfile.github_username.toLowerCase()] = finalProfile;
+      } else {
+        profiles[profileId] = finalProfile;
+      }
+    }
+    saveLocalData(profiles, projects);
   }
 
-  invalidateShowcaseCaches(profileId, updates.github_username);
-  return resultProfile;
+  // Invalidate all related caches with complete identifiers
+  invalidateShowcaseCaches(profileId, finalProfile.github_username);
+
+  return finalProfile;
 }

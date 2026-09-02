@@ -58,17 +58,19 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [isSyncingGitHubUser, setIsSyncingGitHubUser] = useState(false);
   const [githubSyncSuccess, setGithubSyncSuccess] = useState(false);
 
+interface SelectedRepoMeta {
+  customTitle: string;
+  customDescription: string;
+}
+
   // Step 2: Repository selection
   const [repos, setRepos] = useState<GitHubRepoItem[]>([]);
   const [loadingRepos, setLoadingRepos] = useState(false);
   const [repoError, setRepoError] = useState<string | null>(null);
   const [repoSearch, setRepoSearch] = useState('');
-  const [selectedRepoMap, setSelectedRepoMap] = useState<Record<string, {
-    customTitle: string;
-    customDescription: string;
-    isFeatured: boolean;
-  }>>({});
+  const [selectedRepoMap, setSelectedRepoMap] = useState<Record<string, SelectedRepoMeta>>({});
   const [savingShowcase, setSavingShowcase] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Restore draft from localStorage on mount
   useEffect(() => {
@@ -176,15 +178,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             preSelected[p.repo_full_name] = {
               customTitle: p.custom_title || '',
               customDescription: p.custom_description || '',
-              isFeatured: p.is_featured,
             };
           });
         } else if (fetched.length > 0) {
-          fetched.slice(0, 2).forEach((r, idx) => {
+          fetched.slice(0, 2).forEach((r) => {
             preSelected[r.full_name] = {
               customTitle: r.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
               customDescription: r.description ? r.description.slice(0, 120) : '',
-              isFeatured: idx === 0,
             };
           });
         }
@@ -232,34 +232,33 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       updated[repo.full_name] = {
         customTitle: repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
         customDescription: repo.description ? repo.description.slice(0, 120) : '',
-        isFeatured: Object.keys(updated).length === 0, // First selected is featured
       };
     }
     setSelectedRepoMap(updated);
   };
 
   const handleProceedToReview = () => {
+    setSaveError(null);
     setCurrentStep(3);
   };
 
   const handleFinishOnboarding = async () => {
     if (savingShowcase) return;
     setSavingShowcase(true);
+    setSaveError(null);
     try {
       // 1. Prepare repository mappings with direct URLs
       const repoPayloadMap: Record<string, {
         customTitle?: string;
         customDescription?: string;
-        isFeatured?: boolean;
         repoUrl?: string;
       }> = {};
 
-      for (const [repoFullName, meta] of Object.entries(selectedRepoMap) as [string, { customTitle: string; customDescription: string; isFeatured: boolean }][]) {
+      for (const [repoFullName, meta] of Object.entries(selectedRepoMap) as [string, SelectedRepoMeta][]) {
         const repoObj = repos.find(r => r.full_name.toLowerCase() === repoFullName.toLowerCase());
         repoPayloadMap[repoFullName] = {
           customTitle: meta.customTitle || undefined,
           customDescription: meta.customDescription || undefined,
-          isFeatured: meta.isFeatured,
           repoUrl: repoObj?.html_url || `https://github.com/${repoFullName}`,
         };
       }
@@ -295,8 +294,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       setTimeout(() => {
         onComplete(updatedProfile);
       }, 1200);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving onboarding data:', err);
+      setSaveError(err?.message || 'Failed to publish showcase. Please try again.');
     } finally {
       setSavingShowcase(false);
     }
@@ -347,7 +347,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
           </h2>
           <p className="text-xs font-serif-body text-stone-700 mt-0.5">
             {currentStep === 1 && 'Information is pre-filled from your authenticated GitHub account. Review and adjust your details.'}
-            {currentStep === 2 && 'Choose which public repositories to showcase, write custom project summaries, and pin your featured project.'}
+            {currentStep === 2 && 'Choose which public repositories to showcase on your profile and customize their summaries.'}
             {currentStep === 3 && 'Double-check all imported information before launching your public showcase page.'}
             {currentStep === 4 && 'Saving your student profile and connecting your showcase projects.'}
           </p>
@@ -711,28 +711,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                             </p>
                           </div>
                         </label>
-
-                        {isSelected && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedRepoMap({
-                                ...selectedRepoMap,
-                                [repo.full_name]: {
-                                  ...meta,
-                                  isFeatured: !meta?.isFeatured,
-                                },
-                              });
-                            }}
-                            title="Pin as Featured Project"
-                            className={`paper-button text-xs py-1 px-2 min-h-[30px] font-bold flex-shrink-0 ${
-                              meta?.isFeatured ? 'paper-button-dark' : ''
-                            }`}
-                          >
-                            <Star className={`w-3 h-3 mr-0.5 inline-block ${meta?.isFeatured ? 'fill-amber-300 text-amber-300' : ''}`} />
-                            <span>{meta?.isFeatured ? 'Featured' : 'Pin Feature'}</span>
-                          </button>
-                        )}
                       </div>
 
                       {/* Inline title/desc customizer if selected */}
@@ -818,6 +796,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         {/* STEP 3: Review & Confirmation Screen */}
         {currentStep === 3 && (
           <div className="space-y-3.5">
+            {saveError && (
+              <div className="p-2.5 bg-red-100 border border-red-500 text-red-950 text-xs font-mono flex items-center space-x-1.5 rounded-xs">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 text-red-600" />
+                <span>{saveError}</span>
+              </div>
+            )}
+
             <div className="bg-[#FAF6EC] paper-card p-3.5 sm:p-4 border border-[#212121] space-y-3">
               <div className="flex items-center space-x-3">
                 <div className="w-14 h-14 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[2px_2px_0px_#212121]">
@@ -871,7 +856,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   </p>
                 ) : (
                   <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
-                    {(Object.entries(selectedRepoMap) as [string, { customTitle: string; customDescription: string; isFeatured: boolean }][]).map(([repoName, meta]) => (
+                    {(Object.entries(selectedRepoMap) as [string, SelectedRepoMeta][]).map(([repoName, meta]) => (
                       <div
                         key={repoName}
                         className="p-1.5 bg-[#FEFCF6] paper-card text-xs flex items-center justify-between border border-[#212121]"
@@ -884,11 +869,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                             {repoName}
                           </span>
                         </div>
-                        {meta.isFeatured && (
-                          <span className="paper-badge bg-amber-200 text-amber-950 text-[9px] font-bold ml-2">
-                            FEATURED
-                          </span>
-                        )}
                       </div>
                     ))}
                   </div>

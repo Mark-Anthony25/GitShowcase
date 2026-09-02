@@ -22,7 +22,6 @@ interface ProjectPreviewItem {
   desc: string;
   stars: number;
   url: string;
-  isFeatured?: boolean;
 }
 
 export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide }) => {
@@ -59,11 +58,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               title: p.custom_title || p.repo_full_name.split('/')[1] || p.repo_full_name,
               repo: p.repo_full_name,
               author: s.profile.github_username,
-              badge: p.is_featured ? 'FEATURED PROJECT' : 'PROJECT',
+              badge: 'PROJECT',
               desc: p.custom_description || p.live_stats?.description || 'Student repository project showcased on GitShowcase.',
               stars: p.live_stats?.stars ?? 0,
               url: p.repo_url,
-              isFeatured: p.is_featured,
             });
           }
         }
@@ -210,13 +208,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               >
                 <div className="space-y-1">
                   <div className="flex items-center justify-between gap-1 text-[9px]">
-                    {proj.isFeatured ? (
-                      <span className="paper-badge text-[8px] font-bold bg-amber-200 text-amber-950 border-amber-800 truncate max-w-[140px]">
-                        FEATURED
-                      </span>
-                    ) : (
-                      <span />
-                    )}
+                    <span className="text-[10px] font-mono text-stone-600 truncate max-w-[130px]">
+                      {proj.repo.split('/')[1] || proj.repo}
+                    </span>
                     <div className="flex items-center space-x-1 text-stone-800 font-mono text-[10px] font-bold flex-shrink-0 ml-auto">
                       <Star className="w-3 h-3 text-[#212121] stroke-[2]" />
                       <span>{proj.stars}</span>
@@ -311,7 +305,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               3. Add Your Projects
             </h4>
             <p className="text-xs sm:text-sm font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed">
-              Select which projects to display and pin featured projects to your profile.
+              Select which repositories to showcase and publish them instantly to your public profile.
             </p>
           </div>
         </div>

@@ -63,13 +63,21 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   github_username text unique not null,
   full_name text,
+  headline text,
   avatar_url text,
   bio text,
   program text,
   year_level text,
+  is_onboarded boolean default false,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+-- Schema migration helpers for existing installations
+alter table public.profiles add column if not exists headline text;
+alter table public.profiles add column if not exists is_onboarded boolean default false;
+alter table public.profiles add column if not exists program text;
+alter table public.profiles add column if not exists year_level text;
 
 -- 2. Create Showcased Projects Table
 create table if not exists public.showcased_projects (
@@ -99,28 +107,43 @@ create table if not exists public.repo_stats_cache (
 delete from public.showcased_projects where ctid not in (select min(ctid) from public.showcased_projects group by profile_id, lower(repo_full_name));
 create index if not exists idx_showcased_projects_profile_id on public.showcased_projects(profile_id);
 create unique index if not exists idx_showcased_projects_profile_repo_unique on public.showcased_projects(profile_id, lower(repo_full_name));
-create index if not exists idx_showcased_projects_featured_order on public.showcased_projects(is_featured desc, display_order asc, added_at desc);
+create index if not exists idx_showcased_projects_display_order on public.showcased_projects(display_order asc, added_at desc);
 create index if not exists idx_profiles_program on public.profiles(program);
 create index if not exists idx_profiles_created_at on public.profiles(created_at desc);
 create index if not exists idx_profiles_username_lower on public.profiles(lower(github_username));
 
--- 5. Enable Row Level Security (RLS)
+-- 5. Enable and Force Row Level Security (RLS)
 alter table public.profiles enable row level security;
 alter table public.showcased_projects enable row level security;
 alter table public.repo_stats_cache enable row level security;
 
--- 6. RLS Policies
+-- 6. Production RLS Policies (Discrete & Secure)
+drop policy if exists "Profiles are viewable by everyone" on public.profiles;
 create policy "Profiles are viewable by everyone" on public.profiles for select using (true);
-create policy "Users can insert their own profile" on public.profiles for insert with check (auth.uid() = id);
-create policy "Users can update their own profile" on public.profiles for update using (auth.uid() = id);
 
+drop policy if exists "Users can insert their own profile" on public.profiles;
+create policy "Users can insert their own profile" on public.profiles for insert with check ((select auth.uid()) = id);
+
+drop policy if exists "Users can update their own profile" on public.profiles;
+create policy "Users can update their own profile" on public.profiles for update using ((select auth.uid()) = id) with check ((select auth.uid()) = id);
+
+drop policy if exists "Showcased projects are viewable by everyone" on public.showcased_projects;
 create policy "Showcased projects are viewable by everyone" on public.showcased_projects for select using (true);
-create policy "Users can insert their own showcased projects" on public.showcased_projects for insert with check (auth.uid() = profile_id);
-create policy "Users can update their own showcased projects" on public.showcased_projects for update using (auth.uid() = profile_id);
-create policy "Users can delete their own showcased projects" on public.showcased_projects for delete using (auth.uid() = profile_id);
 
+drop policy if exists "Users can insert their own showcased projects" on public.showcased_projects;
+create policy "Users can insert their own showcased projects" on public.showcased_projects for insert with check ((select auth.uid()) = profile_id);
+
+drop policy if exists "Users can update their own showcased projects" on public.showcased_projects;
+create policy "Users can update their own showcased projects" on public.showcased_projects for update using ((select auth.uid()) = profile_id) with check ((select auth.uid()) = profile_id);
+
+drop policy if exists "Users can delete their own showcased projects" on public.showcased_projects;
+create policy "Users can delete their own showcased projects" on public.showcased_projects for delete using ((select auth.uid()) = profile_id);
+
+drop policy if exists "Repo stats cache is viewable by everyone" on public.repo_stats_cache;
 create policy "Repo stats cache is viewable by everyone" on public.repo_stats_cache for select using (true);
-create policy "Authenticated users can update repo cache" on public.repo_stats_cache for all using (auth.role() = 'authenticated');
+
+drop policy if exists "Authenticated users can update repo cache" on public.repo_stats_cache;
+create policy "Authenticated users can update repo cache" on public.repo_stats_cache for all using ((select auth.role()) = 'authenticated');
 
 -- 7. Trigger to auto-create Profile on first sign-in
 create or replace function public.handle_new_user()
@@ -135,16 +158,22 @@ begin
     split_part(coalesce(new.email, 'student'), '@', 1)
   );
 
-  insert into public.profiles (id, github_username, full_name, avatar_url)
+  insert into public.profiles (id, github_username, full_name, avatar_url, bio, headline, program, year_level, is_onboarded)
   values (
     new.id,
     github_handle,
     coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', github_handle),
-    new.raw_user_meta_data->>'avatar_url'
+    new.raw_user_meta_data->>'avatar_url',
+    null,
+    'Student Developer',
+    'BS Computer Science',
+    '1st Year',
+    false
   )
   on conflict (id) do update set
     avatar_url = coalesce(excluded.avatar_url, profiles.avatar_url),
-    full_name = coalesce(profiles.full_name, excluded.full_name);
+    full_name = coalesce(profiles.full_name, excluded.full_name),
+    updated_at = now();
 
   return new;
 end;

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Github, Star, ExternalLink, Share2, Check, ArrowLeft, ArrowRight,
   Code2, Globe, AlertCircle, RefreshCw, FolderGit2, Edit3, 
-  User, X, ArrowUpRight, Pin, Sparkles, GraduationCap, GitFork
+  User, X, ArrowUpRight, Sparkles, GraduationCap, GitFork
 } from 'lucide-react';
 import { StudentShowcaseData, ShowcasedProject, Profile } from '../types';
 import { getStudentShowcaseByUsername, deduplicateProjectsList } from '../lib/showcaseStore';
@@ -34,6 +34,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   const [editYearLevel, setEditYearLevel] = useState('3rd Year');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   useEffect(() => {
     loadShowcase(false);
@@ -83,6 +84,8 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   );
 
   const handleOpenEditModal = () => {
+    setProfileError(null);
+    setProfileSaved(false);
     if (data?.profile) {
       setEditFullName(data.profile.full_name || '');
       setEditHeadline(data.profile.headline || '');
@@ -99,6 +102,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
     e.preventDefault();
     if (profileSaving) return;
     setProfileSaving(true);
+    setProfileError(null);
     try {
       const effectiveProgram =
         editProgramOption === 'Other Programs'
@@ -113,17 +117,14 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
         year_level: editYearLevel.trim() || null,
       });
 
-      if (updated && data) {
+      if (!updated) {
+        throw new Error('Failed to persist profile changes to database. Please check your connection.');
+      }
+
+      if (data) {
         setData({
           ...data,
-          profile: {
-            ...data.profile,
-            full_name: editFullName.trim() || null,
-            headline: editHeadline.trim() || null,
-            bio: editBio.trim().slice(0, 50) || null,
-            program: effectiveProgram,
-            year_level: editYearLevel.trim() || null,
-          }
+          profile: updated,
         });
       }
 
@@ -132,8 +133,9 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
         setProfileSaved(false);
         setIsEditProfileOpen(false);
       }, 1000);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save profile:', err);
+      setProfileError(err?.message || 'Failed to save profile changes. Please try again.');
     } finally {
       setProfileSaving(false);
     }
@@ -220,8 +222,6 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
   const { profile } = data;
   const projects = deduplicateProjectsList(data.projects || []);
-  const featuredProjects = projects.filter(p => p.is_featured);
-  const regularProjects = projects.filter(p => !p.is_featured);
 
   // Extract unique languages & topics for student's technical skills badge cloud
   const techSkillsSet = new Set<string>();
@@ -371,8 +371,8 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                   </span>
                 </div>
                 <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
-                  <span className="text-[8.5px] sm:text-[9px] font-sketch uppercase text-stone-600 block font-bold truncate">Featured</span>
-                  <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121]">{featuredProjects.length}</span>
+                  <span className="text-[8.5px] sm:text-[9px] font-sketch uppercase text-stone-600 block font-bold truncate">Tech Skills</span>
+                  <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121]">{techSkills.length}</span>
                 </div>
               </div>
 
@@ -449,7 +449,6 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                       <ProjectCard 
                         key={project.id} 
                         project={project} 
-                        isFeatured={project.is_featured}
                         onClick={() => setSelectedProject(project)} 
                       />
                     ))}
@@ -484,6 +483,13 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             </div>
 
             <form onSubmit={handleSaveProfile} className="space-y-3.5">
+              {profileError && (
+                <div className="p-2.5 bg-red-100 border border-red-500 text-red-950 text-xs font-mono flex items-center space-x-1.5 rounded-xs">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 text-red-600" />
+                  <span>{profileError}</span>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
                   Full Name
@@ -633,11 +639,6 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
           >
             <div className="flex justify-between items-start border-b border-dashed border-[#212121] p-4 sm:p-6">
               <div>
-                {selectedProject.is_featured && (
-                  <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold mb-2 inline-block">
-                    FEATURED PROJECT
-                  </span>
-                )}
                 <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
                   {selectedProject.custom_title || selectedProject.repo_full_name.split('/')[1]}
                 </h2>
@@ -749,32 +750,21 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
 interface ProjectCardProps {
   project: ShowcasedProject;
-  isFeatured?: boolean;
   onClick: () => void;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, isFeatured = false, onClick }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
   const stats = project.live_stats;
 
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left p-3.5 sm:p-4 paper-card transition-all flex flex-col justify-between space-y-3 cursor-pointer hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_#212121] ${
-        isFeatured
-          ? 'bg-[#FAF6EC] shadow-[2.5px_2.5px_0px_#212121]'
-          : 'bg-[#FEFCF6]'
-      }`}
+      className="w-full text-left p-3.5 sm:p-4 paper-card bg-[#FEFCF6] transition-all flex flex-col justify-between space-y-3 cursor-pointer hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_#212121]"
     >
       <div className="space-y-2 w-full">
         {/* Header Badge */}
         <div className="flex items-start justify-between gap-2 border-b border-dashed border-[#212121] pb-2">
           <div className="space-y-0.5 w-full min-w-0">
-            {isFeatured && (
-              <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold mb-0.5 inline-block">
-                <Pin className="w-2 h-2 mr-0.5 inline-block" />
-                FEATURED PROJECT
-              </span>
-            )}
             <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] leading-snug truncate">
               {project.custom_title || project.repo_full_name.split('/')[1]}
             </h3>
