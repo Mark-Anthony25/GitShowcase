@@ -1,17 +1,19 @@
 /**
- * Unified Multi-Tier Caching & Request Deduplication Layer
+ * Unified Multi-Tier Caching & Request Deduplication Layer (v2)
  * 
  * Provides:
  * 1. In-memory hot cache for instant component transitions
  * 2. Persistent localStorage backing across page refreshes
  * 3. In-flight request deduplication to prevent duplicate concurrent network calls
  * 4. Tagged / key-prefix invalidation on mutations (add/edit/delete project, edit profile)
+ * 5. Safe handling to prevent caching empty error fallbacks permanently
  */
 
 export interface CacheOptions {
   ttlMs?: number;
   skipCache?: boolean;
   persistLocal?: boolean;
+  cacheEmpty?: boolean;
 }
 
 // Default Cache TTLs (Time-To-Live)
@@ -34,7 +36,23 @@ const memoryCache = new Map<string, CacheEntry<any>>();
 // 2. In-flight promise tracker for request deduplication
 const inFlightRequests = new Map<string, Promise<any>>();
 
-const LOCAL_STORAGE_CACHE_PREFIX = 'gitshowcase_cache_';
+const LOCAL_STORAGE_CACHE_PREFIX = 'gitshowcase_cache_v2_';
+
+// Clean legacy v1 poisoned cache keys once on boot
+if (typeof window !== 'undefined') {
+  try {
+    const legacyKeys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('gitshowcase_cache_') && !k.startsWith(LOCAL_STORAGE_CACHE_PREFIX)) {
+        legacyKeys.push(k);
+      }
+    }
+    legacyKeys.forEach(k => localStorage.removeItem(k));
+  } catch {
+    // Non-fatal
+  }
+}
 
 /**
  * Read from memory cache or localStorage
@@ -160,6 +178,7 @@ export async function getCachedOrFetch<T>(
   const ttlMs = options?.ttlMs ?? CACHE_TTL.PUBLIC_DATA;
   const skipCache = options?.skipCache ?? false;
   const persistLocal = options?.persistLocal ?? true;
+  const cacheEmpty = options?.cacheEmpty ?? false;
 
   if (!skipCache) {
     const cached = getFromCache<T>(key);
@@ -171,7 +190,10 @@ export async function getCachedOrFetch<T>(
   return await dedupeRequest(key, async () => {
     const result = await fetcher();
     if (result !== null && result !== undefined) {
-      setInCache(key, result, ttlMs, persistLocal);
+      // Do not store empty arrays into persistent localStorage unless explicitly enabled
+      const isEmptyArray = Array.isArray(result) && result.length === 0;
+      const shouldPersist = persistLocal && (!isEmptyArray || cacheEmpty);
+      setInCache(key, result, isEmptyArray ? Math.min(ttlMs, 1000 * 15) : ttlMs, shouldPersist);
     }
     return result;
   });

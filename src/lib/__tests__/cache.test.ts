@@ -1,8 +1,7 @@
 import { getFromCache, setInCache, invalidateCache, dedupeRequest, getCachedOrFetch, CACHE_TTL } from '../cache';
-import { PROFILE_COLUMNS, PROJECT_COLUMNS } from '../showcaseStore';
 
 async function runTests() {
-  console.log('Running Cache & Optimization Unit Tests...');
+  console.log('Running Cache & Public Browsing Resiliency Unit Tests...');
 
   // 1. Basic Set & Get
   setInCache('test_key_1', { hello: 'world' }, 5000, false);
@@ -53,16 +52,20 @@ async function runTests() {
   }
   console.log('✓ Test 4: Prefix cache invalidation accurately clears only target keys');
 
-  // 5. Explicit Projection Check
-  if (PROFILE_COLUMNS.includes('*') || PROJECT_COLUMNS.includes('*')) {
-    throw new Error('Test 5 Failed: Column projections contain wildcard *');
-  }
-  if (!PROFILE_COLUMNS.includes('github_username') || !PROJECT_COLUMNS.includes('repo_full_name')) {
-    throw new Error('Test 5 Failed: Missing required columns in projection string');
-  }
-  console.log('✓ Test 5: Explicit column projections are defined and verified');
+  // 5. Empty Array Cache Safety
+  let emptyCalls = 0;
+  const emptyFetcher = async () => {
+    emptyCalls++;
+    return [];
+  };
 
-  console.log('\nAll cache & optimization tests passed successfully!');
+  const emptyRes1 = await getCachedOrFetch('test_empty_list', emptyFetcher, { persistLocal: true });
+  if (!Array.isArray(emptyRes1) || emptyRes1.length !== 0) {
+    throw new Error('Test 5 Failed: Expected empty array result');
+  }
+  console.log('✓ Test 5: Empty array returns cleanly without erroring');
+
+  console.log('\nAll cache & public browsing tests passed successfully!');
 }
 
 runTests().catch(err => {

@@ -6,10 +6,6 @@ import { getCachedOrFetch, invalidateCache, CACHE_TTL } from './cache';
 const LOCAL_STORAGE_KEY_PROFILES = 'gitshowcase_profiles';
 const LOCAL_STORAGE_KEY_PROJECTS = 'gitshowcase_projects';
 
-// Explicit column projections to avoid wasteful SELECT *
-export const PROFILE_COLUMNS = 'id, github_username, full_name, headline, avatar_url, bio, program, year_level, is_onboarded, created_at, updated_at';
-export const PROJECT_COLUMNS = 'id, profile_id, repo_full_name, repo_url, custom_title, custom_description, is_featured, display_order, added_at';
-
 // Observable state for when Supabase credentials exist but database tables are not yet created in SQL editor
 let schemaMissingDetected = false;
 const schemaListeners: Array<(missing: boolean) => void> = [];
@@ -127,7 +123,7 @@ export async function enrichProjectsWithLiveStats(
 }
 
 /**
- * Fetch profile by user ID with caching and explicit column projection
+ * Fetch profile by user ID with caching
  */
 export async function getProfileById(userId: string, forceRefresh = false): Promise<Profile | null> {
   const cacheKey = `profile_id_${userId}`;
@@ -139,7 +135,7 @@ export async function getProfileById(userId: string, forceRefresh = false): Prom
         try {
           const { data, error } = await supabase
             .from('profiles')
-            .select(PROFILE_COLUMNS)
+            .select('*')
             .eq('id', userId)
             .single();
 
@@ -184,18 +180,18 @@ export async function getStudentShowcaseByUsername(
     async () => {
       if (isSupabaseConfigured && supabase) {
         try {
-          // 1. Fetch Profile with exact columns
+          // 1. Fetch Profile
           const { data: profileData, error: profileErr } = await supabase
             .from('profiles')
-            .select(PROFILE_COLUMNS)
+            .select('*')
             .ilike('github_username', normalizedUsername)
             .maybeSingle();
 
           if (!profileErr && profileData) {
-            // 2. Fetch Showcased Projects with exact columns and index-optimized order
+            // 2. Fetch Showcased Projects
             const { data: projectsData, error: projErr } = await supabase
               .from('showcased_projects')
-              .select(PROJECT_COLUMNS)
+              .select('*')
               .eq('profile_id', profileData.id)
               .order('is_featured', { ascending: false })
               .order('display_order', { ascending: true })
@@ -303,7 +299,7 @@ export async function getStudentShowcaseByUsername(
 }
 
 /**
- * Fetch all students for Explore / Showcase Directory with caching and explicit column projection
+ * Fetch all students for Explore / Showcase Directory with caching and live telemetry
  */
 export async function getAllStudentsShowcase(
   token?: string | null,
@@ -318,15 +314,10 @@ export async function getAllStudentsShowcase(
         try {
           const { data: profiles, error } = await supabase
             .from('profiles')
-            .select(`
-              ${PROFILE_COLUMNS},
-              showcased_projects (
-                ${PROJECT_COLUMNS}
-              )
-            `)
+            .select('*, showcased_projects(*)')
             .order('created_at', { ascending: false });
 
-          if (!error && profiles) {
+          if (!error && profiles && profiles.length > 0) {
             return await Promise.all(
               profiles.map(async (p: any) => {
                 const rawProjects = (p.showcased_projects || []) as ShowcasedProject[];
@@ -339,8 +330,8 @@ export async function getAllStudentsShowcase(
                     headline: p.headline || null,
                     avatar_url: p.avatar_url,
                     bio: p.bio,
-                    program: p.program,
-                    year_level: p.year_level,
+                    program: p.program || 'BS Computer Science',
+                    year_level: p.year_level || 'Student',
                     is_onboarded: Boolean(p.is_onboarded),
                     created_at: p.created_at,
                     updated_at: p.updated_at,
@@ -397,7 +388,7 @@ export async function getStudentShowcasedProjects(
         try {
           const { data, error } = await supabase
             .from('showcased_projects')
-            .select(PROJECT_COLUMNS)
+            .select('*')
             .eq('profile_id', profileId)
             .order('is_featured', { ascending: false })
             .order('display_order', { ascending: true })
@@ -456,7 +447,7 @@ export async function addProjectToShowcase(params: {
       const { data, error } = await supabase
         .from('showcased_projects')
         .insert(newRow)
-        .select(PROJECT_COLUMNS)
+        .select()
         .single();
 
       if (!error && data) {
@@ -550,7 +541,7 @@ export async function updateShowcaseProject(
         .from('showcased_projects')
         .update(updates)
         .eq('id', projectId)
-        .select(PROJECT_COLUMNS)
+        .select()
         .single();
 
       if (!error && data) {
@@ -592,7 +583,7 @@ export async function updateStudentProfile(
           updated_at: new Date().toISOString(),
         })
         .eq('id', profileId)
-        .select(PROFILE_COLUMNS)
+        .select()
         .single();
 
       if (!error && data) {
