@@ -127,7 +127,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
               Home
             </button>
             <button id="nav-explore-btn" onClick={() => navigate('/explore')} className={navBtnClass('/explore')}>
-              <Compass className="w-3.5 h-3.5 mr-1 flex-shrink-0" /><span>Campus Directory</span>
+              <Compass className="w-3.5 h-3.5 mr-1 flex-shrink-0" /><span>Browse Projects</span>
             </button>
             {user && (
               <button id="nav-dashboard-btn" onClick={() => navigate('/dashboard')} className={navBtnClass('/dashboard')}>
@@ -285,7 +285,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                 onClick={() => { setMobileMenuOpen(false); navigate('/explore'); }}
                 className={`${navBtnClass('/explore')} w-full min-h-[38px] text-xs justify-start px-3`}
               >
-                <Compass className="w-3.5 h-3.5 mr-2 flex-shrink-0" /><span>Campus Directory</span>
+                <Compass className="w-3.5 h-3.5 mr-2 flex-shrink-0" /><span>Browse Projects</span>
               </button>
               {user && (
                 <button

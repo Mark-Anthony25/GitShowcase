@@ -81,7 +81,6 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
     };
   }, []);
 
-  const featuredProjects = previewProjects.filter(p => p.isFeatured);
 
   return (
     <div className="space-y-5 sm:space-y-7 pb-8 sm:pb-10 text-[#212121] w-full max-w-full">
@@ -149,7 +148,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                   className="paper-button paper-button-dark text-xs lg:text-sm py-2 lg:py-2.5 px-4 text-white justify-center min-h-[38px] lg:min-h-[42px] font-bold"
                 >
                   <Compass className="w-4 h-4 mr-1.5 flex-shrink-0 stroke-[2]" />
-                  <span>Browse Campus Directory</span>
+                  <span>Browse Projects</span>
                   <ArrowRight className="w-3.5 h-3.5 ml-1.5 flex-shrink-0 stroke-[2]" />
                 </button>
 
@@ -181,7 +180,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               onClick={() => navigate('/explore')}
               className="text-[11px] sm:text-xs lg:text-sm font-headline uppercase tracking-wider text-stone-800 hover:text-black underline cursor-pointer font-bold flex-shrink-0 ml-2"
             >
-              Browse Campus Directory ({previewProjects.length}) &rarr;
+              Browse All Projects ({previewProjects.length}) &rarr;
             </button>
           )}
         </div>
@@ -211,10 +210,14 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               >
                 <div className="space-y-1">
                   <div className="flex items-center justify-between gap-1 text-[9px]">
-                    <span className="paper-badge text-[8px] font-bold bg-[#EFE9DB] truncate max-w-[140px]">
-                      {proj.badge}
-                    </span>
-                    <div className="flex items-center space-x-1 text-stone-800 font-mono text-[10px] font-bold flex-shrink-0">
+                    {proj.isFeatured ? (
+                      <span className="paper-badge text-[8px] font-bold bg-amber-200 text-amber-950 border-amber-800 truncate max-w-[140px]">
+                        FEATURED
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+                    <div className="flex items-center space-x-1 text-stone-800 font-mono text-[10px] font-bold flex-shrink-0 ml-auto">
                       <Star className="w-3 h-3 text-[#212121] stroke-[2]" />
                       <span>{proj.stars}</span>
                     </div>
@@ -313,70 +316,6 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
           </div>
         </div>
       </section>
-
-      {/* Featured Student Capstones Spotlight (Dynamic only) */}
-      {featuredProjects.length > 0 && (
-        <section className="space-y-3">
-          <div className="border-b border-dashed border-[#212121] pb-1.5 flex items-center justify-between">
-            <div className="flex items-center space-x-1.5">
-              <Star className="w-3.5 h-3.5 text-[#212121] stroke-[2]" />
-              <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121]">
-                Featured Student Projects
-              </h3>
-            </div>
-            <button
-              onClick={() => navigate('/explore')}
-              className="text-xs font-headline uppercase tracking-wider text-stone-800 hover:text-black underline cursor-pointer font-bold"
-            >
-              Browse Campus Directory &rarr;
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5 md:gap-4">
-            {featuredProjects.slice(0, 4).map((proj) => (
-              <div key={proj.id} className="p-3 sm:p-4 paper-card bg-[#FEFCF6] flex flex-col justify-between space-y-3 min-w-0">
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-1 text-[9px]">
-                    <span className="paper-badge text-[8px] font-bold bg-amber-200 text-amber-950 border-amber-800">
-                      FEATURED PROJECT
-                    </span>
-                    <div className="flex items-center space-x-1 text-stone-800 font-mono text-[10px] font-bold flex-shrink-0">
-                      <Star className="w-3 h-3 text-[#212121] stroke-[2]" />
-                      <span>{proj.stars}</span>
-                    </div>
-                  </div>
-
-                  <h4 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
-                    {proj.title}
-                  </h4>
-                  <p className="text-xs sm:text-sm font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed line-clamp-3">
-                    {proj.desc}
-                  </p>
-                </div>
-
-                <div className="pt-2 border-t border-dashed border-[#212121] flex items-center justify-between text-xs">
-                  <button
-                    onClick={() => navigate(`/u/${proj.author}`)}
-                    className="text-stone-800 hover:text-black font-headline text-xs uppercase tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold py-0.5 px-1 min-h-[30px]"
-                  >
-                    <span>By @{proj.author}</span>
-                    <ArrowUpRight className="w-3 h-3 flex-shrink-0" />
-                  </button>
-                  <a
-                    href={proj.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-stone-700 hover:text-black flex items-center space-x-0.5 font-mono text-[10px] font-bold cursor-pointer"
-                  >
-                    <span>Repo</span>
-                    <ArrowUpRight className="w-3 h-3 flex-shrink-0 stroke-[2]" />
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 };

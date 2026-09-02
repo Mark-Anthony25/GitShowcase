@@ -403,14 +403,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                     {/* Status Badges & Controls Header */}
                     <div className="flex items-start justify-between gap-2 border-b border-dashed border-[#212121] pb-2">
                       <div className="flex items-center space-x-1.5 flex-wrap gap-y-1 min-w-0">
-                        {proj.is_featured ? (
+                        {proj.is_featured && (
                           <span className="paper-badge bg-amber-200 text-amber-950 border-amber-800 text-[9px] font-bold">
                             <Pin className="w-2.5 h-2.5 mr-0.5 inline-block" />
                             FEATURED PROJECT
-                          </span>
-                        ) : (
-                          <span className="paper-badge bg-stone-200 text-stone-800 text-[9px] font-bold">
-                            PUBLISHED
                           </span>
                         )}
                         <span className="text-[10px] font-mono text-stone-700 truncate max-w-[130px]">

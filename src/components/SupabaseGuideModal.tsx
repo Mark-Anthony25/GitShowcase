@@ -96,7 +96,9 @@ create table if not exists public.repo_stats_cache (
 );
 
 -- 4. High-Performance Database Indexes
+delete from public.showcased_projects where ctid not in (select min(ctid) from public.showcased_projects group by profile_id, lower(repo_full_name));
 create index if not exists idx_showcased_projects_profile_id on public.showcased_projects(profile_id);
+create unique index if not exists idx_showcased_projects_profile_repo_unique on public.showcased_projects(profile_id, lower(repo_full_name));
 create index if not exists idx_showcased_projects_featured_order on public.showcased_projects(is_featured desc, display_order asc, added_at desc);
 create index if not exists idx_profiles_program on public.profiles(program);
 create index if not exists idx_profiles_created_at on public.profiles(created_at desc);

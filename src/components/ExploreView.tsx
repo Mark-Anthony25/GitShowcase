@@ -456,7 +456,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                     className="paper-button text-xs py-2 px-4 font-bold inline-flex items-center"
                   >
                     <Globe className="w-4 h-4 mr-1.5" />
-                    Visit Project
+                    Visit Live Site
                   </a>
                 )}
                 <a

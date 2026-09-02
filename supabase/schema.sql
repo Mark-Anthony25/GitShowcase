@@ -44,6 +44,14 @@ create table if not exists public.repo_stats_cache (
 );
 
 -- 4. High-Performance Database Indexes
+-- Deduplicate any existing duplicate project rows before applying unique index
+delete from public.showcased_projects
+where ctid not in (
+  select min(ctid)
+  from public.showcased_projects
+  group by profile_id, lower(repo_full_name)
+);
+
 create index if not exists idx_showcased_projects_profile_id 
   on public.showcased_projects(profile_id);
 

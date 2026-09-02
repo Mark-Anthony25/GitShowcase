@@ -243,7 +243,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             className="paper-button text-xs py-1.5 px-3 font-bold min-h-[34px]"
           >
             <ArrowLeft className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
-            <span>Back to Browse</span>
+            <span>Back to Browse Projects</span>
           </button>
 
           <div className="flex items-center space-x-2">
@@ -386,7 +386,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                     title="Open My Projects workbench"
                   >
                     <FolderGit2 className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                    <span>Manage My Projects</span>
+                    <span>My Projects</span>
                     <ArrowUpRight className="w-3.5 h-3.5 ml-1 flex-shrink-0" />
                   </button>
                 )}
@@ -412,23 +412,13 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
             {/* Public Projects Preview & Spotlight Section */}
             <section className="space-y-3.5 pt-1">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-dashed border-[#212121] pb-2">
+              <div className="flex items-center justify-between border-b border-dashed border-[#212121] pb-2">
                 <div className="flex items-center space-x-2">
                   <FolderGit2 className="w-4 h-4 text-[#212121] stroke-[2] flex-shrink-0" />
                   <h2 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
                     {isOwner ? 'My Public Projects' : 'Public Projects'} — {projects.length}
                   </h2>
                 </div>
-
-                {isOwner && (
-                  <button
-                    onClick={() => navigate('/dashboard')}
-                    className="paper-button text-xs py-1 px-3 font-bold min-h-[32px] flex items-center space-x-1 self-start sm:self-auto cursor-pointer"
-                  >
-                    <span>Manage Projects</span>
-                    <ArrowUpRight className="w-3.5 h-3.5 ml-0.5" />
-                  </button>
-                )}
               </div>
 
               {projects.length === 0 ? (
@@ -447,7 +437,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                       onClick={() => navigate('/dashboard')}
                       className="paper-button paper-button-dark text-xs py-1.5 px-3.5 font-bold min-h-[34px] mt-1"
                     >
-                      Open Project Workbench
+                      Go to My Projects
                     </button>
                   )}
                 </div>
@@ -463,39 +453,6 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                         onClick={() => setSelectedProject(project)} 
                       />
                     ))}
-                  </div>
-
-                  {/* Interconnection Call-to-Action Banner */}
-                  <div className="p-3.5 sm:p-4 bg-[#FAF6EC] paper-card border border-[#212121] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[1.5px_1.5px_0px_#212121]">
-                    <div className="space-y-0.5">
-                      <h3 className="text-xs sm:text-sm font-[900] uppercase font-newspaper-title text-[#212121]">
-                        {isOwner ? 'Want to manage or publish more projects?' : 'Discover More Student Projects & Portfolios'}
-                      </h3>
-                      <p className="text-xs font-serif-body text-stone-700">
-                        {isOwner
-                          ? `You currently have ${projects.length} ${projects.length === 1 ? 'project' : 'projects'} published. Visit My Projects for full management tools.`
-                          : 'Explore portfolios, capstones, and repositories from other student developers across Isabela State University - Cauayan Campus.'}
-                      </p>
-                    </div>
-
-                    {isOwner ? (
-                      <button
-                        onClick={() => navigate('/dashboard')}
-                        className="paper-button paper-button-dark text-xs py-2 px-4 font-bold min-h-[36px] whitespace-nowrap flex-shrink-0 flex items-center space-x-1.5"
-                      >
-                        <FolderGit2 className="w-3.5 h-3.5" />
-                        <span>Go to My Projects</span>
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => navigate('/explore')}
-                        className="paper-button text-xs py-2 px-4 font-bold min-h-[36px] whitespace-nowrap flex-shrink-0 flex items-center space-x-1.5"
-                      >
-                        <span>Browse Campus Directory</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    )}
                   </div>
                 </div>
               )}
@@ -868,8 +825,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, isFeatured = false, 
 
       {/* Footer / Links */}
       <div className="pt-2 border-t border-dashed border-[#212121] flex items-center justify-between text-xs font-mono">
-        <span className="text-[10px] font-sketch text-stone-600 font-bold uppercase tracking-wider">
-          Click for details
+        <span className="text-[10px] font-headline uppercase font-bold text-stone-600">
+          View Details &rarr;
         </span>
 
         <div className="flex items-center space-x-2">

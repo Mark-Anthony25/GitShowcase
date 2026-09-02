@@ -730,7 +730,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                             }`}
                           >
                             <Star className={`w-3 h-3 mr-0.5 inline-block ${meta?.isFeatured ? 'fill-amber-300 text-amber-300' : ''}`} />
-                            <span>{meta?.isFeatured ? 'FEATURED PROJECT' : 'Pin Feature'}</span>
+                            <span>{meta?.isFeatured ? 'Featured' : 'Pin Feature'}</span>
                           </button>
                         )}
                       </div>
@@ -886,7 +886,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                         </div>
                         {meta.isFeatured && (
                           <span className="paper-badge bg-amber-200 text-amber-950 text-[9px] font-bold ml-2">
-                            FEATURED PROJECT
+                            FEATURED
                           </span>
                         )}
                       </div>
