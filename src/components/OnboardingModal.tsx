@@ -19,14 +19,6 @@ interface OnboardingModalProps {
 
 const YEAR_OPTIONS = ['1st Year', '2nd Year', '3rd Year', '4th Year', 'Graduate / Alumni'];
 
-const HEADLINE_SUGGESTIONS = [
-  'Multimedia Computing • Game Developer',
-  'Computer Science • Full-Stack Developer',
-  'Information Technology • Cloud & Web',
-  'Accounting Information Systems • Enterprise Dev',
-  'Mobile & Cross-Platform Developer'
-];
-
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   isOpen,
   profile,
@@ -47,7 +39,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [avatarUrl, setAvatarUrl] = useState(
     profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'
   );
-  const [headline, setHeadline] = useState(profile.headline || 'Student Developer');
   const [aboutMe, setAboutMe] = useState(
     (profile.bio || '').slice(0, 50)
   );
@@ -83,7 +74,6 @@ interface SelectedRepoMeta {
         if (draft.username) setUsername(draft.username);
         if (draft.fullName) setFullName(draft.fullName);
         if (draft.avatarUrl) setAvatarUrl(draft.avatarUrl);
-        if (draft.headline) setHeadline(draft.headline);
         if (draft.aboutMe) setAboutMe(draft.aboutMe);
         if (draft.selectedProgramOption) setSelectedProgramOption(draft.selectedProgramOption);
         if (draft.customProgramName) setCustomProgramName(draft.customProgramName);
@@ -104,7 +94,6 @@ interface SelectedRepoMeta {
         username,
         fullName,
         avatarUrl,
-        headline,
         aboutMe,
         selectedProgramOption,
         customProgramName,
@@ -122,7 +111,6 @@ interface SelectedRepoMeta {
     username,
     fullName,
     avatarUrl,
-    headline,
     aboutMe,
     selectedProgramOption,
     customProgramName,
@@ -184,7 +172,7 @@ interface SelectedRepoMeta {
           fetched.slice(0, 2).forEach((r) => {
             preSelected[r.full_name] = {
               customTitle: r.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-              customDescription: r.description ? r.description.slice(0, 120) : '',
+              customDescription: r.description || '',
             };
           });
         }
@@ -231,7 +219,7 @@ interface SelectedRepoMeta {
     } else {
       updated[repo.full_name] = {
         customTitle: repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        customDescription: repo.description ? repo.description.slice(0, 120) : '',
+        customDescription: repo.description || '',
       };
     }
     setSelectedRepoMap(updated);
@@ -277,7 +265,7 @@ interface SelectedRepoMeta {
         github_username: username.trim().toLowerCase() || profile.github_username,
         full_name: fullName.trim() || profile.full_name || username.trim(),
         avatar_url: avatarUrl.trim() || profile.avatar_url,
-        headline: headline.trim() || profile.headline,
+        headline: profile.headline || null,
         bio: aboutMe.trim().slice(0, 50) || profile.bio,
         program: effectiveProgram,
         year_level: yearLevel || profile.year_level,
@@ -451,38 +439,6 @@ interface SelectedRepoMeta {
                 >
                   Use GitHub Avatar
                 </button>
-              </div>
-            </div>
-
-            {/* Headline */}
-            <div>
-              <div className="flex items-center justify-between mb-0.5">
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
-                  Professional / Student Headline
-                </label>
-                <span className="text-[9px] font-sketch text-stone-600 font-bold">e.g. Program &amp; Specialization</span>
-              </div>
-              <input
-                type="text"
-                required
-                value={headline}
-                onChange={(e) => setHeadline(e.target.value)}
-                placeholder="e.g. BS Computer Science • Full-Stack Developer"
-                className="w-full px-2.5 py-1.5 paper-input text-xs font-mono text-[#212121] min-h-[34px]"
-              />
-              {/* Quick Headline Suggestions */}
-              <div className="flex flex-wrap gap-1 mt-1.5">
-                <span className="text-[9px] font-sketch text-stone-700 self-center font-bold">Suggestions:</span>
-                {HEADLINE_SUGGESTIONS.map((sugg) => (
-                  <button
-                    key={sugg}
-                    type="button"
-                    onClick={() => setHeadline(sugg)}
-                    className="paper-button text-[10px] font-mono py-0.5 px-2 min-h-[26px] cursor-pointer"
-                  >
-                    {sugg}
-                  </button>
-                ))}
               </div>
             </div>
 
@@ -706,7 +662,7 @@ interface SelectedRepoMeta {
                                 <span className="flex items-center"><GitFork className="w-2.5 h-2.5 mr-0.5" /> {repo.forks_count}</span>
                               </div>
                             </div>
-                            <p className="text-xs font-serif-body text-stone-700 line-clamp-1">
+                            <p className="text-xs font-serif-body text-stone-700">
                               {repo.description || 'No description provided on GitHub.'}
                             </p>
                           </div>
@@ -825,10 +781,6 @@ interface SelectedRepoMeta {
                 <div className="flex items-center space-x-2">
                   <span className="font-sketch font-bold uppercase text-stone-600 text-[10px]">Program:</span>
                   <span className="font-serif-body font-bold text-[#212121]">{effectiveProgramDisplay}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="font-sketch font-bold uppercase text-stone-600 text-[10px]">Headline:</span>
-                  <span className="font-mono text-[#212121] text-[11px] truncate">{headline}</span>
                 </div>
                 <div className="flex items-start space-x-2 pt-0.5">
                   <span className="font-sketch font-bold uppercase text-stone-600 text-[10px] flex-shrink-0">About Me:</span>

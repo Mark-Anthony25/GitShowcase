@@ -57,13 +57,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   // Load showcase projects
   useEffect(() => {
     if (!user) return;
-    loadShowcasedProjects();
+    loadShowcasedProjects(true);
   }, [user]);
 
   // Load GitHub repos when switching to 'repos' tab or initial mount
   useEffect(() => {
     if (user && (activeTab === 'repos' || availableRepos.length === 0)) {
-      loadGitHubRepos();
+      loadGitHubRepos(true);
     }
   }, [user, activeTab]);
 
@@ -411,12 +411,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] leading-snug line-clamp-2">
+                    <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] leading-snug">
                       {proj.custom_title || proj.repo_full_name.split('/')[1]}
                     </h3>
 
                     {/* Description */}
-                    <p className="text-xs font-serif-body text-stone-700 line-clamp-2 leading-relaxed">
+                    <p className="text-xs font-serif-body text-stone-700 leading-relaxed">
                       {proj.custom_description || proj.live_stats?.description || 'No custom description provided.'}
                     </p>
 
@@ -556,7 +556,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                         )}
                       </div>
 
-                      <p className="text-xs font-serif-body text-stone-700 line-clamp-2 leading-relaxed">
+                      <p className="text-xs font-serif-body text-stone-700 leading-relaxed">
                         {repo.description || 'No description provided on GitHub.'}
                       </p>
 

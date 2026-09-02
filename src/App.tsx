@@ -83,12 +83,11 @@ function AppContent() {
   };
 
   const handleOnboardingComplete = async (updatedProfile: Profile) => {
-    setOnboardingDismissed(false);
+    setOnboardingDismissed(true);
     setManualOnboardOpen(false);
     await updateProfileData({
       github_username: updatedProfile.github_username,
       full_name: updatedProfile.full_name,
-      headline: updatedProfile.headline,
       bio: updatedProfile.bio,
       program: updatedProfile.program,
       year_level: updatedProfile.year_level,

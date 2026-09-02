@@ -27,7 +27,6 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   // Profile Edit Modal State for Owner
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [editFullName, setEditFullName] = useState('');
-  const [editHeadline, setEditHeadline] = useState('');
   const [editBio, setEditBio] = useState('');
   const [editProgramOption, setEditProgramOption] = useState('BS Computer Science');
   const [editCustomProgram, setEditCustomProgram] = useState('');
@@ -37,7 +36,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   const [profileError, setProfileError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadShowcase(false);
+    loadShowcase(true);
   }, [username, githubToken]);
 
   const loadShowcase = async (force = false) => {
@@ -54,7 +53,6 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
       if (res?.profile) {
         setEditFullName(res.profile.full_name || '');
-        setEditHeadline(res.profile.headline || '');
         setEditBio(res.profile.bio || '');
         const progInfo = getCanonicalProgram(res.profile.program);
         setEditProgramOption(progInfo.selectedOptionValue);
@@ -88,7 +86,6 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
     setProfileSaved(false);
     if (data?.profile) {
       setEditFullName(data.profile.full_name || '');
-      setEditHeadline(data.profile.headline || '');
       setEditBio(data.profile.bio || '');
       const progInfo = getCanonicalProgram(data.profile.program);
       setEditProgramOption(progInfo.selectedOptionValue);
@@ -111,10 +108,10 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
       const updated = await updateProfileData({
         full_name: editFullName.trim() || null,
-        headline: editHeadline.trim() || null,
         bio: editBio.trim().slice(0, 50) || null,
         program: effectiveProgram,
         year_level: editYearLevel.trim() || null,
+        is_onboarded: true,
       });
 
       if (!updated) {
@@ -223,16 +220,6 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   const { profile } = data;
   const projects = deduplicateProjectsList(data.projects || []);
 
-  // Extract unique languages & topics for student's technical skills badge cloud
-  const techSkillsSet = new Set<string>();
-  (projects || []).forEach(p => {
-    if (p?.live_stats?.language) techSkillsSet.add(p.live_stats.language);
-    if (Array.isArray(p?.live_stats?.topics)) {
-      p.live_stats.topics.forEach(t => techSkillsSet.add(t));
-    }
-  });
-  const techSkills = Array.from(techSkillsSet).slice(0, 8);
-
   return (
     <>
       <div className="space-y-5 sm:space-y-6 pb-8 text-[#212121]">
@@ -309,9 +296,9 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
               {/* Academic & Identity Info */}
               <div className="space-y-2 pt-2.5 border-t border-dashed border-[#212121]">
-                {profile.headline && (
-                  <p className="text-xs sm:text-sm font-headline uppercase tracking-wider text-stone-800 font-bold leading-snug">
-                    {profile.headline}
+                {profile.bio && (
+                  <p className="text-xs sm:text-sm font-serif-body text-stone-800 leading-relaxed italic">
+                    "{profile.bio}"
                   </p>
                 )}
 
@@ -327,34 +314,6 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                     </span>
                   )}
                 </div>
-
-                {/* About Me / Bio Quote */}
-                {profile.bio && (
-                  <div className="pt-1">
-                    <span className="text-[9px] font-sketch uppercase text-stone-600 font-bold block mb-0.5">
-                      ABOUT ME
-                    </span>
-                    <p className="text-xs font-serif-body text-stone-900 leading-relaxed italic bg-[#FEFCF6] p-2.5 border border-[#212121] paper-card shadow-[1px_1px_0px_rgba(0,0,0,0.15)]">
-                      "{profile.bio}"
-                    </p>
-                  </div>
-                )}
-
-                {/* Skills & Tech Stack Tags */}
-                {techSkills.length > 0 && (
-                  <div className="pt-2 border-t border-dashed border-[#212121]/60">
-                    <span className="text-[9px] font-sketch uppercase text-stone-700 font-bold block mb-1">
-                      TECHNICAL &amp; PROJECT FOCUS
-                    </span>
-                    <div className="flex flex-wrap gap-1">
-                      {techSkills.map((skill, idx) => (
-                        <span key={idx} className="paper-badge text-[9px] font-mono bg-[#FEFCF6]">
-                          #{skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Public Portfolio Metrics Summary */}
@@ -371,8 +330,8 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                   </span>
                 </div>
                 <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
-                  <span className="text-[8.5px] sm:text-[9px] font-sketch uppercase text-stone-600 block font-bold truncate">Tech Skills</span>
-                  <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121]">{techSkills.length}</span>
+                  <span className="text-[8.5px] sm:text-[9px] font-sketch uppercase text-stone-600 block font-bold truncate">Total Forks</span>
+                  <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121]">{projects.reduce((acc, p) => acc + (p.live_stats?.forks ?? 0), 0)}</span>
                 </div>
               </div>
 
@@ -500,22 +459,6 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                   onChange={(e) => setEditFullName(e.target.value)}
                   placeholder="e.g. Juan dela Cruz"
                   className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px]"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
-                    Headline
-                  </label>
-                  <span className="text-[9px] font-sketch text-stone-600 font-bold">e.g. Focus &amp; Interests</span>
-                </div>
-                <input
-                  type="text"
-                  value={editHeadline}
-                  onChange={(e) => setEditHeadline(e.target.value)}
-                  placeholder="e.g. BS Computer Science • Full-Stack Developer"
-                  className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-mono min-h-[34px]"
                 />
               </div>
 
@@ -730,7 +673,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                           <div className="font-bold font-newspaper-title uppercase text-sm truncate">
                             {p.custom_title || p.repo_full_name.split('/')[1]}
                           </div>
-                          <div className="text-xs font-serif-body text-stone-600 truncate mt-0.5">
+                          <div className="text-xs font-serif-body text-stone-600 mt-0.5">
                             {p.custom_description || p.live_stats?.description || 'No description provided.'}
                           </div>
                         </div>
@@ -775,7 +718,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
         </div>
 
         {/* Custom description */}
-        <p className="text-xs font-serif-body text-stone-800 leading-relaxed line-clamp-2">
+        <p className="text-xs font-serif-body text-stone-800 leading-relaxed">
           {project.custom_description || stats?.description || 'No description provided.'}
         </p>
 

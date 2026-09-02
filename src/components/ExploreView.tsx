@@ -173,9 +173,9 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                           <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate group-hover:opacity-80 transition-opacity">
                             {profile.full_name || profile.github_username}
                           </h3>
-                          {profile.headline && (
+                          {profile.bio && (
                             <p className="text-[10px] font-sketch uppercase tracking-wider text-stone-800 truncate font-bold mt-0.5">
-                              {profile.headline}
+                              {profile.bio}
                             </p>
                           )}
                         </div>
@@ -195,7 +195,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
 
                       {/* Bio */}
                       {profile.bio && (
-                        <p className="text-xs font-serif-body text-stone-700 line-clamp-2 leading-relaxed italic bg-[#FAF6EC] p-2 border border-[#212121] paper-card shadow-[1px_1px_0px_rgba(0,0,0,0.15)]">
+                        <p className="text-xs font-serif-body text-stone-700 leading-relaxed italic bg-[#FAF6EC] p-2 border border-[#212121] paper-card shadow-[1px_1px_0px_rgba(0,0,0,0.15)]">
                           "{profile.bio}"
                         </p>
                       )}
@@ -264,12 +264,12 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                   >
                     <div className="space-y-2">
                       <div className="flex justify-between items-start">
-                        <h3 className="text-sm sm:text-base font-[900] font-newspaper-title text-[#212121] line-clamp-2 uppercase">
+                        <h3 className="text-sm sm:text-base font-[900] font-newspaper-title text-[#212121] uppercase">
                           {project.custom_title || project.repo_full_name.split('/')[1]}
                         </h3>
                       </div>
                       
-                      <p className="text-xs font-serif-body text-stone-700 line-clamp-3 leading-relaxed">
+                      <p className="text-xs font-serif-body text-stone-700 leading-relaxed">
                         {project.custom_description || project.live_stats?.description || 'No description provided.'}
                       </p>
 

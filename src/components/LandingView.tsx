@@ -217,10 +217,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                     </div>
                   </div>
 
-                  <h4 className="text-xs sm:text-sm font-[900] uppercase font-newspaper-title text-[#212121] line-clamp-1 leading-snug">
+                  <h4 className="text-xs sm:text-sm font-[900] uppercase font-newspaper-title text-[#212121] leading-snug">
                     {proj.title}
                   </h4>
-                  <p className="text-[11.5px] sm:text-xs font-serif-body text-[#212121] font-semibold sm:font-medium line-clamp-2 leading-relaxed">
+                  <p className="text-[11.5px] sm:text-xs font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed">
                     {proj.desc}
                   </p>
                 </div>

@@ -235,16 +235,17 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                           key={`${day.date}-${dIndex}`}
                           type="button"
                           onMouseEnter={(e) => {
+                            setHoveredDay({ day, x: e.clientX, y: e.clientY });
+                          }}
+                          onMouseMove={(e) => {
+                            setHoveredDay({ day, x: e.clientX, y: e.clientY });
+                          }}
+                          onFocus={(e) => {
                             const rect = e.currentTarget.getBoundingClientRect();
-                            setHoveredDay({ day, x: rect.left + rect.width / 2, y: rect.top - 8 });
+                            setHoveredDay({ day, x: rect.left + rect.width / 2, y: rect.top });
                           }}
+                          onBlur={() => setHoveredDay(null)}
                           onMouseLeave={() => setHoveredDay(null)}
-                          onClick={() => {
-                            const rect = (document.activeElement as HTMLElement)?.getBoundingClientRect();
-                            if (rect) {
-                              setHoveredDay({ day, x: rect.left + rect.width / 2, y: rect.top - 8 });
-                            }
-                          }}
                           aria-label={`${day.count} contributions on ${day.date}`}
                           className={`w-[11.5px] h-[11.5px] sm:w-[13px] sm:h-[13px] rounded-[2px] border transition-transform hover:scale-125 hover:z-20 cursor-pointer ${getLevelColor(
                             day.level
@@ -285,8 +286,11 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
           {/* Interactive Day Tooltip */}
           {hoveredDay && (
             <div
-              className="fixed z-50 pointer-events-none transform -translate-x-1/2 -translate-y-full px-2.5 py-1.5 paper-card bg-[#212121] text-[#FEFCF6] text-[11px] font-mono shadow-[2px_2px_0px_#000] whitespace-nowrap"
-              style={{ left: `${hoveredDay.x}px`, top: `${hoveredDay.y}px` }}
+              className="fixed z-50 pointer-events-none px-2.5 py-1.5 paper-card bg-[#212121] text-[#FEFCF6] text-[11px] font-mono shadow-[2px_2px_0px_#000] whitespace-nowrap"
+              style={{
+                left: `${typeof window !== 'undefined' ? Math.min(Math.max(10, hoveredDay.x + 12), window.innerWidth - 180) : hoveredDay.x + 12}px`,
+                top: `${hoveredDay.y > 60 ? hoveredDay.y - 48 : hoveredDay.y + 20}px`
+              }}
             >
               <div className="font-bold text-emerald-400">
                 {hoveredDay.day.count} {hoveredDay.day.count === 1 ? 'contribution' : 'contributions'}

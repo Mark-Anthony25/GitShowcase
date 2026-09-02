@@ -293,6 +293,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated = await updateStudentProfile(user.id, {
       ...updates,
       github_username: updates.github_username || profile?.github_username || '',
+      is_onboarded: updates.is_onboarded !== undefined ? updates.is_onboarded : (profile?.is_onboarded ?? true),
     });
     if (updated) {
       setProfile(updated);
