@@ -1,25 +1,32 @@
-# Findings: Mobile UI Audit (~375-390px Viewport & 320px Narrow Devices)
+# Findings: Supabase + Vercel Architecture & Resource Usage Audit
 
-## 1. Issue 1: Duplicate CTA Overlay Bug (Nav Drawer vs Hero)
-- **Current State**: Mobile menu in `src/components/Header.tsx` renders inline inside the `<header>` container as a collapsible box (`bg-[#FAF6EC]`). Because it does not backdrop-dim or hide the underlying hero section, when the drawer expands on a mobile viewport (~375-390px), the drawer's "Browse Projects" and "Guest Demo" appear directly stacked over the hero's "Browse Projects" and "Try Guest Demo" buttons.
-- **Fix**: Transform the mobile drawer into a true modal/drawer overlay with an inked dimmed backdrop (`fixed inset-0 bg-[#212121]/60 z-50 backdrop-blur-xs`), body scroll lock when open, and clean tactile paper modal layout that completely isolates the navigation from the underlying hero page content.
+## 1. Supabase Query & Database Resource Bottlenecks
+- **Wildcard Queries (`SELECT *`)**: `getProfileById`, `getStudentShowcaseByUsername`, `getAllStudentsShowcase`, and `getStudentShowcasedProjects` in `src/lib/showcaseStore.ts` execute `.select('*')` or `.select('*, showcased_projects(*)')`, pulling unnecessary payload and increasing bandwidth and Postgres I/O.
+- **Missing Database Indexes in SQL Schema**:
+  - `showcased_projects` has a foreign key on `profile_id`, but lacks an index on `profile_id`. Queries filtering `.eq('profile_id', ...)` perform full table scans as rows grow.
+  - Sorting by `is_featured` and `display_order` lacks composite indexes `(is_featured, display_order)`.
+  - Filtering by `program` in explore lacks an index on `profiles(program)`.
+- **Unused `repo_stats_cache` Table**: The SQL schema defined `repo_stats_cache`, but `src/lib/showcaseStore.ts` never stored or read cached GitHub stats from Supabase, forcing repeated direct GitHub API calls for every repo on every page load.
+- **Aggressive Focus / Visibility Refetching**:
+  - `DashboardView.tsx`, `ExploreView.tsx`, `PublicProfileView.tsx`, and `LandingView.tsx` attached `window.addEventListener('focus', ...)` and `document.addEventListener('visibilitychange', ...)` that unconditionally executed `(force = true)` fetches. Switching browser tabs triggered multiple bursts of database and GitHub API requests.
 
-## 2. Issue 2: One Primary CTA per Screen
-- **Current State**: "Home" (when active in nav), "GitHub Sign In" (in nav/drawer), and "Browse Projects" (in hero) all share solid black fill (`bg-[#212121] text-[#FEFCF6]` / `paper-button-dark`), creating visual noise and diluting action hierarchy.
-- **Fix**: Reserve solid black fill (`paper-button-dark`) exclusively for the single primary landing action: "Browse Projects". Demote "Home" active nav indicator to an inked bottom border / warm tint (`bg-[#FAF6EC] font-black border-b-2`), and demote "GitHub Sign In" in header to the tactile standard outline button (`paper-button` parchment fill with `1.5px` ink border).
+## 2. Authentication & Session Duplication
+- **Duplicate Startup Profile Loads**: In `src/context/AuthContext.tsx`, `supabase.auth.getSession()` was called on mount, followed immediately by the `onAuthStateChange` subscriber firing `INITIAL_SESSION`, resulting in two sequential `loadProfile()` calls querying Supabase for the exact same profile within milliseconds.
+- **No In-Flight Request Deduplication**: If multiple components requested the same user profile or showcase simultaneously, multiple identical HTTP requests were fired.
 
-## 3. Issue 3: Icon Set Unification
-- **Current State**: Mixed icon styles (filled stars, solid background inverted Octocat in logo, varying outline weights across steps).
-- **Fix**: Standardize on Lucide line icons with consistent 2px stroke width, un-filled paths, and inked `#212121` stroke across Logo, Sign-in, and Steps 01/02/03.
+## 3. Caching Architecture Gaps
+- **Transient Memory-Only Cache**: Cache TTL in `github.ts` was only 30 seconds (`CACHE_TTL_MS = 1000 * 30`), causing constant cache misses during ordinary navigation between Home, Explore, and Profile views.
+- **Lack of Multi-Tier Data Classification**:
+  - *Static/Long Cache*: Degree programs, static config, icons, media assets.
+  - *Medium Cache (5-15 mins)*: Public student directory, public profiles, GitHub stars/forks/contributions.
+  - *No Cache / Revalidate on Mutation*: User project additions, edits, unpublishing, profile saves.
+- **No Event-Driven Cache Invalidation**: Caches were time-based without explicit mutation hooks to clear or update specific entity keys immediately upon user action.
 
-## 4. Issue 4: Surface Real Content Sooner
-- **Current State**: Visitors on mobile must scroll through Header -> Hero -> How It Works (3 cards) before reaching any student repository.
-- **Fix**: Insert a compact, tactile "Latest Student Dispatches" preview strip directly below the Hero action buttons (before "How It Works") displaying 2-3 real student projects with author badges, tags, and repo links.
+## 4. Vercel & Media Storage Efficiency
+- **Vercel Static Delivery**: `vercel.json` had only a simple SPA rewrite `/(.*) -> /index.html`. It lacked `Cache-Control` headers for immutable static assets (`/assets/*`, fonts, SVG icons). Browsers and Vercel CDN were re-validating assets with `304 Not Modified` or full downloads rather than serving directly from Edge Cache (`max-age=31536000, immutable`).
+- **Media Delivery**: Media (avatars and project links) are currently loaded from GitHub (`avatars.githubusercontent.com`) or fallback URLs. We should provide a dedicated Supabase Storage helper (`src/lib/storage.ts`) with CDN URL generation, lazy loading, and dimension optimization so that user uploads do not route through Vercel serverless functions.
 
-## 5. Issue 5: Layout at 320px Width (iPhone SE)
-- **Current State**: Cards with `2.5px 2.5px 0px` hard drop-shadows combined with nested padding (`p-3.5` + sheet padding) risk right-edge clipping or horizontal scroll on 320px screens.
-- **Fix**: Apply explicit `box-sizing: border-box`, `max-w-full`, responsive card padding (`p-2.5` on `<=360px`, `p-3.5` on `>=375px`), and shadow margin clearance (`overflow-x-clip` on parent containers).
-
-## 6. Issue 6: Body Text Weight on Mobile
-- **Current State**: `font-serif-body` (`Patrick Hand`) at regular weight (400) and `text-xs` (12px) in `text-stone-700` is thin and hard to read on mobile screens.
-- **Fix**: Bump body text font weight to `font-medium` (500) and color to high-contrast `text-[#212121]` or `text-stone-900`, increasing legibility on mobile viewports.
+## 5. Supabase Keep-Alive Mechanism
+- **Analysis**: Supabase Free Tier pauses projects after 7 days of total inactivity.
+- **Anti-Pattern to Avoid**: Polling Supabase from client-side visitors or running continuous browser intervals wastes quota and database connection slots.
+- **Optimal Solution**: A lightweight GitHub Actions cron workflow (`.github/workflows/supabase-keepalive.yml`) running once every 5 days (well within the 7-day pause window) that performs a single minimal HTTP `HEAD` or 1-row REST select (`/rest/v1/profiles?select=id&limit=1`). This consumes 0 client bandwidth, 0 Vercel function executions, and exactly 6 tiny requests per month on Supabase.

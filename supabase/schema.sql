@@ -8,10 +8,12 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   github_username text unique not null,
   full_name text,
+  headline text,
   avatar_url text,
   bio text,
   program text,          -- e.g. "BS Computer Science", "BS Information Technology"
   year_level text,       -- e.g. "1st Year", "2nd Year", "3rd Year", "4th Year"
+  is_onboarded boolean default false,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -29,7 +31,7 @@ create table if not exists public.showcased_projects (
   added_at timestamptz default now()
 );
 
--- 3. Create Repo Stats Cache Table
+-- 3. Create Repo Stats Cache Table (Shared caching across all users)
 create table if not exists public.repo_stats_cache (
   repo_full_name text primary key,
   stars int default 0,
@@ -40,12 +42,28 @@ create table if not exists public.repo_stats_cache (
   fetched_at timestamptz default now()
 );
 
--- 4. Enable Row Level Security (RLS)
+-- 4. High-Performance Database Indexes
+create index if not exists idx_showcased_projects_profile_id 
+  on public.showcased_projects(profile_id);
+
+create index if not exists idx_showcased_projects_featured_order 
+  on public.showcased_projects(is_featured desc, display_order asc, added_at desc);
+
+create index if not exists idx_profiles_program 
+  on public.profiles(program);
+
+create index if not exists idx_profiles_created_at 
+  on public.profiles(created_at desc);
+
+create index if not exists idx_profiles_username_lower 
+  on public.profiles(lower(github_username));
+
+-- 5. Enable Row Level Security (RLS)
 alter table public.profiles enable row level security;
 alter table public.showcased_projects enable row level security;
 alter table public.repo_stats_cache enable row level security;
 
--- 5. Drop existing policies if any (for clean rerun)
+-- 6. Drop existing policies if any (for clean rerun)
 drop policy if exists "Profiles are viewable by everyone" on public.profiles;
 drop policy if exists "Users can insert their own profile" on public.profiles;
 drop policy if exists "Users can update their own profile" on public.profiles;
@@ -58,7 +76,7 @@ drop policy if exists "Users can delete their own showcased projects" on public.
 drop policy if exists "Repo stats cache is viewable by everyone" on public.repo_stats_cache;
 drop policy if exists "Authenticated users can update repo cache" on public.repo_stats_cache;
 
--- 6. RLS Policies
+-- 7. RLS Policies
 create policy "Profiles are viewable by everyone"
   on public.profiles for select
   using (true);
@@ -95,7 +113,7 @@ create policy "Authenticated users can update repo cache"
   on public.repo_stats_cache for all
   using (auth.role() = 'authenticated');
 
--- 7. Trigger to auto-create Profile on first sign-in
+-- 8. Trigger to auto-create Profile on first sign-in
 create or replace function public.handle_new_user()
 returns trigger as $$
 declare

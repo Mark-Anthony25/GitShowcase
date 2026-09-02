@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Github, Star, ExternalLink, Share2, Check, ArrowLeft, ArrowRight,
   Code2, Globe, AlertCircle, RefreshCw, FolderGit2, Edit3, 
-  User, X, ArrowUpRight, Pin, Sparkles, GraduationCap
+  User, X, ArrowUpRight, Pin, Sparkles, GraduationCap, GitFork
 } from 'lucide-react';
 import { StudentShowcaseData, ShowcasedProject, Profile } from '../types';
 import { getStudentShowcaseByUsername } from '../lib/showcaseStore';
@@ -16,10 +16,11 @@ interface PublicProfileViewProps {
 }
 
 export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, navigate }) => {
-  const { user, profile: authProfile, updateProfileData } = useAuth();
+  const { user, profile: authProfile, githubToken, updateProfileData } = useAuth();
 
   const [data, setData] = useState<StudentShowcaseData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ShowcasedProject | null>(null);
 
@@ -36,28 +37,16 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
   useEffect(() => {
     loadShowcase(false);
-
-    const handleFocus = () => {
-      loadShowcase(true);
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        loadShowcase(true);
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
   }, [username, githubToken]);
 
   const loadShowcase = async (force = false) => {
+    if (!username) {
+      setLoading(false);
+      setData(null);
+      return;
+    }
     setLoading(true);
+    setError(null);
     try {
       const res = await getStudentShowcaseByUsername(username, githubToken, force);
       setData(res);
@@ -71,8 +60,9 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
         setEditCustomProgram(progInfo.customProgramName);
         setEditYearLevel(res.profile.year_level || '3rd Year');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading student showcase:', err);
+      setError(err?.message || 'Failed to load student profile. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -156,8 +146,41 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
           Loading profile...
         </h2>
         <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 font-bold">
-          Retrieving student identity and coding activity...
+          Retrieving student identity and coding activity for @{username}...
         </p>
+      </div>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <div className="max-w-xl mx-auto px-6 py-12 text-center space-y-4 paper-card bg-[#FEFCF6]">
+        <div className="w-12 h-12 paper-card bg-rose-50 border-rose-600 flex items-center justify-center mx-auto text-rose-700">
+          <AlertCircle className="w-6 h-6" />
+        </div>
+        <div className="space-y-1">
+          <h1 className="text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
+            Unable to Load Profile
+          </h1>
+          <p className="text-xs sm:text-sm font-serif-body text-stone-700 leading-relaxed">
+            {error}
+          </p>
+        </div>
+        <div className="pt-2 flex items-center justify-center space-x-3">
+          <button
+            onClick={() => loadShowcase(true)}
+            className="paper-button paper-button-dark text-xs py-2 px-4 font-bold flex items-center space-x-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Try Again</span>
+          </button>
+          <button
+            onClick={() => navigate('/explore')}
+            className="paper-button text-xs py-2 px-4 font-bold"
+          >
+            Browse Projects
+          </button>
+        </div>
       </div>
     );
   }
@@ -173,7 +196,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             Student Profile Not Found
           </h1>
           <p className="text-xs sm:text-sm font-serif-body text-stone-700 leading-relaxed">
-            No profile exists for @{username} yet.
+            No profile exists for @{username} on GitHub or GitShowcase.
           </p>
         </div>
         <div className="pt-2 flex items-center justify-center space-x-3">
@@ -195,14 +218,16 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   }
 
   const { profile, projects } = data;
-  const featuredProjects = projects.filter(p => p.is_featured);
-  const regularProjects = projects.filter(p => !p.is_featured);
+  const featuredProjects = (projects || []).filter(p => p.is_featured);
+  const regularProjects = (projects || []).filter(p => !p.is_featured);
 
   // Extract unique languages & topics for student's technical skills badge cloud
   const techSkillsSet = new Set<string>();
-  projects.forEach(p => {
-    if (p.live_stats?.language) techSkillsSet.add(p.live_stats.language);
-    p.live_stats?.topics?.forEach(t => techSkillsSet.add(t));
+  (projects || []).forEach(p => {
+    if (p?.live_stats?.language) techSkillsSet.add(p.live_stats.language);
+    if (Array.isArray(p?.live_stats?.topics)) {
+      p.live_stats.topics.forEach(t => techSkillsSet.add(t));
+    }
   });
   const techSkills = Array.from(techSkillsSet).slice(0, 8);
 
@@ -262,6 +287,8 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                   <img
                     src={profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'}
                     alt={profile.full_name || profile.github_username}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                   />
                 </div>

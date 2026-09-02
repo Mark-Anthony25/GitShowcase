@@ -50,8 +50,9 @@ function AppContent() {
   const renderCurrentView = () => {
     // 1. Check for /u/[username]
     if (currentPath.startsWith('/u/')) {
-      const username = currentPath.replace('/u/', '').split('/')[0];
-      return <PublicProfileView username={username} navigate={navigate} />;
+      const rawUsername = currentPath.replace('/u/', '').split('/')[0].split('?')[0].split('#')[0];
+      const username = decodeURIComponent(rawUsername).trim();
+      return <PublicProfileView key={username} username={username} navigate={navigate} />;
     }
 
     // 2. Check for /dashboard

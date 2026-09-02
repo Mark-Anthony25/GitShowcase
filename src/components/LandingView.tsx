@@ -76,24 +76,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
 
     loadProjects(false);
 
-    // Near real-time synchronization on tab focus / visibility return
-    const handleFocus = () => {
-      loadProjects(true);
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        loadProjects(true);
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
     return () => {
       isMounted = false;
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 

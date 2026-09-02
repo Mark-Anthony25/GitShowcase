@@ -87,6 +87,8 @@ export interface GitHubRepoItem {
   homepage?: string | null;
   private: boolean;
   fork: boolean;
+  open_issues_count?: number;
+  license?: { spdx_id?: string; name?: string } | null;
 }
 
 export interface StudentShowcaseData {

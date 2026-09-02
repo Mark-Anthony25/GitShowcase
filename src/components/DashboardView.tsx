@@ -68,35 +68,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     }
   }, [user, activeTab]);
 
-  // Near real-time synchronization on tab focus or visibility change
-  useEffect(() => {
-    if (!user) return;
-
-    const handleFocus = () => {
-      loadShowcasedProjects(true);
-      if (activeTab === 'repos') {
-        loadGitHubRepos(true);
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        loadShowcasedProjects(true);
-        if (activeTab === 'repos') {
-          loadGitHubRepos(true);
-        }
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [user, activeTab, githubToken]);
-
   const loadShowcasedProjects = async (force = false) => {
     if (!user) return;
     setLoadingShowcase(true);

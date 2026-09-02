@@ -95,12 +95,19 @@ create table if not exists public.repo_stats_cache (
   fetched_at timestamptz default now()
 );
 
--- 4. Enable Row Level Security (RLS)
+-- 4. High-Performance Database Indexes
+create index if not exists idx_showcased_projects_profile_id on public.showcased_projects(profile_id);
+create index if not exists idx_showcased_projects_featured_order on public.showcased_projects(is_featured desc, display_order asc, added_at desc);
+create index if not exists idx_profiles_program on public.profiles(program);
+create index if not exists idx_profiles_created_at on public.profiles(created_at desc);
+create index if not exists idx_profiles_username_lower on public.profiles(lower(github_username));
+
+-- 5. Enable Row Level Security (RLS)
 alter table public.profiles enable row level security;
 alter table public.showcased_projects enable row level security;
 alter table public.repo_stats_cache enable row level security;
 
--- 5. RLS Policies
+-- 6. RLS Policies
 create policy "Profiles are viewable by everyone" on public.profiles for select using (true);
 create policy "Users can insert their own profile" on public.profiles for insert with check (auth.uid() = id);
 create policy "Users can update their own profile" on public.profiles for update using (auth.uid() = id);
@@ -113,7 +120,7 @@ create policy "Users can delete their own showcased projects" on public.showcase
 create policy "Repo stats cache is viewable by everyone" on public.repo_stats_cache for select using (true);
 create policy "Authenticated users can update repo cache" on public.repo_stats_cache for all using (auth.role() = 'authenticated');
 
--- 6. Trigger to auto-create Profile on first sign-in
+-- 7. Trigger to auto-create Profile on first sign-in
 create or replace function public.handle_new_user()
 returns trigger as $$
 declare

@@ -1,18 +1,20 @@
 import { createClient, SupabaseClient, User, Session } from '@supabase/supabase-js';
 
 // Read env variables (supporting Vite, standard, and Next.js conventions)
+const metaEnv = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : (typeof process !== 'undefined' && process.env ? process.env : {}) as Record<string, string | undefined>;
+
 const envSupabaseUrl = 
-  import.meta.env.VITE_SUPABASE_URL || 
-  import.meta.env.SUPABASE_URL || 
-  import.meta.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  metaEnv.VITE_SUPABASE_URL || 
+  metaEnv.SUPABASE_URL || 
+  metaEnv.NEXT_PUBLIC_SUPABASE_URL || '';
 
 const envSupabaseAnonKey = 
-  import.meta.env.VITE_SUPABASE_ANON_KEY || 
-  import.meta.env.SUPABASE_ANON_KEY || 
-  import.meta.env.SUPABASE_KEY || 
-  import.meta.env.SUPABASE_PUBLIC_KEY || 
-  import.meta.env.SUPABASE_PUBLISHABLE_KEY || 
-  import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  metaEnv.VITE_SUPABASE_ANON_KEY || 
+  metaEnv.SUPABASE_ANON_KEY || 
+  metaEnv.SUPABASE_KEY || 
+  metaEnv.SUPABASE_PUBLIC_KEY || 
+  metaEnv.SUPABASE_PUBLISHABLE_KEY || 
+  metaEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Allow local overrides if user enters them in the UI config drawer
 const storedUrl = typeof window !== 'undefined' ? localStorage.getItem('custom_supabase_url') : null;

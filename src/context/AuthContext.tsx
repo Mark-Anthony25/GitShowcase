@@ -163,9 +163,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Initialize auth state
+  // Initialize auth state with deduplicated session and listener handling
   useEffect(() => {
     let mounted = true;
+    let lastLoadedUserId: string | null = null;
 
     async function initAuth() {
       if (isSupabaseConfigured && supabase) {
@@ -178,6 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (tok) {
               setGithubToken(tok);
             }
+            lastLoadedUserId = session.user.id;
             await loadProfile(session.user.id, session.user, tok);
           }
         } catch (err) {
@@ -195,8 +197,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           if (newSession?.user) {
-            await loadProfile(newSession.user.id, newSession.user, tok);
+            // Only reload if user changed or event is explicit SIGNED_IN / USER_UPDATED
+            if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || lastLoadedUserId !== newSession.user.id) {
+              lastLoadedUserId = newSession.user.id;
+              await loadProfile(newSession.user.id, newSession.user, tok);
+            }
           } else {
+            lastLoadedUserId = null;
             setProfile(null);
           }
         });

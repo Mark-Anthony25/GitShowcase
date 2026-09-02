@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, Github, ArrowRight, ExternalLink, RefreshCw, Star, Users, 
-  Globe, X, ArrowLeft, User
+  Globe, X, ArrowLeft, User, GitFork
 } from 'lucide-react';
 import { StudentShowcaseData, ShowcasedProject } from '../types';
 import { getAllStudentsShowcase } from '../lib/showcaseStore';
@@ -24,24 +24,6 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
 
   useEffect(() => {
     loadAllStudents(false);
-
-    const handleFocus = () => {
-      loadAllStudents(true);
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        loadAllStudents(true);
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
   }, []);
 
   const loadAllStudents = async (force = false) => {
@@ -182,6 +164,8 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                           <img
                             src={profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80'}
                             alt={profile.github_username}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -400,6 +384,8 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                   <img
                     src={selectedModalItem.student.profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
                     alt={selectedModalItem.student.profile.github_username}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                   />
                 </div>

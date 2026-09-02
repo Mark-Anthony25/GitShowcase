@@ -1,0 +1,36 @@
+name: Supabase Lightweight Scheduled Keep-Alive
+
+on:
+  schedule:
+    # Run once every 5 days at 00:00 UTC (well within Supabase's 7-day inactivity pause window)
+    - cron: '0 0 */5 * *'
+  workflow_dispatch:
+    # Allow manual test execution from GitHub Actions tab
+
+jobs:
+  keepalive:
+    name: Supabase Activity Ping
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Lightweight Health Endpoint
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::notice::SUPABASE_URL or SUPABASE_ANON_KEY secrets are not configured in GitHub repository secrets. Skipping keep-alive ping."
+            exit 0
+          fi
+
+          echo "Sending lightweight 1-row query to Supabase to maintain project activity..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            "${SUPABASE_URL%/}/rest/v1/profiles?select=id&limit=1")
+
+          echo "Supabase Response Status Code: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
+            echo "Successfully pinged Supabase project. Inactivity timer reset."
+          else
+            echo "::warning::Supabase ping returned HTTP status $HTTP_STATUS."
+          fi

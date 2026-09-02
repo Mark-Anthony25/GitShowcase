@@ -1,9 +1,5 @@
 import { GitHubRepoItem, RepoLiveStats, ContributionCalendar, ContributionDay, GitHubUserData } from '../types';
-
-// In-memory cache for contribution calendars and repo stats to minimize API rate-limits
-const contributionCache = new Map<string, { data: ContributionCalendar; timestamp: number }>();
-const repoStatsCache = new Map<string, { data: RepoLiveStats; timestamp: number }>();
-const CACHE_TTL_MS = 1000 * 30; // 30 seconds transient cache for burst rendering
+import { getCachedOrFetch, invalidateCache, CACHE_TTL } from './cache';
 
 let globalGitHubToken: string | null = null;
 
@@ -17,13 +13,9 @@ export function getActiveGitHubToken(): string | null {
 
 export function clearRepoStatsCache(repoFullName?: string) {
   if (repoFullName) {
-    for (const key of repoStatsCache.keys()) {
-      if (key.startsWith(`${repoFullName}_`)) {
-        repoStatsCache.delete(key);
-      }
-    }
+    invalidateCache(`github_stats_${repoFullName.trim()}`);
   } else {
-    repoStatsCache.clear();
+    invalidateCache('github_stats_');
   }
 }
 
@@ -32,127 +24,150 @@ export function clearRepoStatsCache(repoFullName?: string) {
  */
 export async function fetchGitHubUserData(
   token?: string | null,
-  username?: string | null
+  username?: string | null,
+  forceRefresh = false
 ): Promise<GitHubUserData | null> {
-  try {
-    const effectiveToken = token !== undefined ? token : globalGitHubToken;
-    const headers: Record<string, string> = {
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-    };
+  const effectiveToken = token !== undefined ? token : globalGitHubToken;
+  const targetKey = username ? `user_${username.toLowerCase()}` : `auth_user_${effectiveToken ? 'authed' : 'anon'}`;
+  const cacheKey = `github_user_${targetKey}`;
 
-    let url = 'https://api.github.com/user';
-    if (effectiveToken) {
-      headers.Authorization = `Bearer ${effectiveToken}`;
-    } else if (username) {
-      url = `https://api.github.com/users/${encodeURIComponent(username)}`;
-    } else {
-      return null;
-    }
+  return getCachedOrFetch(
+    cacheKey,
+    async () => {
+      try {
+        const headers: Record<string, string> = {
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        };
 
-    const res = await fetch(url, { headers, cache: 'no-cache' });
-    if (!res.ok) {
-      if (effectiveToken && username && (res.status === 401 || res.status === 403)) {
-        // Fallback to public endpoint if token is unauthorized
-        const publicRes = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, {
-          headers: {
-            Accept: 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28',
-          },
-          cache: 'no-cache',
-        });
-        if (publicRes.ok) {
-          const pubData = await publicRes.json();
-          return {
-            login: pubData.login,
-            name: pubData.name || null,
-            avatar_url: pubData.avatar_url,
-            bio: pubData.bio || null,
-            public_repos: pubData.public_repos || 0,
-            followers: pubData.followers || 0,
-            following: pubData.following || 0,
-            company: pubData.company || null,
-            location: pubData.location || null,
-            blog: pubData.blog || null,
-            html_url: pubData.html_url || `https://github.com/${pubData.login}`,
-          };
+        let url: string;
+        if (username) {
+          url = `https://api.github.com/users/${encodeURIComponent(username)}`;
+        } else if (effectiveToken) {
+          url = 'https://api.github.com/user';
+        } else {
+          return null;
         }
-      }
-      return null;
-    }
 
-    const data = await res.json();
-    return {
-      login: data.login,
-      name: data.name || null,
-      avatar_url: data.avatar_url,
-      bio: data.bio || null,
-      public_repos: data.public_repos || 0,
-      followers: data.followers || 0,
-      following: data.following || 0,
-      company: data.company || null,
-      location: data.location || null,
-      blog: data.blog || null,
-      html_url: data.html_url || `https://github.com/${data.login}`,
-    };
-  } catch (err) {
-    console.error('Error fetching GitHub user data:', err);
-    return null;
-  }
+        if (effectiveToken) {
+          headers.Authorization = `Bearer ${effectiveToken}`;
+        }
+
+        const res = await fetch(url, { headers });
+        if (!res.ok) {
+          if (effectiveToken && username && (res.status === 401 || res.status === 403)) {
+            const publicRes = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, {
+              headers: {
+                Accept: 'application/vnd.github+json',
+                'X-GitHub-Api-Version': '2022-11-28',
+              },
+            });
+            if (publicRes.ok) {
+              const pubData = await publicRes.json();
+              return {
+                login: pubData.login,
+                name: pubData.name || null,
+                avatar_url: pubData.avatar_url,
+                bio: pubData.bio || null,
+                public_repos: pubData.public_repos || 0,
+                followers: pubData.followers || 0,
+                following: pubData.following || 0,
+                company: pubData.company || null,
+                location: pubData.location || null,
+                blog: pubData.blog || null,
+                html_url: pubData.html_url || `https://github.com/${pubData.login}`,
+              };
+            }
+          }
+          return null;
+        }
+
+        const data = await res.json();
+        return {
+          login: data.login,
+          name: data.name || null,
+          avatar_url: data.avatar_url,
+          bio: data.bio || null,
+          public_repos: data.public_repos || 0,
+          followers: data.followers || 0,
+          following: data.following || 0,
+          company: data.company || null,
+          location: data.location || null,
+          blog: data.blog || null,
+          html_url: data.html_url || `https://github.com/${data.login}`,
+        };
+      } catch (err) {
+        console.error('Error fetching GitHub user data:', err);
+        return null;
+      }
+    },
+    { ttlMs: CACHE_TTL.PUBLIC_DATA, skipCache: forceRefresh }
+  );
 }
 
 /**
- * Fetch repos belonging to the logged-in student using their GitHub provider token or public username
+ * Fetch repos belonging to the student using their GitHub provider token or public username
  */
 export async function fetchUserRepos(
   githubToken?: string | null,
   username?: string | null,
   forceRefresh = false
 ): Promise<GitHubRepoItem[]> {
-  try {
-    const effectiveToken = githubToken !== undefined ? githubToken : globalGitHubToken;
-    const headers: Record<string, string> = {
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-    };
+  const effectiveToken = githubToken !== undefined ? githubToken : globalGitHubToken;
+  const targetKey = username ? `user_${username.toLowerCase()}` : `auth_user_${effectiveToken ? 'authed' : 'anon'}`;
+  const cacheKey = `github_repos_${targetKey}`;
 
-    let url = 'https://api.github.com/user/repos?sort=updated&per_page=100&type=all';
+  return getCachedOrFetch(
+    cacheKey,
+    async () => {
+      try {
+        const headers: Record<string, string> = {
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        };
 
-    if (effectiveToken) {
-      headers.Authorization = `Bearer ${effectiveToken}`;
-    } else if (username) {
-      url = `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=100`;
-    } else {
-      return [];
-    }
-
-    const res = await fetch(url, { headers, cache: 'no-cache' });
-    if (!res.ok) {
-      if ((res.status === 401 || res.status === 403) && username) {
-        console.warn('GitHub API rate limited or token expired, attempting public user repos');
-        const publicRes = await fetch(
-          `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=100`,
-          {
-            headers: {
-              Accept: 'application/vnd.github+json',
-              'X-GitHub-Api-Version': '2022-11-28',
-            },
-            cache: 'no-cache',
-          }
-        );
-        if (publicRes.ok) {
-          return await publicRes.json();
+        let url: string;
+        if (username) {
+          url = `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=100`;
+        } else if (effectiveToken) {
+          url = 'https://api.github.com/user/repos?sort=updated&per_page=100&type=all';
+        } else {
+          return [];
         }
-      }
-      throw new Error(`GitHub API returned status ${res.status}: ${res.statusText}`);
-    }
 
-    const repos: GitHubRepoItem[] = await res.json();
-    return Array.isArray(repos) ? repos : [];
-  } catch (error) {
-    console.error('Error fetching repos from GitHub:', error);
-    return [];
-  }
+        if (effectiveToken) {
+          headers.Authorization = `Bearer ${effectiveToken}`;
+        }
+
+        const res = await fetch(url, { headers });
+        if (!res.ok) {
+          if ((res.status === 401 || res.status === 403) && username) {
+            console.warn('GitHub API rate limited or token expired, attempting public user repos');
+            const publicRes = await fetch(
+              `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=100`,
+              {
+                headers: {
+                  Accept: 'application/vnd.github+json',
+                  'X-GitHub-Api-Version': '2022-11-28',
+                },
+              }
+            );
+            if (publicRes.ok) {
+              return await publicRes.json();
+            }
+          }
+          throw new Error(`GitHub API returned status ${res.status}: ${res.statusText}`);
+        }
+
+        const repos: GitHubRepoItem[] = await res.json();
+        return Array.isArray(repos) ? repos : [];
+      } catch (error) {
+        console.error('Error fetching repos from GitHub:', error);
+        return [];
+      }
+    },
+    { ttlMs: CACHE_TTL.PUBLIC_DATA, skipCache: forceRefresh }
+  );
 }
 
 /**
@@ -169,80 +184,73 @@ export async function fetchLiveRepoStats(
   }
 
   const effectiveToken = token !== undefined ? token : globalGitHubToken;
-  const cacheKey = `${cleanRepoName}_${effectiveToken ? 'auth' : 'public'}`;
+  const cacheKey = `github_stats_${cleanRepoName}_${effectiveToken ? 'auth' : 'public'}`;
 
-  if (!forceRefresh) {
-    const cached = repoStatsCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-      return cached.data;
-    }
-  }
-
-  try {
-    const headers: Record<string, string> = {
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-    };
-    if (effectiveToken) {
-      headers.Authorization = `Bearer ${effectiveToken}`;
-    }
-
-    const res = await fetch(`https://api.github.com/repos/${cleanRepoName}`, {
-      headers,
-      cache: 'no-cache',
-    });
-
-    if (!res.ok) {
-      // If unauthorized with token, try public fallback for public repo
-      if (effectiveToken && (res.status === 401 || res.status === 403)) {
-        const publicRes = await fetch(`https://api.github.com/repos/${cleanRepoName}`, {
-          headers: {
-            Accept: 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28',
-          },
-          cache: 'no-cache',
-        });
-        if (publicRes.ok) {
-          const data = await publicRes.json();
-          const stats: RepoLiveStats = {
-            stars: typeof data.stargazers_count === 'number' ? data.stargazers_count : 0,
-            forks: typeof data.forks_count === 'number' ? data.forks_count : 0,
-            language: data.language ?? null,
-            topics: Array.isArray(data.topics) ? data.topics : [],
-            last_commit_at: data.pushed_at || data.updated_at,
-            description: data.description || null,
-            homepage: data.homepage || null,
-            open_issues: typeof data.open_issues_count === 'number' ? data.open_issues_count : 0,
-            license: data.license?.spdx_id || data.license?.name || null,
-          };
-          repoStatsCache.set(cacheKey, { data: stats, timestamp: Date.now() });
-          return stats;
+  return getCachedOrFetch(
+    cacheKey,
+    async () => {
+      try {
+        const headers: Record<string, string> = {
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        };
+        if (effectiveToken) {
+          headers.Authorization = `Bearer ${effectiveToken}`;
         }
+
+        const res = await fetch(`https://api.github.com/repos/${cleanRepoName}`, {
+          headers,
+        });
+
+        if (!res.ok) {
+          // If unauthorized with token, try public fallback for public repo
+          if (effectiveToken && (res.status === 401 || res.status === 403)) {
+            const publicRes = await fetch(`https://api.github.com/repos/${cleanRepoName}`, {
+              headers: {
+                Accept: 'application/vnd.github+json',
+                'X-GitHub-Api-Version': '2022-11-28',
+              },
+            });
+            if (publicRes.ok) {
+              const data = await publicRes.json();
+              const stats: RepoLiveStats = {
+                stars: typeof data.stargazers_count === 'number' ? data.stargazers_count : 0,
+                forks: typeof data.forks_count === 'number' ? data.forks_count : 0,
+                language: data.language ?? null,
+                topics: Array.isArray(data.topics) ? data.topics : [],
+                last_commit_at: data.pushed_at || data.updated_at,
+                description: data.description || null,
+                homepage: data.homepage || null,
+                open_issues: typeof data.open_issues_count === 'number' ? data.open_issues_count : 0,
+                license: data.license?.spdx_id || data.license?.name || null,
+              };
+              return stats;
+            }
+          }
+          return null;
+        }
+
+        const data = await res.json();
+        const stats: RepoLiveStats = {
+          stars: typeof data.stargazers_count === 'number' ? data.stargazers_count : 0,
+          forks: typeof data.forks_count === 'number' ? data.forks_count : 0,
+          language: data.language ?? null,
+          topics: Array.isArray(data.topics) ? data.topics : [],
+          last_commit_at: data.pushed_at || data.updated_at,
+          description: data.description || null,
+          homepage: data.homepage || null,
+          open_issues: typeof data.open_issues_count === 'number' ? data.open_issues_count : 0,
+          license: data.license?.spdx_id || data.license?.name || null,
+        };
+
+        return stats;
+      } catch (err) {
+        console.error(`Error fetching live stats for ${cleanRepoName}:`, err);
+        return null;
       }
-      return null;
-    }
-
-    const data = await res.json();
-    const stats: RepoLiveStats = {
-      stars: typeof data.stargazers_count === 'number' ? data.stargazers_count : 0,
-      forks: typeof data.forks_count === 'number' ? data.forks_count : 0,
-      language: data.language ?? null,
-      topics: Array.isArray(data.topics) ? data.topics : [],
-      last_commit_at: data.pushed_at || data.updated_at,
-      description: data.description || null,
-      homepage: data.homepage || null,
-      open_issues: typeof data.open_issues_count === 'number' ? data.open_issues_count : 0,
-      license: data.license?.spdx_id || data.license?.name || null,
-    };
-
-    repoStatsCache.set(cacheKey, { data: stats, timestamp: Date.now() });
-    return stats;
-  } catch (err) {
-    console.error(`Error fetching live stats for ${cleanRepoName}:`, err);
-    // If error occurs and we have a cached value, return it
-    const lastKnown = repoStatsCache.get(cacheKey);
-    return lastKnown ? lastKnown.data : null;
-  }
+    },
+    { ttlMs: CACHE_TTL.PUBLIC_DATA, skipCache: forceRefresh }
+  );
 }
 
 /**
@@ -254,52 +262,51 @@ export async function fetchLiveRepoStats(
 export async function fetchGitHubContributions(
   username: string,
   token?: string | null,
-  compact = false
+  compact = false,
+  forceRefresh = false
 ): Promise<ContributionCalendar> {
   const cleanUsername = username.trim().toLowerCase();
-  const cacheKey = `${cleanUsername}_${compact ? 'compact' : 'full'}_${token ? 'auth' : 'anon'}`;
-  
-  const cached = contributionCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return cached.data;
-  }
+  const cacheKey = `github_contrib_${cleanUsername}_${compact ? 'compact' : 'full'}_${token ? 'auth' : 'anon'}`;
 
-  // 1. Try GitHub GraphQL API first if token is available
-  if (token) {
-    try {
-      const graphQLResult = await fetchContributionsViaGraphQL(cleanUsername, token, compact);
-      if (graphQLResult) {
-        contributionCache.set(cacheKey, { data: graphQLResult, timestamp: Date.now() });
-        return graphQLResult;
+  return getCachedOrFetch(
+    cacheKey,
+    async () => {
+      // 1. Try GitHub GraphQL API first if token is available
+      if (token) {
+        try {
+          const graphQLResult = await fetchContributionsViaGraphQL(cleanUsername, token, compact);
+          if (graphQLResult) {
+            return graphQLResult;
+          }
+        } catch (err) {
+          console.warn('GitHub GraphQL contributions fetch failed, attempting public parser fallback:', err);
+        }
       }
-    } catch (err) {
-      console.warn('GitHub GraphQL contributions fetch failed, attempting public parser fallback:', err);
-    }
-  }
 
-  // 2. Try Public GitHub Contributions API parser (jogruber API)
-  try {
-    const publicResult = await fetchContributionsViaPublicApi(cleanUsername, compact);
-    if (publicResult) {
-      contributionCache.set(cacheKey, { data: publicResult, timestamp: Date.now() });
-      return publicResult;
-    }
-  } catch (err) {
-    console.warn('Public contributions API failed, attempting GitHub events parser:', err);
-  }
+      // 2. Try Public GitHub Contributions API parser (jogruber API)
+      try {
+        const publicResult = await fetchContributionsViaPublicApi(cleanUsername, compact);
+        if (publicResult) {
+          return publicResult;
+        }
+      } catch (err) {
+        console.warn('Public contributions API failed, attempting GitHub events parser:', err);
+      }
 
-  // 3. Try GitHub User Events API fallback
-  try {
-    const eventsResult = await fetchContributionsViaEventsApi(cleanUsername, token, compact);
-    if (eventsResult) {
-      contributionCache.set(cacheKey, { data: eventsResult, timestamp: Date.now() });
-      return eventsResult;
-    }
-  } catch (err) {
-    console.error('All GitHub contribution sources failed for user:', cleanUsername, err);
-  }
+      // 3. Try GitHub User Events API fallback
+      try {
+        const eventsResult = await fetchContributionsViaEventsApi(cleanUsername, token, compact);
+        if (eventsResult) {
+          return eventsResult;
+        }
+      } catch (err) {
+        console.error('All GitHub contribution sources failed for user:', cleanUsername, err);
+      }
 
-  throw new Error(`Unable to load contribution data from GitHub for @${username}. Please check your connection or GitHub username.`);
+      throw new Error(`Unable to load contribution data from GitHub for @${username}. Please check your connection or GitHub username.`);
+    },
+    { ttlMs: CACHE_TTL.CONTRIBUTIONS, skipCache: forceRefresh }
+  );
 }
 
 /**
