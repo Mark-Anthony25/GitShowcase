@@ -1,32 +1,46 @@
-# Findings: Supabase + Vercel Architecture & Resource Usage Audit
+# Discoveries & Findings: GitShowcase
 
-## 1. Supabase Query & Database Resource Bottlenecks
-- **Wildcard Queries (`SELECT *`)**: `getProfileById`, `getStudentShowcaseByUsername`, `getAllStudentsShowcase`, and `getStudentShowcasedProjects` in `src/lib/showcaseStore.ts` execute `.select('*')` or `.select('*, showcased_projects(*)')`, pulling unnecessary payload and increasing bandwidth and Postgres I/O.
-- **Missing Database Indexes in SQL Schema**:
-  - `showcased_projects` has a foreign key on `profile_id`, but lacks an index on `profile_id`. Queries filtering `.eq('profile_id', ...)` perform full table scans as rows grow.
-  - Sorting by `is_featured` and `display_order` lacks composite indexes `(is_featured, display_order)`.
-  - Filtering by `program` in explore lacks an index on `profiles(program)`.
-- **Unused `repo_stats_cache` Table**: The SQL schema defined `repo_stats_cache`, but `src/lib/showcaseStore.ts` never stored or read cached GitHub stats from Supabase, forcing repeated direct GitHub API calls for every repo on every page load.
-- **Aggressive Focus / Visibility Refetching**:
-  - `DashboardView.tsx`, `ExploreView.tsx`, `PublicProfileView.tsx`, and `LandingView.tsx` attached `window.addEventListener('focus', ...)` and `document.addEventListener('visibilitychange', ...)` that unconditionally executed `(force = true)` fetches. Switching browser tabs triggered multiple bursts of database and GitHub API requests.
+## Project Identity & Context
+- **Name:** GitShowcase (GitShowcase • Isabela State University - Cauayan Campus)
+- **Target Audience:** Student developers (BSCS, BSIT, BSEMC, BSAIS, and related computing programs at ISU Cauayan Campus), faculty advisers, evaluators, and peer student developers.
+- **Core Purpose:** Centralized repository showcase and academic portfolio registry linking students' GitHub activity, highlighted capstone projects, academic identities, and verified commit heatmaps.
+- **Design System:** PaperCSS tactile newspaper/sketch aesthetic (`Neucha`, `Patrick Hand`, warm parchment `#FEFCF6` / `#F7F3E9`, `#FAF6EC`, hand-drawn borders, dark inked shadows).
 
-## 2. Authentication & Session Duplication
-- **Duplicate Startup Profile Loads**: In `src/context/AuthContext.tsx`, `supabase.auth.getSession()` was called on mount, followed immediately by the `onAuthStateChange` subscriber firing `INITIAL_SESSION`, resulting in two sequential `loadProfile()` calls querying Supabase for the exact same profile within milliseconds.
-- **No In-Flight Request Deduplication**: If multiple components requested the same user profile or showcase simultaneously, multiple identical HTTP requests were fired.
+## Architecture & Technology Stack
+- **Frontend Framework:** React 19 (`19.0.1`) + TypeScript 5.8
+- **Build Tool:** Vite 6 (`6.2.3`)
+- **Styling:** Tailwind CSS v4 (`@tailwindcss/vite`, `tailwindcss 4.1.14`) + PaperCSS (`1.9.2`) + Custom Hand-Drawn utility classes (`index.css`)
+- **Animations & Effects:** Motion (`motion 12.23.24`), `canvas-confetti`
+- **Icons:** Lucide React (`lucide-react 0.546.0`)
+- **Database & Auth:** Supabase (`@supabase/supabase-js 2.112.4`)
+  - GitHub OAuth Provider
+  - Row Level Security (RLS) with security definer triggers (`on_auth_user_created`)
+  - High-performance composite database indexes on profiles and showcased projects
+  - Storage bucket (`avatars`) with CDN and image transformation parameters
+  - Client-side offline fallback store if Supabase credentials are in setup/demo mode
+- **External APIs:**
+  - GitHub REST API v3 / 2022-11-28 (`/users/{username}`, `/user/repos`, `/repos/{owner}/{repo}`)
+  - GitHub GraphQL API (`user.contributionsCollection.contributionCalendar`)
+  - Public Contribution Event Aggregator & Parser
+- **Deployment Platform:** Vercel (SPA rewrites, immutable asset caching with `Cache-Control: public, max-age=31536000, immutable`, strict security headers).
 
-## 3. Caching Architecture Gaps
-- **Transient Memory-Only Cache**: Cache TTL in `github.ts` was only 30 seconds (`CACHE_TTL_MS = 1000 * 30`), causing constant cache misses during ordinary navigation between Home, Explore, and Profile views.
-- **Lack of Multi-Tier Data Classification**:
-  - *Static/Long Cache*: Degree programs, static config, icons, media assets.
-  - *Medium Cache (5-15 mins)*: Public student directory, public profiles, GitHub stars/forks/contributions.
-  - *No Cache / Revalidate on Mutation*: User project additions, edits, unpublishing, profile saves.
-- **No Event-Driven Cache Invalidation**: Caches were time-based without explicit mutation hooks to clear or update specific entity keys immediately upon user action.
+## Performance & Optimization Mechanisms
+1. **Multi-Tier Caching Layer (`src/lib/cache.ts`):**
+   - L1: In-memory hot cache (`Map<string, CacheEntry<T>>`) for zero-latency component switches.
+   - L2: `localStorage` persistence with TTL (`CACHE_TTL`: STATIC 24h, PUBLIC_DATA 10m, USER_SESSION 5m, CONTRIBUTIONS 15m).
+   - In-Flight Request Deduplication (`dedupeRequest`): Reuses active Promises to prevent duplicate concurrent network requests.
+   - Tagged Cache Invalidation: Automatic invalidation on project add/edit/delete or profile update.
+2. **Supabase Storage CDN Image Transformations (`src/lib/storage.ts`):**
+   - Supports dimension, quality, format (`webp`, `avif`), and resize transformations.
+3. **Vercel Edge Asset Optimization (`vercel.json`):**
+   - 1-year immutable caching for static assets, zero-cache revalidation for HTML entrypoint, `nosniff`, `SAMEORIGIN`, `strict-origin-when-cross-origin`.
 
-## 4. Vercel & Media Storage Efficiency
-- **Vercel Static Delivery**: `vercel.json` had only a simple SPA rewrite `/(.*) -> /index.html`. It lacked `Cache-Control` headers for immutable static assets (`/assets/*`, fonts, SVG icons). Browsers and Vercel CDN were re-validating assets with `304 Not Modified` or full downloads rather than serving directly from Edge Cache (`max-age=31536000, immutable`).
-- **Media Delivery**: Media (avatars and project links) are currently loaded from GitHub (`avatars.githubusercontent.com`) or fallback URLs. We should provide a dedicated Supabase Storage helper (`src/lib/storage.ts`) with CDN URL generation, lazy loading, and dimension optimization so that user uploads do not route through Vercel serverless functions.
-
-## 5. Supabase Keep-Alive Mechanism
-- **Analysis**: Supabase Free Tier pauses projects after 7 days of total inactivity.
-- **Anti-Pattern to Avoid**: Polling Supabase from client-side visitors or running continuous browser intervals wastes quota and database connection slots.
-- **Optimal Solution**: A lightweight GitHub Actions cron workflow (`.github/workflows/supabase-keepalive.yml`) running once every 5 days (well within the 7-day pause window) that performs a single minimal HTTP `HEAD` or 1-row REST select (`/rest/v1/profiles?select=id&limit=1`). This consumes 0 client bandwidth, 0 Vercel function executions, and exactly 6 tiny requests per month on Supabase.
+## Verified Application Views & Routes
+1. `/` - Front Page / Landing View (Discover Student Projects, Hero Banner, Latest Dispatches, How It Works, Action CTAs).
+2. `/explore` - Explore Directory (Search students or projects, Filter by 4 academic programs + Other, Student Grid vs Project Grid toggle, Detail Modals).
+3. `/dashboard` - Student Workbench (Manage Published Projects, Pin/Unpin Featured Spotlight, Edit Title & Role Description, Add from Connected GitHub Repos).
+4. `/u/:username` - Public Student Showcase Profile (Avatar, Academic Identity, 50-char About Me bio, Technical Cloud, 52-Week Commit Heatmap with live GitHub telemetry, Spotlight Project Cards with Stars/Forks/Topics/Links, Share Profile).
+5. Modals:
+   - Onboarding / Profile Edit Modal (Full Name, Headline, Program, Year Level, Max 50-character bio).
+   - Supabase Guide Modal (Interactive SQL migration runner & OAuth setup instructions).
+   - Project Detail Modal (Live stats, stars, forks, language, topics, direct GitHub & live site links).
