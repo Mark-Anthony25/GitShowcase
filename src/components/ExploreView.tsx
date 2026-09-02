@@ -100,7 +100,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             {browseMode === 'students' ? 'Browse by Student' : 'Browse Projects'}
           </h1>
           <p className="text-xs font-serif-body text-stone-700 mt-0.5">
-            Explore student portfolios, capstones, and course projects from Isabela State University - Cauayan Campus.
+            Explore portfolios, capstones, and repositories from Isabela State University students and alumni.
           </p>
         </div>
 

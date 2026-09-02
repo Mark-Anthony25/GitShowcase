@@ -8,15 +8,17 @@ web
 
 ## Users
 
-Primary users are student developers from Isabela State University - Cauayan Campus (BS Computer Science, BS Information Technology, BS Entertainment and Multimedia Computing, BS Accounting Information Systems, and related computing programs) preparing portfolios, sharing capstone projects, and tracking coding consistency. Secondary users include faculty advisers, classmates, and potential tech recruiters evaluating student contributions.
+Students and alumni of Isabela State University (across computing programs including BS Computer Science, BS Information Technology, BS Entertainment and Multimedia Computing, BS Accounting Information Systems, and related disciplines) preparing portfolios, sharing capstone projects, learning from past cohorts, and finding collaborators across class years.
 
 ## Product Purpose
 
-GitShowcase provides a centralized portfolio and repository registry for ISU Cauayan Campus student developers. It allows students to link their GitHub accounts, define their academic headline and 50-character bio, curate spotlighted capstone repositories with live stats, and display their 52-week commit activity heatmap on a public profile page.
+GitShowcase is a GitHub-connected portfolio and collaboration platform for Isabela State University and its alumni. **Explore** projects from past students, **build** and showcase your own work, and **collab** with others across class years.
+
+Beyond serving as a portfolio registry, GitShowcase functions as a discovery and networking hub: incoming and current students can browse past and ongoing projects to understand the kind of work they'll be doing and get inspiration for their own, while the platform's connections make it easy to find and reach out to other members for collaboration, whether alumni connecting with fellow alumni, freshmen learning from seniors, or students partnering with alumni on new ideas.
 
 ## Positioning
 
-Unlike generic portfolio builders or raw GitHub profiles, GitShowcase is tailored specifically to the ISU Cauayan computing community, combining academic identity (program, year level) with live GitHub contribution telemetry, repository pinning, and an authentic editorial PaperCSS aesthetic.
+Unlike generic portfolio builders or raw GitHub profiles, GitShowcase is tailored specifically to the ISU community, combining academic and alumni identity with live GitHub contribution telemetry, cross-cohort repository discovery, and an authentic editorial PaperCSS aesthetic.
 
 ## Operating Context
 

@@ -116,13 +116,13 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 sm:gap-6">
           <div className="space-y-2 sm:space-y-2.5 max-w-xl lg:max-w-2xl xl:max-w-3xl min-w-0">
             <span className="paper-badge text-[9px] sm:text-[10px] lg:text-xs font-sketch uppercase tracking-wider text-stone-800 font-bold bg-[#EFE9DB]">
-              Student Project Showcase
+              Explore. Build. Collab
             </span>
             <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-[2.65rem] font-[900] uppercase font-newspaper-title tracking-tight text-[#212121] leading-tight break-words">
               Discover Student Projects
             </h2>
             <p className="text-xs sm:text-sm lg:text-base font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed">
-              A showcase of student projects from Isabela State University — Cauayan Campus. Browse projects, discover student creators, and explore what they've built.
+              GitShowcase is a GitHub-connected portfolio and collaboration platform for Isabela State University and its alumni. <strong className="font-bold">Explore</strong> projects from past students, <strong className="font-bold">build</strong> and showcase your own work, and <strong className="font-bold">collab</strong> with others across class years.
             </p>
           </div>
 

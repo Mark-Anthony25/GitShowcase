@@ -1,6 +1,6 @@
 {
   "name": "GitShowcase",
-  "description": "A student developer platform for Isabela State University - Cauayan Campus to connect GitHub, set up student profiles, curate capstone repositories, and display commit contribution activity.",
+  "description": "GitShowcase is a GitHub-connected portfolio and collaboration platform for Isabela State University and its alumni. Explore projects from past students, build and showcase your own work, and collab with others across class years.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

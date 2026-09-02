@@ -1,6 +1,6 @@
 ---
 name: GitShowcase
-description: Hand-drawn PaperCSS student developer showcase and repository registry for Isabela State University - Cauayan Campus.
+description: Hand-drawn PaperCSS project showcase and collaboration platform for Isabela State University students and alumni.
 colors:
   primary: "#212121"
   primary-surface: "#FEFCF6"

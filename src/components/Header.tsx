@@ -115,7 +115,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
               GITSHOWCASE
             </h1>
             <p className="text-[9px] sm:text-[11px] font-sketch text-stone-700 font-semibold truncate">
-              Student Project Showcase
+              Explore. Build. Collab
             </p>
           </div>
         </button>
