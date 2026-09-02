@@ -5,7 +5,7 @@ import {
   User, X, ArrowUpRight, Pin, Sparkles, GraduationCap, GitFork
 } from 'lucide-react';
 import { StudentShowcaseData, ShowcasedProject, Profile } from '../types';
-import { getStudentShowcaseByUsername } from '../lib/showcaseStore';
+import { getStudentShowcaseByUsername, deduplicateProjectsList } from '../lib/showcaseStore';
 import { CommitHeatmap } from './CommitHeatmap';
 import { useAuth } from '../context/AuthContext';
 import { DEGREE_PROGRAM_OPTIONS, getCanonicalProgram } from '../lib/programs';
@@ -97,6 +97,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (profileSaving) return;
     setProfileSaving(true);
     try {
       const effectiveProgram =
@@ -217,9 +218,10 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
     );
   }
 
-  const { profile, projects } = data;
-  const featuredProjects = (projects || []).filter(p => p.is_featured);
-  const regularProjects = (projects || []).filter(p => !p.is_featured);
+  const { profile } = data;
+  const projects = deduplicateProjectsList(data.projects || []);
+  const featuredProjects = projects.filter(p => p.is_featured);
+  const regularProjects = projects.filter(p => !p.is_featured);
 
   // Extract unique languages & topics for student's technical skills badge cloud
   const techSkillsSet = new Set<string>();

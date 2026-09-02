@@ -102,7 +102,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
   const handleConfirmAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !selectedRepoToAdd) return;
+    if (!user || !selectedRepoToAdd || addingInProgress) return;
 
     setAddingInProgress(true);
     try {
@@ -116,7 +116,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
       });
 
       if (newProj) {
-        setShowcased(prev => [newProj, ...prev]);
+        setShowcased(prev => {
+          const filtered = prev.filter(
+            p => p.repo_full_name.trim().toLowerCase() !== newProj.repo_full_name.trim().toLowerCase()
+          );
+          return [newProj, ...filtered];
+        });
         setSelectedRepoToAdd(null);
         setActiveTab('showcase');
         try {
@@ -135,7 +140,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   const handleRemoveProject = async (projectId: string) => {
     if (!confirm('Are you sure you want to unpublish this project from your showcase?')) return;
     try {
-      await removeProjectFromShowcase(projectId);
+      await removeProjectFromShowcase(projectId, user?.id);
       setShowcased(prev => prev.filter(p => p.id !== projectId));
     } catch (err) {
       console.error('Failed to remove project:', err);
@@ -145,7 +150,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   const handleToggleFeatured = async (project: ShowcasedProject) => {
     const updatedStatus = !project.is_featured;
     try {
-      await updateShowcaseProject(project.id, { is_featured: updatedStatus });
+      await updateShowcaseProject(project.id, { is_featured: updatedStatus }, user?.id);
       setShowcased(prev =>
         prev.map(p => (p.id === project.id ? { ...p, is_featured: updatedStatus } : p))
       );
@@ -163,7 +168,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
         custom_title: editingProject.custom_title,
         custom_description: editingProject.custom_description,
         is_featured: editingProject.is_featured,
-      });
+      }, user?.id);
       if (updated) {
         setShowcased(prev => prev.map(p => (p.id === editingProject.id ? updated : p)));
         setEditingProject(null);
@@ -173,7 +178,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     }
   };
 
-  const showcasedRepoNames = new Set(showcased.map(p => p.repo_full_name));
+  const showcasedRepoNames = new Set(showcased.map(p => p.repo_full_name.trim().toLowerCase()));
 
   // Filtered showcased projects
   const filteredShowcased = showcased.filter(p => {
@@ -563,7 +568,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4">
               {filteredAvailableRepos.map((repo) => {
-                const isAlreadyShowcased = showcasedRepoNames.has(repo.full_name);
+                const isAlreadyShowcased = showcasedRepoNames.has(repo.full_name.trim().toLowerCase());
 
                 return (
                   <div

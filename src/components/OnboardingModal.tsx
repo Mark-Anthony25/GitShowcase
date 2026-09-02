@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Profile, GitHubRepoItem, GitHubUserData } from '../types';
 import { fetchUserRepos, fetchGitHubUserData } from '../lib/github';
-import { addProjectToShowcase, getStudentShowcasedProjects } from '../lib/showcaseStore';
+import { addProjectToShowcase, getStudentShowcasedProjects, syncStudentShowcaseProjects } from '../lib/showcaseStore';
 import { DEGREE_PROGRAM_OPTIONS, getCanonicalProgram } from '../lib/programs';
 
 interface OnboardingModalProps {
@@ -225,8 +225,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
   const toggleRepoSelection = (repo: GitHubRepoItem) => {
     const updated = { ...selectedRepoMap };
-    if (updated[repo.full_name]) {
-      delete updated[repo.full_name];
+    const existingKey = Object.keys(updated).find(k => k.trim().toLowerCase() === repo.full_name.trim().toLowerCase());
+    if (existingKey) {
+      delete updated[existingKey];
     } else {
       updated[repo.full_name] = {
         customTitle: repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
@@ -242,22 +243,31 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   };
 
   const handleFinishOnboarding = async () => {
+    if (savingShowcase) return;
     setSavingShowcase(true);
     try {
-      // 1. Save all selected projects
+      // 1. Prepare repository mappings with direct URLs
+      const repoPayloadMap: Record<string, {
+        customTitle?: string;
+        customDescription?: string;
+        isFeatured?: boolean;
+        repoUrl?: string;
+      }> = {};
+
       for (const [repoFullName, meta] of Object.entries(selectedRepoMap) as [string, { customTitle: string; customDescription: string; isFeatured: boolean }][]) {
-        const repoObj = repos.find(r => r.full_name === repoFullName);
-        await addProjectToShowcase({
-          profileId: profile.id,
-          repoFullName,
-          repoUrl: repoObj?.html_url || `https://github.com/${repoFullName}`,
-          customTitle: meta.customTitle || null,
-          customDescription: meta.customDescription || null,
+        const repoObj = repos.find(r => r.full_name.toLowerCase() === repoFullName.toLowerCase());
+        repoPayloadMap[repoFullName] = {
+          customTitle: meta.customTitle || undefined,
+          customDescription: meta.customDescription || undefined,
           isFeatured: meta.isFeatured,
-        });
+          repoUrl: repoObj?.html_url || `https://github.com/${repoFullName}`,
+        };
       }
 
-      // 2. Prepare updated profile with is_onboarded: true
+      // 2. Safely sync and persist projects (upsert selected, remove deselected, zero duplicates)
+      await syncStudentShowcaseProjects(profile.id, repoPayloadMap);
+
+      // 3. Prepare updated profile with is_onboarded: true
       const effectiveProgram =
         selectedProgramOption === 'Other Programs'
           ? (customProgramName.trim() || 'Other Programs')
@@ -265,18 +275,18 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
       const updatedProfile: Profile = {
         ...profile,
-        github_username: username.trim().toLowerCase(),
-        full_name: fullName.trim() || username.trim(),
-        avatar_url: avatarUrl.trim(),
-        headline: headline.trim(),
-        bio: aboutMe.trim().slice(0, 50),
+        github_username: username.trim().toLowerCase() || profile.github_username,
+        full_name: fullName.trim() || profile.full_name || username.trim(),
+        avatar_url: avatarUrl.trim() || profile.avatar_url,
+        headline: headline.trim() || profile.headline,
+        bio: aboutMe.trim().slice(0, 50) || profile.bio,
         program: effectiveProgram,
-        year_level: yearLevel,
+        year_level: yearLevel || profile.year_level,
         is_onboarded: true,
         updated_at: new Date().toISOString(),
       };
 
-      // 3. Clear draft from localStorage
+      // 4. Clear draft from localStorage
       try {
         localStorage.removeItem(draftKey);
       } catch {}
@@ -562,24 +572,47 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-3 border-t border-dashed border-[#212121]">
-              {onCancel && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-3 border-t border-dashed border-[#212121]">
+              <div>
+                {onCancel && (
+                  <button
+                    type="button"
+                    id="onboarding-skip-all-btn"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onCancel();
+                    }}
+                    className="paper-button text-xs py-1.5 px-3 min-h-[34px] font-bold justify-center w-full sm:w-auto cursor-pointer"
+                  >
+                    Skip for Now
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <button
                   type="button"
-                  onClick={onCancel}
-                  className="paper-button text-xs py-1.5 px-3 min-h-[34px] font-bold justify-center"
+                  id="onboarding-step1-skip-btn"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setStep1Error(null);
+                    setCurrentStep(2);
+                  }}
+                  className="paper-button text-xs py-1.5 px-3 min-h-[34px] font-bold justify-center cursor-pointer"
                 >
-                  Skip for Now
+                  <span>Skip to Repositories</span>
                 </button>
-              )}
-              <button
-                type="submit"
-                id="onboarding-step1-next-btn"
-                className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold min-h-[34px] justify-center flex items-center space-x-1"
-              >
-                <span>Continue to Select Repositories</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1 flex-shrink-0" />
-              </button>
+                <button
+                  type="submit"
+                  id="onboarding-step1-next-btn"
+                  className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold min-h-[34px] justify-center flex items-center space-x-1 cursor-pointer"
+                >
+                  <span>Continue to Select Repositories</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-1 flex-shrink-0" />
+                </button>
+              </div>
             </div>
           </form>
         )}
@@ -748,21 +781,36 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               <button
                 type="button"
                 onClick={() => setCurrentStep(1)}
-                className="paper-button text-xs py-1.5 px-3 min-h-[34px] font-bold justify-center"
+                className="paper-button text-xs py-1.5 px-3 min-h-[34px] font-bold justify-center cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
                 <span>Back to Profile</span>
               </button>
 
-              <button
-                type="button"
-                id="onboarding-step2-next-btn"
-                onClick={handleProceedToReview}
-                className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold min-h-[34px] justify-center flex items-center space-x-1"
-              >
-                <span>Review &amp; Publish</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1 flex-shrink-0" />
-              </button>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <button
+                  type="button"
+                  id="onboarding-step2-skip-btn"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setCurrentStep(3);
+                  }}
+                  className="paper-button text-xs py-1.5 px-3 min-h-[34px] font-bold justify-center cursor-pointer"
+                >
+                  <span>Skip Repositories</span>
+                </button>
+
+                <button
+                  type="button"
+                  id="onboarding-step2-next-btn"
+                  onClick={handleProceedToReview}
+                  className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold min-h-[34px] justify-center flex items-center space-x-1 cursor-pointer"
+                >
+                  <span>Review &amp; Publish</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-1 flex-shrink-0" />
+                </button>
+              </div>
             </div>
           </div>
         )}

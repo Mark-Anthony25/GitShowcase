@@ -13,6 +13,7 @@ function AppContent() {
   const [currentPath, setCurrentPath] = useState<string>('/');
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [manualOnboardOpen, setManualOnboardOpen] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const { user, profile, githubToken, updateProfileData } = useAuth();
 
   // Sync state with browser location
@@ -63,7 +64,10 @@ function AppContent() {
       return (
         <DashboardView 
           navigate={navigate} 
-          onOpenOnboarding={() => setManualOnboardOpen(true)} 
+          onOpenOnboarding={() => {
+            setOnboardingDismissed(false);
+            setManualOnboardOpen(true);
+          }} 
           onOpenGuide={() => setIsGuideOpen(true)}
         />
       );
@@ -79,6 +83,8 @@ function AppContent() {
   };
 
   const handleOnboardingComplete = async (updatedProfile: Profile) => {
+    setOnboardingDismissed(false);
+    setManualOnboardOpen(false);
     await updateProfileData({
       github_username: updatedProfile.github_username,
       full_name: updatedProfile.full_name,
@@ -88,12 +94,16 @@ function AppContent() {
       year_level: updatedProfile.year_level,
       is_onboarded: true,
     });
-    setManualOnboardOpen(false);
     navigate(`/u/${updatedProfile.github_username}`);
   };
 
+  const handleOnboardingCancel = () => {
+    setManualOnboardOpen(false);
+    setOnboardingDismissed(true);
+  };
+
   const showOnboarding = Boolean(
-    user && profile && (profile.is_onboarded === false || manualOnboardOpen)
+    user && profile && !onboardingDismissed && (profile.is_onboarded === false || manualOnboardOpen)
   );
 
   return (
@@ -119,7 +129,7 @@ function AppContent() {
             profile={profile}
             githubToken={githubToken}
             onComplete={handleOnboardingComplete}
-            onCancel={() => setManualOnboardOpen(false)}
+            onCancel={handleOnboardingCancel}
           />
         )}
 

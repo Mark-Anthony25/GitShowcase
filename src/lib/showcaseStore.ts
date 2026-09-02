@@ -45,9 +45,28 @@ export function isSchemaError(err: any): boolean {
   return isErr;
 }
 
+export function deduplicateProjectsList(projects: ShowcasedProject[]): ShowcasedProject[] {
+  if (!Array.isArray(projects)) return [];
+  const seen = new Set<string>();
+  const deduped: ShowcasedProject[] = [];
+  for (const p of projects) {
+    if (!p || !p.profile_id || !p.repo_full_name) continue;
+    const key = `${p.profile_id}::${p.repo_full_name.trim().toLowerCase()}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduped.push(p);
+    }
+  }
+  return deduped;
+}
+
+// In-memory fallback for environments where localStorage is not available (Node.js test runners, SSR)
+let inMemoryProfiles: Record<string, Profile> = {};
+let inMemoryProjects: ShowcasedProject[] = [];
+
 function getLocalData(): { profiles: Record<string, Profile>; projects: ShowcasedProject[] } {
-  if (typeof window === 'undefined') {
-    return { profiles: {}, projects: [] };
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return { profiles: inMemoryProfiles, projects: inMemoryProjects };
   }
 
   const rawProfiles = localStorage.getItem(LOCAL_STORAGE_KEY_PROFILES);
@@ -67,6 +86,11 @@ function getLocalData(): { profiles: Record<string, Profile>; projects: Showcase
   if (rawProjects) {
     try {
       projects = JSON.parse(rawProjects);
+      if (Array.isArray(projects)) {
+        projects = deduplicateProjectsList(projects);
+      } else {
+        projects = [];
+      }
     } catch {
       projects = [];
     }
@@ -76,9 +100,17 @@ function getLocalData(): { profiles: Record<string, Profile>; projects: Showcase
 }
 
 function saveLocalData(profiles: Record<string, Profile>, projects: ShowcasedProject[]) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(LOCAL_STORAGE_KEY_PROFILES, JSON.stringify(profiles));
-  localStorage.setItem(LOCAL_STORAGE_KEY_PROJECTS, JSON.stringify(projects));
+  const cleanProjects = deduplicateProjectsList(projects);
+  inMemoryProfiles = profiles;
+  inMemoryProjects = cleanProjects;
+
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY_PROFILES, JSON.stringify(profiles));
+    localStorage.setItem(LOCAL_STORAGE_KEY_PROJECTS, JSON.stringify(cleanProjects));
+  } catch (e) {
+    console.warn('Could not write to localStorage:', e);
+  }
 }
 
 /**
@@ -372,6 +404,9 @@ export async function getAllStudentsShowcase(
 /**
  * Fetch showcased projects for the logged in student with live enriched stats & user session caching
  */
+/**
+ * Fetch showcased projects for the logged in student with live enriched stats & user session caching
+ */
 export async function getStudentShowcasedProjects(
   profileId: string,
   token?: string | null,
@@ -395,22 +430,22 @@ export async function getStudentShowcasedProjects(
             .order('added_at', { ascending: false });
 
           if (!error && data) {
-            rawProjects = data as ShowcasedProject[];
+            rawProjects = deduplicateProjectsList(data as ShowcasedProject[]);
           } else if (error) {
             isSchemaError(error);
             console.warn('Notice: Falling back to local storage for showcased projects:', error.message);
             const { projects } = getLocalData();
-            rawProjects = projects.filter(p => p.profile_id === profileId);
+            rawProjects = deduplicateProjectsList(projects.filter(p => p.profile_id === profileId));
           }
         } catch (err) {
           isSchemaError(err);
           console.warn('Exception fetching student projects from Supabase:', err);
           const { projects } = getLocalData();
-          rawProjects = projects.filter(p => p.profile_id === profileId);
+          rawProjects = deduplicateProjectsList(projects.filter(p => p.profile_id === profileId));
         }
       } else {
         const { projects } = getLocalData();
-        rawProjects = projects.filter(p => p.profile_id === profileId);
+        rawProjects = deduplicateProjectsList(projects.filter(p => p.profile_id === profileId));
       }
 
       return await enrichProjectsWithLiveStats(rawProjects, token, forceRefresh);
@@ -420,7 +455,8 @@ export async function getStudentShowcasedProjects(
 }
 
 /**
- * Add a repository to showcase & invalidate affected caches
+ * Add or update a repository in showcase & invalidate affected caches
+ * Protects against duplicate additions at both database and storage layers
  */
 export async function addProjectToShowcase(params: {
   profileId: string;
@@ -431,32 +467,76 @@ export async function addProjectToShowcase(params: {
   isFeatured?: boolean;
 }): Promise<ShowcasedProject | null> {
   let createdProject: ShowcasedProject | null = null;
+  const normalizedRepoName = params.repoFullName.trim();
 
   if (isSupabaseConfigured && supabase) {
     try {
-      const newRow = {
-        profile_id: params.profileId,
-        repo_full_name: params.repoFullName,
-        repo_url: params.repoUrl,
-        custom_title: params.customTitle || null,
-        custom_description: params.customDescription || null,
-        is_featured: Boolean(params.isFeatured),
-        display_order: 0,
-      };
-
-      const { data, error } = await supabase
+      // 1. Check if a project with the same repo name already exists for this profile
+      const { data: existingRows } = await supabase
         .from('showcased_projects')
-        .insert(newRow)
-        .select()
-        .single();
+        .select('*')
+        .eq('profile_id', params.profileId)
+        .ilike('repo_full_name', normalizedRepoName);
 
-      if (!error && data) {
-        createdProject = data as ShowcasedProject;
-      }
+      if (existingRows && existingRows.length > 0) {
+        const primaryRow = existingRows[0];
 
-      if (error) {
-        isSchemaError(error);
-        console.warn('Error adding project to Supabase, saving locally instead:', error.message);
+        // Clean up any extraneous duplicate rows if they existed prior to constraint
+        if (existingRows.length > 1) {
+          const dupIds = existingRows.slice(1).map(r => r.id);
+          await supabase.from('showcased_projects').delete().in('id', dupIds);
+        }
+
+        const updatePayload: Partial<ShowcasedProject> = {
+          repo_url: params.repoUrl,
+          custom_title: params.customTitle !== undefined ? (params.customTitle || null) : primaryRow.custom_title,
+          custom_description: params.customDescription !== undefined ? (params.customDescription || null) : primaryRow.custom_description,
+          is_featured: params.isFeatured !== undefined ? Boolean(params.isFeatured) : primaryRow.is_featured,
+        };
+
+        const { data: updated, error: updateErr } = await supabase
+          .from('showcased_projects')
+          .update(updatePayload)
+          .eq('id', primaryRow.id)
+          .select()
+          .single();
+
+        if (!updateErr && updated) {
+          createdProject = updated as ShowcasedProject;
+        }
+      } else {
+        const newRow = {
+          profile_id: params.profileId,
+          repo_full_name: normalizedRepoName,
+          repo_url: params.repoUrl,
+          custom_title: params.customTitle || null,
+          custom_description: params.customDescription || null,
+          is_featured: Boolean(params.isFeatured),
+          display_order: 0,
+        };
+
+        // Attempt upsert with conflict key
+        const { data, error } = await supabase
+          .from('showcased_projects')
+          .upsert(newRow, { onConflict: 'profile_id,repo_full_name' })
+          .select()
+          .single();
+
+        if (!error && data) {
+          createdProject = data as ShowcasedProject;
+        } else if (error) {
+          isSchemaError(error);
+          console.warn('Upsert fallback to insert in Supabase:', error.message);
+          const { data: insertData, error: insertError } = await supabase
+            .from('showcased_projects')
+            .insert(newRow)
+            .select()
+            .single();
+
+          if (!insertError && insertData) {
+            createdProject = insertData as ShowcasedProject;
+          }
+        }
       }
     } catch (err) {
       isSchemaError(err);
@@ -464,13 +544,29 @@ export async function addProjectToShowcase(params: {
     }
   }
 
-  if (!createdProject) {
-    // Local store fallback
-    const { profiles, projects } = getLocalData();
+  // Local storage synchronization and fallback
+  const { profiles, projects } = getLocalData();
+  const normalizedKey = `${params.profileId}::${normalizedRepoName.toLowerCase()}`;
+  const existingIdx = projects.findIndex(
+    p => `${p.profile_id}::${p.repo_full_name.trim().toLowerCase()}` === normalizedKey
+  );
+
+  if (existingIdx >= 0) {
+    projects[existingIdx] = {
+      ...projects[existingIdx],
+      repo_url: params.repoUrl,
+      custom_title: params.customTitle !== undefined ? (params.customTitle || null) : projects[existingIdx].custom_title,
+      custom_description: params.customDescription !== undefined ? (params.customDescription || null) : projects[existingIdx].custom_description,
+      is_featured: params.isFeatured !== undefined ? Boolean(params.isFeatured) : projects[existingIdx].is_featured,
+    };
+    if (!createdProject) {
+      createdProject = projects[existingIdx];
+    }
+  } else {
     const newProj: ShowcasedProject = {
-      id: `local-proj-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: createdProject?.id || `local-proj-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       profile_id: params.profileId,
-      repo_full_name: params.repoFullName,
+      repo_full_name: normalizedRepoName,
       repo_url: params.repoUrl,
       custom_title: params.customTitle || null,
       custom_description: params.customDescription || null,
@@ -478,14 +574,16 @@ export async function addProjectToShowcase(params: {
       display_order: projects.filter(p => p.profile_id === params.profileId).length + 1,
       added_at: new Date().toISOString(),
     };
-
     projects.unshift(newProj);
-    saveLocalData(profiles, projects);
-    createdProject = newProj;
+    if (!createdProject) {
+      createdProject = newProj;
+    }
   }
 
+  saveLocalData(profiles, projects);
+
   if (createdProject) {
-    // Fetch live stats immediately for the newly added repo
+    // Fetch live stats immediately for the newly added/updated repo
     const stats = await fetchLiveRepoStats(createdProject.repo_full_name, undefined, true);
     createdProject.live_stats = stats || undefined;
   }
@@ -494,6 +592,51 @@ export async function addProjectToShowcase(params: {
   invalidateShowcaseCaches(params.profileId);
 
   return createdProject;
+}
+
+/**
+ * Sync all showcased projects for a profile during onboarding / profile update:
+ * - Upserts selected repositories
+ * - Removes unselected/deselected repositories
+ * - Deduplicates and preserves existing valid project records
+ */
+export async function syncStudentShowcaseProjects(
+  profileId: string,
+  selectedReposMap: Record<string, {
+    customTitle?: string;
+    customDescription?: string;
+    isFeatured?: boolean;
+    repoUrl?: string;
+  }>
+): Promise<ShowcasedProject[]> {
+  const currentProjects = await getStudentShowcasedProjects(profileId, undefined, true);
+  const selectedKeys = new Set(Object.keys(selectedReposMap).map(k => k.trim().toLowerCase()));
+
+  // 1. Remove projects that were unselected
+  for (const existing of currentProjects) {
+    if (!selectedKeys.has(existing.repo_full_name.trim().toLowerCase())) {
+      await removeProjectFromShowcase(existing.id, profileId);
+    }
+  }
+
+  // 2. Add or update currently selected projects
+  const result: ShowcasedProject[] = [];
+  for (const [repoFullName, meta] of Object.entries(selectedReposMap)) {
+    const saved = await addProjectToShowcase({
+      profileId,
+      repoFullName: repoFullName.trim(),
+      repoUrl: meta.repoUrl || `https://github.com/${repoFullName.trim()}`,
+      customTitle: meta.customTitle || null,
+      customDescription: meta.customDescription || null,
+      isFeatured: Boolean(meta.isFeatured),
+    });
+    if (saved) {
+      result.push(saved);
+    }
+  }
+
+  invalidateShowcaseCaches(profileId);
+  return result;
 }
 
 /**

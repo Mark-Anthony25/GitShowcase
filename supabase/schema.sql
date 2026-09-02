@@ -28,7 +28,8 @@ create table if not exists public.showcased_projects (
   custom_description text,        -- optional student override for context/role
   is_featured boolean default false,
   display_order int default 0,
-  added_at timestamptz default now()
+  added_at timestamptz default now(),
+  constraint unique_profile_project unique (profile_id, repo_full_name)
 );
 
 -- 3. Create Repo Stats Cache Table (Shared caching across all users)
@@ -45,6 +46,9 @@ create table if not exists public.repo_stats_cache (
 -- 4. High-Performance Database Indexes
 create index if not exists idx_showcased_projects_profile_id 
   on public.showcased_projects(profile_id);
+
+create unique index if not exists idx_showcased_projects_profile_repo_unique 
+  on public.showcased_projects(profile_id, lower(repo_full_name));
 
 create index if not exists idx_showcased_projects_featured_order 
   on public.showcased_projects(is_featured desc, display_order asc, added_at desc);
