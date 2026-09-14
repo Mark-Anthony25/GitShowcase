@@ -1,36 +1,47 @@
-name: Supabase Lightweight Scheduled Keep-Alive
+name: Supabase Keep-Alive
 
 on:
   schedule:
-    # Run once every 5 days at 00:00 UTC (well within Supabase's 7-day inactivity pause window)
-    - cron: '0 0 */5 * *'
+    # A few daily database requests keep Free-plan activity steady without visitors.
+    - cron: '17 3,11,19 * * *'
   workflow_dispatch:
-    # Allow manual test execution from GitHub Actions tab
 
 jobs:
   keepalive:
-    name: Supabase Activity Ping
+    name: Ping Supabase
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
-      - name: Ping Supabase Lightweight Health Endpoint
+      - name: Ping Supabase REST API
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
+          set -Eeuo pipefail
+
           if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "::notice::SUPABASE_URL or SUPABASE_ANON_KEY secrets are not configured in GitHub repository secrets. Skipping keep-alive ping."
-            exit 0
+            echo "::error title=Supabase secrets missing::Set SUPABASE_URL and SUPABASE_ANON_KEY in repository Actions secrets."
+            exit 1
           fi
 
-          echo "Sending lightweight 1-row query to Supabase to maintain project activity..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          SUPABASE_URL="${SUPABASE_URL%/}"
+          if [[ ! "$SUPABASE_URL" =~ ^https://[^/[:space:]]+$ ]]; then
+            echo "::error title=Invalid SUPABASE_URL::Use https://<project-ref>.supabase.co with no path or whitespace."
+            exit 1
+          fi
+
+          echo "Sending one-row query to Supabase..."
+          HTTP_STATUS=$(curl --fail --silent --show-error \
+            --retry 3 --retry-all-errors --retry-delay 5 \
+            --connect-timeout 10 --max-time 30 \
+            --output /dev/null --write-out "%{http_code}" \
             -H "apikey: $SUPABASE_ANON_KEY" \
             -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-            "${SUPABASE_URL%/}/rest/v1/profiles?select=id&limit=1")
+            "$SUPABASE_URL/rest/v1/profiles?select=id&limit=1")
 
-          echo "Supabase Response Status Code: $HTTP_STATUS"
-          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
-            echo "Successfully pinged Supabase project. Inactivity timer reset."
-          else
-            echo "::warning::Supabase ping returned HTTP status $HTTP_STATUS."
+          if [[ "$HTTP_STATUS" != 2* ]]; then
+            echo "::error title=Supabase ping failed::REST endpoint returned HTTP $HTTP_STATUS."
+            exit 1
           fi
+
+          echo "Supabase activity recorded (HTTP $HTTP_STATUS)."
