@@ -75,6 +75,32 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
     return matchesQuery && matchesProgram;
   });
 
+  const resultCount = browseMode === 'students' ? filteredStudents.length : filteredProjects.length;
+  const hasActiveFilters = searchQuery.trim().length > 0 || filterProgram !== 'all';
+  const clearSearch = () => setSearchQuery('');
+  const clearProgram = () => setFilterProgram('all');
+  const clearAllFilters = () => {
+    clearSearch();
+    clearProgram();
+  };
+
+  const emptyStateCopy = () => {
+    const noun = browseMode === 'students' ? 'student profiles' : 'projects';
+    if (students.length === 0) {
+      return {
+        title: `No ${noun} published yet`,
+        description: 'Sign in with GitHub to publish the first showcase from the ISU community.',
+      };
+    }
+
+    const queryLabel = searchQuery.trim() ? ` for “${searchQuery.trim()}”` : '';
+    const programLabel = filterProgram !== 'all' ? ` in ${filterProgram}` : '';
+    return {
+      title: `No ${noun} found${queryLabel}${programLabel}`,
+      description: 'Try removing a search term or program filter.',
+    };
+  };
+
   return (
     <>
       <div className="space-y-4 sm:space-y-5 pb-8 text-[#212121]">
@@ -82,12 +108,14 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
         <div className="flex gap-2 mb-2">
           <button 
             onClick={() => setBrowseMode('students')}
+            aria-pressed={browseMode === 'students'}
             className={`paper-button text-xs py-1.5 px-3 font-bold flex-1 sm:flex-none justify-center ${browseMode === 'students' ? 'paper-button-dark' : 'bg-[#FEFCF6]'}`}
           >
             Students &amp; Projects
           </button>
           <button 
             onClick={() => setBrowseMode('projects')}
+            aria-pressed={browseMode === 'projects'}
             className={`paper-button text-xs py-1.5 px-3 font-bold flex-1 sm:flex-none justify-center ${browseMode === 'projects' ? 'paper-button-dark' : 'bg-[#FEFCF6]'}`}
           >
             Projects Only
@@ -133,6 +161,29 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
           </select>
         </div>
 
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-sketch uppercase tracking-wider text-stone-700">
+          <span aria-live="polite" className="font-bold">
+            {resultCount} {browseMode === 'students' ? (resultCount === 1 ? 'student' : 'students') : (resultCount === 1 ? 'project' : 'projects')} shown
+          </span>
+          {hasActiveFilters && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {searchQuery.trim() && (
+                <button onClick={clearSearch} className="paper-badge cursor-pointer hover:bg-[#FAF6EC]">
+                  Search: {searchQuery.trim()} ×
+                </button>
+              )}
+              {filterProgram !== 'all' && (
+                <button onClick={clearProgram} className="paper-badge cursor-pointer hover:bg-[#FAF6EC]">
+                  Program: {filterProgram} ×
+                </button>
+              )}
+              <button onClick={clearAllFilters} className="underline font-bold">
+                Clear all
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Main Content Area */}
         {loading ? (
           <div className="text-center py-12 paper-card bg-[#FEFCF6]">
@@ -142,8 +193,13 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
         ) : browseMode === 'students' ? (
           filteredStudents.length === 0 ? (
             <div className="text-center py-10 px-4 paper-card bg-[#FEFCF6] space-y-1.5 border-dashed">
-              <p className="text-sm font-[900] uppercase font-newspaper-title text-[#212121]">No students found</p>
-              <p className="text-xs font-serif-body text-stone-600">Try adjusting your query or selecting another program.</p>
+              <p className="text-sm font-[900] uppercase font-newspaper-title text-[#212121]">{emptyStateCopy().title}</p>
+              <p className="text-xs font-serif-body text-stone-600">{emptyStateCopy().description}</p>
+              {hasActiveFilters && (
+                <button onClick={clearAllFilters} className="paper-button text-xs py-1.5 px-3 font-bold mt-2">
+                  Clear Filters
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
@@ -250,8 +306,13 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
         ) : (
           filteredProjects.length === 0 ? (
             <div className="text-center py-10 px-4 paper-card bg-[#FEFCF6] space-y-1.5 border-dashed">
-              <p className="text-sm font-[900] uppercase font-newspaper-title text-[#212121]">No projects found</p>
-              <p className="text-xs font-serif-body text-stone-600">Try adjusting your query or selecting another program.</p>
+              <p className="text-sm font-[900] uppercase font-newspaper-title text-[#212121]">{emptyStateCopy().title}</p>
+              <p className="text-xs font-serif-body text-stone-600">{emptyStateCopy().description}</p>
+              {hasActiveFilters && (
+                <button onClick={clearAllFilters} className="paper-button text-xs py-1.5 px-3 font-bold mt-2">
+                  Clear Filters
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">

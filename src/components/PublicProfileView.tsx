@@ -5,7 +5,7 @@ import {
   User, X, ArrowUpRight, Sparkles, GraduationCap, GitFork
 } from 'lucide-react';
 import { StudentShowcaseData, ShowcasedProject, Profile } from '../types';
-import { getStudentShowcaseByUsername, deduplicateProjectsList } from '../lib/showcaseStore';
+import { getStudentShowcaseByUsername, deduplicateProjectsList, ShowcaseLoadError } from '../lib/showcaseStore';
 import { CommitHeatmap } from './CommitHeatmap';
 import { useAuth } from '../context/AuthContext';
 import { DEGREE_PROGRAM_OPTIONS, getCanonicalProgram } from '../lib/programs';
@@ -47,8 +47,13 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
     }
     setLoading(true);
     setError(null);
+    let timeoutId: number | undefined;
     try {
-      const res = await getStudentShowcaseByUsername(username, githubToken, force);
+      const profileRequest = getStudentShowcaseByUsername(username, githubToken, force);
+      const timeout = new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(() => reject(new ShowcaseLoadError('Profile request timed out. Please try again.')), 10000);
+      });
+      const res = await Promise.race([profileRequest, timeout]);
       setData(res);
 
       if (res?.profile) {
@@ -63,6 +68,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
       console.error('Error loading student showcase:', err);
       setError(err?.message || 'Failed to load student profile. Please check your connection.');
     } finally {
+      if (timeoutId) window.clearTimeout(timeoutId);
       setLoading(false);
     }
   };
@@ -145,7 +151,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
         <h2 className="text-xl font-[900] uppercase font-newspaper-title text-[#212121]">
           Loading profile...
         </h2>
-        <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 font-bold">
+        <p role="status" aria-live="polite" className="text-xs font-sketch uppercase tracking-wider text-stone-700 font-bold">
           Retrieving student identity and coding activity for @{username}...
         </p>
       </div>
@@ -162,7 +168,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
           <h1 className="text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
             Unable to Load Profile
           </h1>
-          <p className="text-xs sm:text-sm font-serif-body text-stone-700 leading-relaxed">
+          <p role="alert" className="text-xs sm:text-sm font-serif-body text-stone-700 leading-relaxed">
             {error}
           </p>
         </div>

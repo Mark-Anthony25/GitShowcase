@@ -5,6 +5,7 @@ import { LandingView } from './components/LandingView';
 import { DashboardView } from './components/DashboardView';
 import { PublicProfileView } from './components/PublicProfileView';
 import { ExploreView } from './components/ExploreView';
+import { AuthGateView } from './components/AuthGateView';
 import { SupabaseGuideModal } from './components/SupabaseGuideModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { Profile } from './types';
@@ -59,7 +60,7 @@ function AppContent() {
     // 2. Check for /dashboard
     if (currentPath === '/dashboard') {
       if (!user) {
-        return <LandingView navigate={navigate} onOpenGuide={() => setIsGuideOpen(true)} />;
+        return <AuthGateView navigate={navigate} onOpenGuide={() => setIsGuideOpen(true)} />;
       }
       return (
         <DashboardView 

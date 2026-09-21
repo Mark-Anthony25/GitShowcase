@@ -2,9 +2,19 @@ import { supabase, isSupabaseConfigured } from './supabase';
 import { Profile, ShowcasedProject, StudentShowcaseData } from '../types';
 import { fetchLiveRepoStats, fetchGitHubUserData, fetchUserRepos } from './github';
 import { getCachedOrFetch, invalidateCache, CACHE_TTL } from './cache';
+import { getDemoShowcaseByUsername, getDemoStudentsShowcase } from './demoData';
 
 const LOCAL_STORAGE_KEY_PROFILES = 'gitshowcase_profiles';
 const LOCAL_STORAGE_KEY_PROJECTS = 'gitshowcase_projects';
+
+export class ShowcaseLoadError extends Error {
+  readonly kind = 'unavailable' as const;
+
+  constructor(message = 'Profile service unavailable. Please try again.') {
+    super(message);
+    this.name = 'ShowcaseLoadError';
+  }
+}
 
 // Observable state for when Supabase credentials exist but database tables are not yet created in SQL editor
 let schemaMissingDetected = false;
@@ -266,6 +276,11 @@ export async function getStudentShowcaseByUsername(
         };
       }
 
+      const demoShowcase = getDemoShowcaseByUsername(normalizedUsername);
+      if (demoShowcase) {
+        return demoShowcase;
+      }
+
       // 3. Fallback: Fetch directly from GitHub for any real GitHub username
       try {
         const ghUser = await fetchGitHubUserData(token, normalizedUsername, forceRefresh);
@@ -320,7 +335,7 @@ export async function getStudentShowcaseByUsername(
         };
       } catch (err) {
         console.warn(`Could not resolve public GitHub profile for ${normalizedUsername}:`, err);
-        return null;
+        throw new ShowcaseLoadError();
       }
     },
     { ttlMs: CACHE_TTL.PUBLIC_DATA, skipCache: forceRefresh, persistLocal: false }
@@ -383,6 +398,9 @@ export async function getAllStudentsShowcase(
 
       // Fallback local store
       const { profiles, projects } = getLocalData();
+      if (Object.keys(profiles).length === 0) {
+        return getDemoStudentsShowcase();
+      }
       return await Promise.all(
         Object.values(profiles).map(async (profile) => {
           const studentProjects = projects.filter(p => p.profile_id === profile.id);
