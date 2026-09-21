@@ -12,6 +12,38 @@ interface CommitHeatmapProps {
   totalProjects?: number;
 }
 
+interface TooltipRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+interface ViewportSize {
+  width: number;
+  height: number;
+}
+
+const TOOLTIP_WIDTH = 180;
+const TOOLTIP_HEIGHT = 48;
+const TOOLTIP_GAP = 8;
+const VIEWPORT_PADDING = 8;
+
+export function getTooltipPosition(rect: TooltipRect, viewport: ViewportSize) {
+  const left = Math.floor(
+    Math.min(
+      Math.max(VIEWPORT_PADDING, rect.left + rect.width / 2 - TOOLTIP_WIDTH / 2),
+      Math.max(VIEWPORT_PADDING, viewport.width - TOOLTIP_WIDTH - VIEWPORT_PADDING),
+    ),
+  );
+  const aboveTop = rect.top - TOOLTIP_HEIGHT - TOOLTIP_GAP;
+  const top = aboveTop >= VIEWPORT_PADDING
+    ? aboveTop
+    : rect.top + rect.height + TOOLTIP_GAP;
+
+  return { left, top };
+}
+
 export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
   username,
   className = '',
@@ -23,7 +55,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
   const [calendarData, setCalendarData] = useState<ContributionCalendar | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [hoveredDay, setHoveredDay] = useState<{ day: ContributionDay; x: number; y: number } | null>(null);
+  const [hoveredDay, setHoveredDay] = useState<{ day: ContributionDay; left: number; top: number } | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadContributions = useCallback(async (showRefreshIndicator = false) => {
@@ -235,14 +267,20 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                           key={`${day.date}-${dIndex}`}
                           type="button"
                           onMouseEnter={(e) => {
-                            setHoveredDay({ day, x: e.clientX, y: e.clientY });
-                          }}
-                          onMouseMove={(e) => {
-                            setHoveredDay({ day, x: e.clientX, y: e.clientY });
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const position = getTooltipPosition(rect, {
+                              width: window.innerWidth,
+                              height: window.innerHeight,
+                            });
+                            setHoveredDay({ day, ...position });
                           }}
                           onFocus={(e) => {
                             const rect = e.currentTarget.getBoundingClientRect();
-                            setHoveredDay({ day, x: rect.left + rect.width / 2, y: rect.top });
+                            const position = getTooltipPosition(rect, {
+                              width: window.innerWidth,
+                              height: window.innerHeight,
+                            });
+                            setHoveredDay({ day, ...position });
                           }}
                           onBlur={() => setHoveredDay(null)}
                           onMouseLeave={() => setHoveredDay(null)}
@@ -288,8 +326,8 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
             <div
               className="fixed z-50 pointer-events-none px-2.5 py-1.5 paper-card bg-[#212121] text-[#FEFCF6] text-[11px] font-mono shadow-[2px_2px_0px_#000] whitespace-nowrap"
               style={{
-                left: `${typeof window !== 'undefined' ? Math.min(Math.max(10, hoveredDay.x + 12), window.innerWidth - 180) : hoveredDay.x + 12}px`,
-                top: `${hoveredDay.y > 60 ? hoveredDay.y - 48 : hoveredDay.y + 20}px`
+                left: `${hoveredDay.left}px`,
+                top: `${hoveredDay.top}px`,
               }}
             >
               <div className="font-bold text-emerald-400">

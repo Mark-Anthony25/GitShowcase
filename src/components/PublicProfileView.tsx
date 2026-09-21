@@ -381,7 +381,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                 <div className="flex items-center space-x-2">
                   <FolderGit2 className="w-4 h-4 text-[#212121] stroke-[2] flex-shrink-0" />
                   <h2 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
-                    {isOwner ? 'My Public Projects' : 'Public Projects'} — {projects.length}
+                    {isOwner ? 'My Public Projects' : 'Public Projects'}: {projects.length}
                   </h2>
                 </div>
               </div>
