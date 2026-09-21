@@ -349,7 +349,7 @@ export async function getAllStudentsShowcase(
   token?: string | null,
   forceRefresh = false
 ): Promise<StudentShowcaseData[]> {
-  const cacheKey = 'showcase_all_students';
+  const cacheKey = getAllStudentsShowcaseCacheKey(token);
 
   return getCachedOrFetch(
     cacheKey,
@@ -414,6 +414,10 @@ export async function getAllStudentsShowcase(
     },
     { ttlMs: CACHE_TTL.PUBLIC_DATA, skipCache: forceRefresh, persistLocal: false }
   );
+}
+
+export function getAllStudentsShowcaseCacheKey(token?: string | null): string {
+  return token ? 'showcase_all_students_authenticated' : 'showcase_all_students_public';
 }
 
 /**

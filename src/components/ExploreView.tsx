@@ -6,12 +6,14 @@ import {
 import { StudentShowcaseData, ShowcasedProject } from '../types';
 import { getAllStudentsShowcase } from '../lib/showcaseStore';
 import { DEGREE_PROGRAM_OPTIONS, matchesProgramFilter, getProgramBadgeLabel } from '../lib/programs';
+import { useAuth } from '../context/AuthContext';
 
 interface ExploreViewProps {
   navigate: (route: string) => void;
 }
 
 export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
+  const { githubToken } = useAuth();
   const [students, setStudents] = useState<StudentShowcaseData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,12 +26,12 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
 
   useEffect(() => {
     loadAllStudents(false);
-  }, []);
+  }, [githubToken]);
 
   const loadAllStudents = async (force = false) => {
     setLoading(true);
     try {
-      const data = await getAllStudentsShowcase(undefined, force);
+      const data = await getAllStudentsShowcase(githubToken, force);
       setStudents(data);
     } catch (err) {
       console.error('Error loading students:', err);
