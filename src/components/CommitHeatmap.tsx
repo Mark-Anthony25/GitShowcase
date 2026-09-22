@@ -25,23 +25,16 @@ interface ViewportSize {
 }
 
 const TOOLTIP_WIDTH = 180;
-const TOOLTIP_HEIGHT = 40;
-const TOOLTIP_GAP = 4;
+const TOOLTIP_HEIGHT = 48;
+const TOOLTIP_GAP = 8;
 const VIEWPORT_PADDING = 8;
 
 export function getTooltipPosition(rect: TooltipRect, viewport: ViewportSize) {
-  const rightOfCell = rect.left + rect.width + TOOLTIP_GAP;
-  const leftOfCell = rect.left - TOOLTIP_WIDTH - TOOLTIP_GAP;
-  const maxLeft = Math.max(VIEWPORT_PADDING, viewport.width - TOOLTIP_WIDTH - VIEWPORT_PADDING);
   const left = Math.floor(
-    rightOfCell + TOOLTIP_WIDTH <= viewport.width - VIEWPORT_PADDING
-      ? rightOfCell
-      : leftOfCell >= VIEWPORT_PADDING
-        ? leftOfCell
-        : Math.min(
-            Math.max(VIEWPORT_PADDING, rect.left + rect.width / 2 - TOOLTIP_WIDTH / 2),
-            maxLeft,
-          ),
+    Math.min(
+      Math.max(VIEWPORT_PADDING, rect.left + rect.width / 2 - TOOLTIP_WIDTH / 2),
+      Math.max(VIEWPORT_PADDING, viewport.width - TOOLTIP_WIDTH - VIEWPORT_PADDING),
+    ),
   );
   const aboveTop = rect.top - TOOLTIP_HEIGHT - TOOLTIP_GAP;
   const top = aboveTop >= VIEWPORT_PADDING
@@ -160,7 +153,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
             href={`https://github.com/${username}`}
             target="_blank"
             rel="noreferrer"
-            className="paper-button text-[11px] font-mono py-1 px-2.5 min-h-[36px] flex items-center space-x-1"
+            className="paper-button text-[11px] font-mono py-1 px-2.5 min-h-[30px] flex items-center space-x-1"
             title={`View @${username} on GitHub`}
           >
             <span>@{username}</span>
@@ -170,7 +163,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
           <button
             onClick={() => loadContributions(true)}
             disabled={isLoading || isRefreshing}
-            className="paper-button-icon min-w-[40px] min-h-[40px] p-2 cursor-pointer disabled:opacity-50"
+            className="paper-button-icon min-w-[32px] min-h-[32px] p-1.5 cursor-pointer disabled:opacity-50"
             title="Refresh GitHub Contributions"
             aria-label="Refresh GitHub Contributions"
           >
@@ -223,13 +216,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
       {calendarData && (
         <>
           {/* Scrollable / Responsive Calendar Container with Maximized Cell Spacing */}
-          <div
-            className="relative overflow-x-auto pb-2 -mx-1 px-1 sm:mx-0 sm:px-0"
-            role="region"
-            aria-label="52-week contribution heatmap"
-            tabIndex={0}
-          >
-            <p className="sm:hidden text-[10px] font-mono text-stone-600 mb-1">Swipe sideways to view all 52 weeks.</p>
+          <div className="relative overflow-x-auto pb-2 -mx-1 px-1 sm:mx-0 sm:px-0">
             <div className="min-w-[780px] sm:min-w-[880px] flex flex-col space-y-1.5">
               {/* Month Labels Bar */}
               <div className="relative text-[10px] font-mono font-bold text-stone-700 pl-7 sm:pl-8 h-4 select-none">
@@ -237,7 +224,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                   <span
                     key={`${m.label}-${idx}`}
                     className="absolute font-bold"
-                    style={{ left: `calc(${m.weekIndex} * (18px + 4px) + 2rem)` }}
+                    style={{ left: `calc(${m.weekIndex} * (13px + 4px) + 2rem)` }}
                   >
                     {m.label}
                   </span>
@@ -249,23 +236,23 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                 {/* Day of Week Axis with exact row alignment (Mon, Wed, Fri) */}
                 <div
                   className="relative w-6 sm:w-7 text-[9px] font-mono text-stone-600 select-none flex-shrink-0"
-                  style={{ height: 'calc(7 * 18px + 6 * 4px)' }}
+                  style={{ height: 'calc(7 * 13px + 6 * 4px)' }}
                 >
                   <span
                     className="absolute leading-none right-1"
-                    style={{ top: 'calc(1 * (18px + 4px) + 1px)' }}
+                    style={{ top: 'calc(1 * (13px + 4px) + 1px)' }}
                   >
                     Mon
                   </span>
                   <span
                     className="absolute leading-none right-1"
-                    style={{ top: 'calc(3 * (18px + 4px) + 1px)' }}
+                    style={{ top: 'calc(3 * (13px + 4px) + 1px)' }}
                   >
                     Wed
                   </span>
                   <span
                     className="absolute leading-none right-1"
-                    style={{ top: 'calc(5 * (18px + 4px) + 1px)' }}
+                    style={{ top: 'calc(5 * (13px + 4px) + 1px)' }}
                   >
                     Fri
                   </span>
@@ -298,13 +285,10 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                           onBlur={() => setHoveredDay(null)}
                           onMouseLeave={() => setHoveredDay(null)}
                           aria-label={`${day.count} contributions on ${day.date}`}
-                          className="w-[18px] h-[18px] p-[2px] rounded-[3px] border border-transparent transition-transform hover:scale-110 hover:z-20 cursor-pointer"
-                        >
-                          <span
-                            aria-hidden="true"
-                            className={`block w-full h-full rounded-[2px] border ${getLevelColor(day.level)}`}
-                          />
-                        </button>
+                          className={`w-[11.5px] h-[11.5px] sm:w-[13px] sm:h-[13px] rounded-[2px] border transition-transform hover:scale-125 hover:z-20 cursor-pointer ${getLevelColor(
+                            day.level
+                          )}`}
+                        />
                       ))}
                     </div>
                   ))}
