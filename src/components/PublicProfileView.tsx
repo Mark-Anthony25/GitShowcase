@@ -230,7 +230,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
     <>
       <div className="space-y-5 sm:space-y-6 pb-8 text-[#212121]">
         {/* Top Action Bar */}
-        <div className="flex items-center justify-between border-b border-dashed border-[#212121] pb-2 gap-2">
+        <div className="flex flex-wrap items-center justify-between border-b border-dashed border-[#212121] pb-2 gap-2 max-[380px]:flex-col max-[380px]:items-stretch">
           <button
             onClick={() => navigate('/explore')}
             className="paper-button text-xs py-1.5 px-3 font-bold min-h-[34px]"
@@ -239,12 +239,12 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             <span>Back to Browse Projects</span>
           </button>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 max-[380px]:w-full max-[380px]:justify-end">
             {isOwner && (
               <button
                 id="profile-edit-btn"
                 onClick={handleOpenEditModal}
-                className="paper-button text-xs py-1.5 px-3 font-bold min-h-[34px] flex items-center space-x-1.5 cursor-pointer text-[#212121]"
+                className="paper-button text-xs py-1.5 px-3 font-bold min-h-[38px] flex items-center space-x-1.5 cursor-pointer text-[#212121] max-[380px]:flex-1"
               >
                 <Edit3 className="w-3.5 h-3.5 text-stone-800 flex-shrink-0" />
                 <span>Edit Profile</span>
@@ -254,7 +254,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             <button
               id="share-profile-btn"
               onClick={handleShare}
-              className="paper-button text-xs py-1.5 px-3 font-bold min-h-[34px]"
+              className="paper-button text-xs py-1.5 px-3 font-bold min-h-[38px] max-[380px]:flex-1"
             >
               {copiedLink ? (
                 <>

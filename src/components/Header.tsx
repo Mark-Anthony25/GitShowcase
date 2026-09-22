@@ -121,7 +121,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
         </button>
 
         {/* Desktop Middle: Centered Navigation */}
-        <div className="hidden md:flex items-center justify-center flex-1 mx-3 lg:mx-6">
+        <div className="hidden lg:flex items-center justify-center flex-1 mx-3 lg:mx-6">
           <nav className="flex items-center space-x-2 lg:space-x-3">
             <button id="nav-front-page-btn" onClick={() => navigate('/')} className={navBtnClass('/')}>
               Home
@@ -143,7 +143,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
         </div>
 
         {/* Desktop Right: User Menu & Auth Controls */}
-        <div className="hidden md:flex items-center gap-2 shrink-0">
+        <div className="hidden lg:flex items-center gap-2 shrink-0">
           {user ? (
             <div className="relative" ref={dropdownRef}>
               <button
@@ -223,7 +223,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
         </div>
 
         {/* Mobile: avatar thumbnail + hamburger */}
-        <div className="flex md:hidden items-center space-x-1.5 flex-shrink-0">
+        <div className="flex lg:hidden items-center space-x-1.5 flex-shrink-0">
           {user && (
             <div className="w-7 h-7 border-1.5 border-[#212121] bg-stone-300 overflow-hidden flex-shrink-0 rounded-xs shadow-[1px_1px_0px_#212121]">
               <img
@@ -247,7 +247,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
       {/* Mobile Navigation Modal / Backdrop */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 bg-[#212121]/70 backdrop-blur-xs md:hidden animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 bg-[#212121]/70 backdrop-blur-xs lg:hidden animate-in fade-in duration-150"
           role="dialog"
           aria-modal="true"
           aria-label="Mobile Navigation Menu"
