@@ -215,9 +215,8 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
             </div>
           ) : (
             <div className="flex items-center space-x-2">
-              <button id="github-login-btn" onClick={handleGitHubSignIn} className="paper-button text-xs py-1.5 px-3.5 font-bold cursor-pointer min-h-[34px] bg-[#FEFCF6] text-[#212121] hover:bg-[#FAF6EC]">
-                <Github className="w-3.5 h-3.5 text-[#212121] mr-1 flex-shrink-0" /><span>Sign In with GitHub</span>
-              </button>
+              <button onClick={() => navigate('/signin')} className="paper-button text-xs py-1.5 px-3 font-bold cursor-pointer min-h-[34px] bg-[#FEFCF6] text-[#212121] hover:bg-[#FAF6EC]">Sign In</button>
+              <button onClick={() => navigate('/signup')} className="paper-button paper-button-dark text-xs py-1.5 px-3 font-bold cursor-pointer min-h-[34px]">Create Portfolio</button>
             </div>
           )}
         </div>
@@ -328,13 +327,10 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
               </div>
             ) : (
               <div className="flex flex-col gap-2 pt-0.5">
-                <button
-                  id="github-mobile"
-                  onClick={async () => { setMobileMenuOpen(false); await handleGitHubSignIn(); }}
-                  className="paper-button text-xs py-2 px-3 font-bold cursor-pointer justify-center min-h-[36px] w-full bg-[#FEFCF6] text-[#212121] hover:bg-[#FAF6EC]"
-                >
-                  <Github className="w-3.5 h-3.5 text-[#212121] mr-1.5 flex-shrink-0" /><span>Sign In with GitHub</span>
+                <button onClick={() => { setMobileMenuOpen(false); navigate('/signin'); }} className="paper-button text-xs py-2 px-3 font-bold cursor-pointer justify-center min-h-[36px] w-full bg-[#FEFCF6] text-[#212121] hover:bg-[#FAF6EC]">
+                  <span>Sign In</span>
                 </button>
+                <button onClick={() => { setMobileMenuOpen(false); navigate('/signup'); }} className="paper-button paper-button-dark text-xs py-2 px-3 font-bold cursor-pointer justify-center min-h-[36px] w-full"><span>Create Portfolio</span></button>
               </div>
             )}
           </div>
