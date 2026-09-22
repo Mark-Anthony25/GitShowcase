@@ -32,14 +32,17 @@ export const isSupabaseConfigured = Boolean(
 
 let supabaseInstance: SupabaseClient | null = null;
 
+export const supabaseAuthOptions = {
+  flowType: 'pkce' as const,
+  autoRefreshToken: true,
+  persistSession: true,
+  detectSessionInUrl: false,
+};
+
 if (isSupabaseConfigured) {
   try {
     supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false,
-      }
+      auth: supabaseAuthOptions,
     });
   } catch (err) {
     console.error('Failed to initialize Supabase client:', err);
