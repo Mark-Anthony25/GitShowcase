@@ -152,11 +152,14 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
 
                 <button
                   id="hero-github-signin-btn"
-                  onClick={handleGitHubSignIn}
+                  onClick={() => navigate('/signin')}
                   className="paper-button text-xs lg:text-sm py-2 lg:py-2.5 px-4 justify-center min-h-[38px] lg:min-h-[42px] font-bold text-[#212121] bg-[#FEFCF6]"
                 >
                   <Github className="w-3.5 h-3.5 text-[#212121] mr-1.5 flex-shrink-0 stroke-[2]" />
-                  <span>Sign In with GitHub</span>
+                  <span>Sign In</span>
+                </button>
+                <button onClick={() => navigate('/signup')} className="paper-button paper-button-dark text-xs lg:text-sm py-2 lg:py-2.5 px-4 justify-center min-h-[38px] lg:min-h-[42px] font-bold">
+                  <Github className="w-3.5 h-3.5 mr-1.5" /><span>Create Portfolio</span>
                 </button>
               </>
             )}

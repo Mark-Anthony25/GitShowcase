@@ -3,6 +3,7 @@ import { supabase, isSupabaseConfigured, User, Session } from '../lib/supabase';
 import { Profile } from '../types';
 import { getProfileById, updateStudentProfile } from '../lib/showcaseStore';
 import { fetchGitHubUserData, setActiveGitHubToken } from '../lib/github';
+import { completeOAuthCallback } from '../lib/authCallback';
 
 interface AuthContextType {
   user: User | null;
@@ -37,6 +38,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Check for OAuth error parameters in URL on mount
   useEffect(() => {
     try {
+      const storedError = sessionStorage.getItem('gitshowcase_auth_error');
+      if (storedError) {
+        setAuthError(storedError);
+        sessionStorage.removeItem('gitshowcase_auth_error');
+      }
       const searchParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
       
@@ -108,67 +114,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Cross-window popup authentication handler
-  useEffect(() => {
-    const handleAuthMessage = async (event: MessageEvent) => {
-      if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
-        if (isSupabaseConfigured && supabase) {
-          try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-              setSession(session);
-              setUser(session.user);
-              const tok = session.provider_token || null;
-              if (tok) {
-                setGithubToken(tok);
-              }
-              await loadProfile(session.user.id, session.user, tok);
-            }
-          } catch (err) {
-            console.error('Error handling popup auth session:', err);
-          }
-        }
-      }
-    };
-
-    window.addEventListener('message', handleAuthMessage);
-    return () => window.removeEventListener('message', handleAuthMessage);
-  }, [loadProfile]);
-
-  // Popup closer detection: If this window was opened as a popup and contains auth callback tokens
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.opener) {
-      const hash = window.location.hash || '';
-      const search = window.location.search || '';
-      if (
-        hash.includes('access_token=') || 
-        hash.includes('refresh_token=') || 
-        search.includes('code=') ||
-        hash.includes('type=recovery')
-      ) {
-        const timer = setTimeout(() => {
-          try {
-            window.opener.postMessage({ type: 'SUPABASE_AUTH_SUCCESS' }, '*');
-          } catch (e) {
-            console.error('Error communicating with opener window:', e);
-          }
-          try {
-            window.close();
-          } catch (e) {
-            console.error('Error closing popup window:', e);
-          }
-        }, 500);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, []);
-
   // Initialize auth state with deduplicated session and listener handling
   useEffect(() => {
     let mounted = true;
     let lastLoadedUserId: string | null = null;
 
     async function initAuth() {
+      if (window.location.pathname === '/auth/callback') {
+        if (!isSupabaseConfigured || !supabase) {
+          sessionStorage.setItem('gitshowcase_auth_error', 'GitHub sign-in is not configured yet.');
+          window.location.replace('/signin');
+          return;
+        }
+        const result = await completeOAuthCallback(window.location.search, (code) => supabase.auth.exchangeCodeForSession(code));
+        if (result.status === 'success') {
+          window.location.replace('/dashboard');
+        } else {
+          sessionStorage.setItem('gitshowcase_auth_error', result.message);
+          window.location.replace('/signin');
+        }
+        return;
+      }
       if (isSupabaseConfigured && supabase) {
         try {
           const { data: { session } } = await supabase.auth.getSession();
@@ -231,13 +197,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const redirectUrl = `${window.location.origin}/dashboard`;
+      const redirectUrl = `${window.location.origin}/auth/callback`;
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
           scopes: 'read:user repo',
           redirectTo: redirectUrl,
-          skipBrowserRedirect: true,
         },
       });
 
@@ -246,26 +211,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      if (data?.url) {
-        const width = 600;
-        const height = 750;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-
-        const authWindow = window.open(
-          data.url,
-          'github_oauth_popup',
-          `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes`
-        );
-
-        if (!authWindow || authWindow.closed || typeof authWindow.closed === 'undefined') {
-          if (window.top === window.self) {
-            window.location.href = data.url;
-          } else {
-            alert('Please allow popups for this site in your browser to sign in with GitHub.');
-          }
-        }
-      }
     } catch (err) {
       console.error('signInWithGitHub failed:', err);
       throw err;

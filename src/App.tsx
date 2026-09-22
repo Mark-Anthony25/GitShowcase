@@ -6,6 +6,7 @@ import { DashboardView } from './components/DashboardView';
 import { PublicProfileView } from './components/PublicProfileView';
 import { ExploreView } from './components/ExploreView';
 import { AuthGateView } from './components/AuthGateView';
+import { AuthCallbackView } from './components/AuthCallbackView';
 import { SupabaseGuideModal } from './components/SupabaseGuideModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { Profile } from './types';
@@ -50,6 +51,7 @@ function AppContent() {
 
   // Route resolution
   const renderCurrentView = () => {
+    if (currentPath === '/auth/callback') return <AuthCallbackView />;
     // 1. Check for /u/[username]
     if (currentPath.startsWith('/u/')) {
       const rawUsername = currentPath.replace('/u/', '').split('/')[0].split('?')[0].split('#')[0];
@@ -73,6 +75,9 @@ function AppContent() {
         />
       );
     }
+
+    if (currentPath === '/signin') return <AuthGateView navigate={navigate} onOpenGuide={() => setIsGuideOpen(true)} />;
+    if (currentPath === '/signup') return <AuthGateView navigate={navigate} onOpenGuide={() => setIsGuideOpen(true)} mode="signup" />;
 
     // 3. Check for /explore
     if (currentPath === '/explore') {

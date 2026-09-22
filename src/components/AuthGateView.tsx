@@ -5,9 +5,10 @@ import { useAuth } from '../context/AuthContext';
 interface AuthGateViewProps {
   navigate: (route: string) => void;
   onOpenGuide: () => void;
+  mode?: 'signin' | 'signup';
 }
 
-export const AuthGateView: React.FC<AuthGateViewProps> = ({ navigate, onOpenGuide }) => {
+export const AuthGateView: React.FC<AuthGateViewProps> = ({ navigate, onOpenGuide, mode = 'signin' }) => {
   const { signInWithGitHub } = useAuth();
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,10 +37,10 @@ export const AuthGateView: React.FC<AuthGateViewProps> = ({ navigate, onOpenGuid
       </div>
       <div className="space-y-1">
         <h1 className="text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
-          Sign In To Open Your Project Desk
+          {mode === 'signup' ? 'Create Your Portfolio' : 'Sign In To Open Your Project Desk'}
         </h1>
         <p className="text-xs sm:text-sm font-serif-body text-stone-700 leading-relaxed">
-          Your dashboard is where you set up your profile and choose repositories to publish.
+          {mode === 'signup' ? 'New here? GitHub creates your portfolio account on first sign-in. Already have an account? You will be signed in instead.' : 'Returning to GitShowcase? Continue with the GitHub account you already use.'}
         </p>
       </div>
       {error && (
@@ -54,7 +55,7 @@ export const AuthGateView: React.FC<AuthGateViewProps> = ({ navigate, onOpenGuid
           className="paper-button paper-button-dark text-xs py-2 px-4 font-bold flex items-center space-x-1.5"
         >
           {signingIn ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Github className="w-3.5 h-3.5" />}
-          <span>{signingIn ? 'Opening GitHub...' : 'Sign In With GitHub'}</span>
+          <span>{signingIn ? 'Opening GitHub...' : mode === 'signup' ? 'Create Account With GitHub' : 'Continue With GitHub'}</span>
         </button>
         <button
           onClick={() => navigate('/explore')}
