@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { GitCommit, Flame, Award, TrendingUp, RefreshCw, AlertCircle, ExternalLink } from 'lucide-react';
 import { ContributionCalendar, ContributionDay } from '../types';
 import { fetchGitHubContributions } from '../lib/github';
@@ -329,7 +330,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
           </div>
 
           {/* Interactive Day Tooltip */}
-          {hoveredDay && (
+          {hoveredDay && createPortal(
             <div
               className="fixed z-50 pointer-events-none px-2.5 py-1.5 paper-card bg-[#212121] text-[#FEFCF6] text-[11px] font-mono shadow-[2px_2px_0px_#000] whitespace-nowrap"
               style={{
@@ -341,7 +342,8 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                 {hoveredDay.day.count} {hoveredDay.day.count === 1 ? 'contribution' : 'contributions'}
               </div>
               <div className="text-stone-300 text-[10px]">{formatDate(hoveredDay.day.date)}</div>
-            </div>
+            </div>,
+            document.body,
           )}
 
           {/* Metric Summary Cards */}
