@@ -30,11 +30,18 @@ const TOOLTIP_GAP = 8;
 const VIEWPORT_PADDING = 8;
 
 export function getTooltipPosition(rect: TooltipRect, viewport: ViewportSize) {
+  const rightOfCell = rect.left + rect.width + TOOLTIP_GAP;
+  const leftOfCell = rect.left - TOOLTIP_WIDTH - TOOLTIP_GAP;
+  const maxLeft = Math.max(VIEWPORT_PADDING, viewport.width - TOOLTIP_WIDTH - VIEWPORT_PADDING);
   const left = Math.floor(
-    Math.min(
-      Math.max(VIEWPORT_PADDING, rect.left + rect.width / 2 - TOOLTIP_WIDTH / 2),
-      Math.max(VIEWPORT_PADDING, viewport.width - TOOLTIP_WIDTH - VIEWPORT_PADDING),
-    ),
+    rightOfCell + TOOLTIP_WIDTH <= viewport.width - VIEWPORT_PADDING
+      ? rightOfCell
+      : leftOfCell >= VIEWPORT_PADDING
+        ? leftOfCell
+        : Math.min(
+            Math.max(VIEWPORT_PADDING, rect.left + rect.width / 2 - TOOLTIP_WIDTH / 2),
+            maxLeft,
+          ),
   );
   const aboveTop = rect.top - TOOLTIP_HEIGHT - TOOLTIP_GAP;
   const top = aboveTop >= VIEWPORT_PADDING
