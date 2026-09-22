@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "tsx src/lib/__tests__/authCallback.test.ts && tsx src/lib/__tests__/cache.test.ts && tsx src/lib/__tests__/profileUpdateAndProjects.test.ts && tsx src/lib/__tests__/demoData.test.ts && tsx src/lib/__tests__/showcaseErrors.test.ts && tsx src/lib/__tests__/showcaseStore.test.ts && tsx src/components/__tests__/CommitHeatmap.test.ts"
+    "test": "tsx src/lib/__tests__/authCallback.test.ts && tsx src/lib/__tests__/projectStats.test.ts && tsx src/lib/__tests__/cache.test.ts && tsx src/lib/__tests__/profileUpdateAndProjects.test.ts && tsx src/lib/__tests__/demoData.test.ts && tsx src/lib/__tests__/showcaseErrors.test.ts && tsx src/lib/__tests__/showcaseStore.test.ts && tsx src/components/__tests__/CommitHeatmap.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

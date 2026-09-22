@@ -6,6 +6,7 @@ import {
 import { StudentShowcaseData, ShowcasedProject } from '../types';
 import { getAllStudentsShowcase } from '../lib/showcaseStore';
 import { DEGREE_PROGRAM_OPTIONS, matchesProgramFilter, getProgramBadgeLabel } from '../lib/programs';
+import { getStarCountLabel } from '../lib/projectStats';
 import { useAuth } from '../context/AuthContext';
 
 interface ExploreViewProps {
@@ -345,7 +346,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                         )}
                         <span className="flex items-center space-x-0.5" title="Actual GitHub Stars">
                           <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-700" />
-                          <span>{project.live_stats !== undefined ? project.live_stats.stars : '...'}</span>
+                          <span>{getStarCountLabel(project.live_stats)}</span>
                         </span>
                         {project.live_stats && (
                           <span className="flex items-center space-x-0.5" title="GitHub Forks">

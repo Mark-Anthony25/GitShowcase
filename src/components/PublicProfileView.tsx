@@ -9,6 +9,7 @@ import { getStudentShowcaseByUsername, deduplicateProjectsList, ShowcaseLoadErro
 import { CommitHeatmap } from './CommitHeatmap';
 import { useAuth } from '../context/AuthContext';
 import { DEGREE_PROGRAM_OPTIONS, getCanonicalProgram } from '../lib/programs';
+import { getStarCountLabel } from '../lib/projectStats';
 
 interface PublicProfileViewProps {
   username: string;
@@ -737,7 +738,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
           )}
           <span className="flex items-center space-x-0.5" title="Actual GitHub Stars">
             <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-700" />
-            <span>{stats !== undefined ? stats.stars : '...'}</span>
+            <span>{getStarCountLabel(stats)}</span>
           </span>
           {stats && (
             <span className="flex items-center space-x-0.5" title="GitHub Forks">

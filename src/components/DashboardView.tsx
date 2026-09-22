@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
+import { getStarCountLabel } from '../lib/projectStats';
 import { GitHubRepoItem, ShowcasedProject } from '../types';
 import { fetchUserRepos } from '../lib/github';
 import { 
@@ -429,7 +430,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                       )}
                       <span className="flex items-center space-x-0.5" title="Actual GitHub Stars">
                         <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-700" />
-                        <span>{proj.live_stats !== undefined ? proj.live_stats.stars : '...'}</span>
+                        <span>{getStarCountLabel(proj.live_stats)}</span>
                       </span>
                       {proj.live_stats && (
                         <span className="flex items-center space-x-0.5" title="GitHub Forks">
