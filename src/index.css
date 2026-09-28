@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+:root {
+  --paper-canvas: #D8C6A2;
+  --paper-sheet: #F6EBD5;
+  --paper-panel: #EBD9B8;
+  --paper-ink: #342018;
+  --paper-primary: #7A2E25;
+  --paper-primary-hover: #602018;
+  --paper-highlight: #B7863F;
+  --paper-focus: #D4A551;
+  --motion-fast: 120ms;
+  --motion-panel: 180ms;
+  --motion-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
 @layer base {
   *, *::before, *::after {
     box-sizing: border-box;
@@ -11,8 +25,8 @@
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
-    background-color: #F7F3E9;
-    color: #212121;
+    background-color: var(--paper-canvas);
+    color: var(--paper-ink);
     font-family: 'Neucha', 'Patrick Hand', 'Newsreader', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-size: 14px;
     line-height: 1.5;
@@ -78,7 +92,7 @@
   font-family: 'Patrick Hand', 'Newsreader', Georgia, serif;
   font-weight: 500;
   line-height: 1.5;
-  color: #212121;
+  color: var(--paper-ink);
 }
 
 @media (max-width: 639px) {
@@ -102,75 +116,66 @@
 /* Paper sheet & card custom styles */
 @layer components {
   .paper-sheet {
-    background-color: #FEFCF6;
+    background-color: var(--paper-sheet);
     border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
-    border: 1.5px solid #212121;
-    box-shadow: 2.5px 2.5px 0px rgba(0, 0, 0, 0.85);
+    border: 1.5px solid var(--paper-ink);
     max-width: 100%;
   }
 
   @media (min-width: 640px) {
     .paper-sheet {
-      border: 2px solid #212121;
-      box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.85);
+      border: 2px solid var(--paper-ink);
     }
   }
 
   @media (min-width: 1024px) {
     .paper-sheet {
-      border: 2px solid #212121;
-      box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.9);
+      border: 2px solid var(--paper-ink);
     }
   }
 
   .paper-card {
-    background-color: #FEFCF6;
+    background-color: var(--paper-sheet);
     border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
-    border: 1.5px solid #212121;
-    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.85);
-    transition: all 0.12s ease-in-out;
+    border: 1.5px solid var(--paper-ink);
+    transition: transform var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease);
     max-width: 100%;
   }
 
   @media (max-width: 360px) {
     .paper-sheet {
       border-radius: 160px 10px 140px 10px/10px 140px 10px 160px;
-      box-shadow: 1.5px 1.5px 0px rgba(0, 0, 0, 0.85);
     }
     .paper-card {
       border-radius: 160px 10px 140px 10px/10px 140px 10px 160px;
-      box-shadow: 1.5px 1.5px 0px rgba(0, 0, 0, 0.85);
     }
   }
 
   @media (min-width: 640px) {
     .paper-card {
-      border: 1.5px solid #212121;
-      box-shadow: 2.5px 2.5px 0px rgba(0, 0, 0, 0.85);
+      border: 1.5px solid var(--paper-ink);
     }
   }
 
   @media (min-width: 1024px) {
     .paper-card {
-      border: 1.5px solid #212121;
-      box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.85);
+      border: 1.5px solid var(--paper-ink);
     }
   }
 
   .paper-card:hover {
     transform: translateY(-1.5px);
-    box-shadow: 3.5px 4px 0px rgba(0, 0, 0, 0.85);
+    background-color: var(--paper-panel) !important;
   }
 
   .paper-input {
     border-radius: 255px 15px 225px 15px/15px 225px 15px 255px !important;
-    border: 1.5px solid #212121 !important;
-    background-color: #FFFFFF !important;
-    box-shadow: 1.5px 1.5px 0px rgba(0,0,0,0.3) !important;
+    border: 1.5px solid var(--paper-ink) !important;
+    background-color: #FFF8E7 !important;
     min-height: 36px;
     padding: 0.35rem 0.65rem;
     font-size: 0.8125rem;
-    transition: all 0.12s ease;
+    transition: border-color var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease), outline-color var(--motion-fast) var(--motion-ease);
   }
 
   @media (max-width: 639px) {
@@ -197,9 +202,9 @@
   }
 
   .paper-input:focus {
-    outline: none !important;
-    box-shadow: 2.5px 2.5px 0px #212121 !important;
-    border-color: #212121 !important;
+    border-color: var(--paper-primary) !important;
+    outline: 2px solid var(--paper-focus);
+    outline-offset: 1px;
   }
 
   .paper-button {
@@ -214,16 +219,15 @@
     font-size: 0.75rem;
     padding: 0.35rem 0.85rem;
     min-height: 34px;
-    border: 1.5px solid #212121;
+    border: 1.5px solid var(--paper-ink);
     border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
-    background-color: #FEFCF6;
-    color: #212121;
-    box-shadow: 2px 2px 0px #212121;
+    background-color: var(--paper-sheet);
+    color: var(--paper-ink);
     cursor: pointer;
     touch-action: manipulation;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    transition: all 0.1s ease-in-out;
+    transition: transform var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease);
   }
 
   @media (min-width: 1024px) {
@@ -240,29 +244,27 @@
       font-size: 0.85rem;
       padding: 0.5rem 1.15rem;
       min-height: 40px;
-      box-shadow: 2.5px 2.5px 0px #212121;
     }
   }
 
   .paper-button:hover:not(:disabled) {
     transform: translate(-1px, -1px);
-    box-shadow: 3px 3px 0px #212121;
+    background-color: var(--paper-panel);
+    border-color: var(--paper-primary);
   }
 
   .paper-button:active:not(:disabled) {
-    transform: translate(1.5px, 1.5px);
-    box-shadow: 0.5px 0.5px 0px #212121;
+    transform: translate(0, 0) scale(0.99);
   }
 
   .paper-button:focus-visible {
-    outline: 2px solid #92400E;
+    outline: 2px solid var(--paper-focus);
     outline-offset: 1.5px;
   }
 
   .paper-button:disabled {
     opacity: 0.55;
     cursor: not-allowed;
-    box-shadow: 1px 1px 0px #212121;
     transform: none !important;
   }
 
@@ -274,16 +276,15 @@
     padding: 0.35rem;
     min-width: 32px;
     min-height: 32px;
-    border: 1.5px solid #212121;
+    border: 1.5px solid var(--paper-ink);
     border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
-    background-color: #FEFCF6;
-    color: #212121;
-    box-shadow: 1.5px 1.5px 0px #212121;
+    background-color: var(--paper-sheet);
+    color: var(--paper-ink);
     cursor: pointer;
     touch-action: manipulation;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    transition: all 0.1s ease-in-out;
+    transition: transform var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease);
   }
 
   @media (min-width: 1024px) {
@@ -299,48 +300,48 @@
       min-width: 38px;
       min-height: 38px;
       padding: 0.5rem;
-      box-shadow: 2px 2px 0px #212121;
     }
   }
 
   .paper-button-icon:hover:not(:disabled) {
     transform: translate(-1px, -1px);
-    box-shadow: 2.5px 2.5px 0px #212121;
+    background-color: var(--paper-panel);
+    border-color: var(--paper-primary);
   }
 
   .paper-button-icon:active:not(:disabled) {
-    transform: translate(1px, 1px);
-    box-shadow: 0.5px 0.5px 0px #212121;
+    transform: translate(0, 0) scale(0.99);
   }
 
   .paper-button-icon:focus-visible {
-    outline: 2px solid #92400E;
+    outline: 2px solid var(--paper-focus);
     outline-offset: 1.5px;
   }
 
   .paper-button-icon:disabled {
     opacity: 0.55;
     cursor: not-allowed;
-    box-shadow: 1px 1px 0px #212121;
     transform: none !important;
   }
 
   .paper-button-dark {
-    background-color: #212121;
-    color: #FEFCF6;
-  }
-
-  .paper-button-dark:hover {
-    background-color: #383838;
-  }
-
-  .paper-button-primary {
-    background-color: #0071de;
+    background-color: var(--paper-primary);
     color: #FFFFFF;
   }
 
-  .paper-button-primary:hover {
-    background-color: #005bb5;
+  .paper-button.paper-button-dark:hover {
+    background-color: var(--paper-primary-hover);
+    color: #FFFFFF;
+  }
+
+  .paper-button-primary {
+    background-color: var(--paper-primary);
+    color: #FFFFFF;
+  }
+
+  .paper-button.paper-button-primary:hover {
+    background-color: var(--paper-primary-hover);
+    color: #FFFFFF;
   }
 
   .paper-button-success {
@@ -357,15 +358,14 @@
     display: inline-flex;
     align-items: center;
     border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
-    border: 1.5px solid #212121;
+    border: 1.5px solid var(--paper-ink);
     padding: 0.08rem 0.45rem;
     font-family: 'Neucha', monospace;
     font-size: 0.6875rem;
     font-weight: 700;
     line-height: 1.2;
-    background-color: #EFE9DB;
-    color: #212121;
-    box-shadow: 1px 1px 0px #212121;
+    background-color: #E6D0A2;
+    color: var(--paper-ink);
   }
 
   @media (min-width: 1024px) {
@@ -384,12 +384,12 @@
 
   /* Sketchy dividers & lines */
   .paper-divider {
-    border-bottom: 1.5px dashed #212121;
+    border-bottom: 1.5px dashed var(--paper-ink);
     margin: 1rem 0;
   }
 
   .paper-divider-solid {
-    border-bottom: 1.5px solid #212121;
+    border-bottom: 1.5px solid var(--paper-ink);
     margin: 0.85rem 0;
   }
 
@@ -405,11 +405,93 @@
     transform: translateX(-50%) rotate(-2deg);
     width: 75px;
     height: 18px;
-    background-color: rgba(235, 230, 210, 0.75);
-    border: 1px dashed #B8B09C;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+    background-color: rgba(236, 216, 174, 0.75);
+    border: 1px dashed #9F8355;
     z-index: 10;
   }
+}
+
+@keyframes paper-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes paper-panel-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes paper-menu-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.paper-motion-overlay {
+  animation: paper-overlay-in var(--motion-fast) var(--motion-ease) both;
+}
+
+.paper-motion-panel {
+  animation: paper-panel-in var(--motion-panel) var(--motion-ease) both;
+}
+
+.paper-motion-menu {
+  animation: paper-menu-in var(--motion-panel) var(--motion-ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paper-card,
+  .paper-input,
+  .paper-button,
+  .paper-button-icon {
+    transition-duration: 1ms !important;
+  }
+
+  .paper-motion-overlay,
+  .paper-motion-panel,
+  .paper-motion-menu {
+    animation-duration: 1ms !important;
+  }
+}
+
+/* Vintage newspaper bridge for existing PaperCSS utility surfaces. */
+[class*="bg-[#F0EBE1]"],
+[class*="bg-[#F7F3E9]"] {
+  background-color: var(--paper-canvas) !important;
+}
+
+[class*="bg-[#FEFCF6]"] {
+  background-color: var(--paper-sheet) !important;
+}
+
+[class*="bg-[#FAF6EC]"],
+[class*="bg-[#F3EDE0]"],
+[class*="hover:bg-[#FAF6EC]"]:hover {
+  background-color: var(--paper-panel) !important;
+}
+
+[class*="bg-[#EFE9DB]"] {
+  background-color: #E6D0A2 !important;
+}
+
+[class*="bg-[#EFF6FF]"] {
+  background-color: #F1E4C8 !important;
+}
+
+[class*="text-[#212121]"] {
+  color: var(--paper-ink) !important;
+}
+
+[class*="border-[#212121]"] {
+  border-color: var(--paper-ink) !important;
+}
+
+[class*="bg-[#0071DE]"] {
+  background-color: var(--paper-primary) !important;
+}
+
+[class*="hover:text-[#0071DE]"]:hover,
+[class~="text-blue-800"] {
+  color: var(--paper-primary) !important;
 }
 
 

@@ -91,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
     }`;
 
   return (
-    <header className="w-full bg-[#FEFCF6] border-1.5 border-[#212121] text-[#212121] select-none p-1.5 sm:p-2.5 mb-2.5 sm:mb-3 relative z-30 shadow-[2px_2px_0px_rgba(0,0,0,0.85)] rounded-[255px_15px_225px_15px/15px_225px_15px_255px]">
+    <header className="w-full bg-[#FEFCF6] border-1.5 border-[#212121] text-[#212121] select-none p-1.5 sm:p-2.5 mb-2.5 sm:mb-3 relative z-30 rounded-[255px_15px_225px_15px/15px_225px_15px_255px]">
       {/* Top Utility Bar */}
       <div className="flex items-center justify-between border-b border-dashed border-[#212121] px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-sketch uppercase tracking-wider text-stone-700 bg-[#FAF6EC] gap-1">
         <span className="truncate max-w-[150px] sm:max-w-none font-bold">ISU Cauayan</span>
@@ -107,7 +107,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
           onClick={() => navigate('/')}
           className="text-left group cursor-pointer flex items-center space-x-2 sm:space-x-3 shrink-0 focus:outline-none"
         >
-          <div className="w-8 h-8 sm:w-9 sm:h-9 border-1.5 sm:border-2 border-[#212121] bg-[#FEFCF6] text-[#212121] flex items-center justify-center flex-shrink-0 shadow-[1.5px_1.5px_0px_#212121] sm:shadow-[2px_2px_0px_#212121] rounded-xs group-hover:bg-[#FAF6EC] transition-colors">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 border-1.5 sm:border-2 border-[#212121] bg-[#FEFCF6] text-[#212121] flex items-center justify-center flex-shrink-0 rounded-xs group-hover:bg-[#FAF6EC] transition-colors">
             <Github className="w-4 h-4 sm:w-5 sm:h-5 text-[#212121] stroke-[2]" />
           </div>
           <div className="min-w-0">
@@ -127,7 +127,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
               Home
             </button>
             <button id="nav-explore-btn" onClick={() => navigate('/explore')} className={navBtnClass('/explore')}>
-              <Compass className="w-3.5 h-3.5 mr-1 flex-shrink-0" /><span>Browse Projects</span>
+              <Compass className="w-3.5 h-3.5 mr-1 flex-shrink-0" /><span>Projects</span>
             </button>
             {user && (
               <button id="nav-dashboard-btn" onClick={() => navigate('/dashboard')} className={navBtnClass('/dashboard')}>
@@ -173,7 +173,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                   aria-labelledby="user-menu-btn"
                   className="absolute right-0 top-full pt-1.5 w-56 z-50 animate-in fade-in duration-100"
                 >
-                  <div className="w-full bg-[#FEFCF6] border-2 border-[#212121] shadow-[4px_4px_0px_#212121] p-1.5 rounded-[255px_15px_225px_15px/15px_225px_15px_255px]">
+                  <div className="w-full bg-[#FEFCF6] border-2 border-[#212121] p-1.5 rounded-[255px_15px_225px_15px/15px_225px_15px_255px]">
                     <div className="p-2 border-b border-dashed border-[#212121] mb-1 bg-[#FAF6EC] rounded-xs">
                       <p className="text-xs font-bold font-headline uppercase text-[#212121] truncate">{profile?.full_name || 'Student Author'}</p>
                       <p className="text-[10px] font-mono text-stone-700 truncate">@{profile?.github_username || 'student'}</p>
@@ -214,17 +214,14 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
               )}
             </div>
           ) : (
-            <div className="flex items-center space-x-2">
-              <button onClick={() => navigate('/signin')} className="paper-button text-xs py-1.5 px-3 font-bold cursor-pointer min-h-[34px] bg-[#FEFCF6] text-[#212121] hover:bg-[#FAF6EC]">Sign In</button>
-              <button onClick={() => navigate('/signup')} className="paper-button paper-button-dark text-xs py-1.5 px-3 font-bold cursor-pointer min-h-[34px]">Create Portfolio</button>
-            </div>
+            <button onClick={handleGitHubSignIn} className="paper-button paper-button-dark text-xs py-1.5 px-3 font-bold cursor-pointer min-h-[34px]">Continue With GitHub</button>
           )}
         </div>
 
         {/* Mobile: avatar thumbnail + hamburger */}
         <div className="flex lg:hidden items-center space-x-1.5 flex-shrink-0">
           {user && (
-            <div className="w-7 h-7 border-1.5 border-[#212121] bg-stone-300 overflow-hidden flex-shrink-0 rounded-xs shadow-[1px_1px_0px_#212121]">
+            <div className="w-7 h-7 border-1.5 border-[#212121] bg-stone-300 overflow-hidden flex-shrink-0 rounded-xs">
               <img
                 src={profile?.avatar_url || `https://github.com/${profile?.github_username || 'ghost'}.png`}
                 alt={profile?.github_username || 'Avatar'}
@@ -246,7 +243,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
       {/* Mobile Navigation Modal / Backdrop */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 bg-[#212121]/70 backdrop-blur-xs lg:hidden animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 bg-[#57534E]/45 lg:hidden paper-motion-overlay"
           role="dialog"
           aria-modal="true"
           aria-label="Mobile Navigation Menu"
@@ -254,11 +251,11 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
             if (e.target === e.currentTarget) setMobileMenuOpen(false);
           }}
         >
-          <div className="w-full max-w-sm bg-[#FEFCF6] border-2 border-[#212121] shadow-[4px_4px_0px_#212121] paper-card p-3 sm:p-4 space-y-3 mt-2 animate-in zoom-in-95 duration-150">
+          <div className="w-full max-w-sm bg-[#FEFCF6] border-2 border-[#212121] paper-card paper-motion-menu p-3 sm:p-4 space-y-3 mt-2">
             {/* Modal Top Masthead */}
             <div className="flex items-center justify-between border-b border-dashed border-[#212121] pb-2">
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 border-1.5 border-[#212121] bg-[#FEFCF6] text-[#212121] flex items-center justify-center rounded-xs shadow-[1px_1px_0px_#212121]">
+                <div className="w-6 h-6 border-1.5 border-[#212121] bg-[#FEFCF6] text-[#212121] flex items-center justify-center rounded-xs">
                   <Github className="w-3.5 h-3.5 text-[#212121] stroke-[2]" />
                 </div>
                 <span className="font-newspaper-title font-[900] uppercase text-sm text-[#212121] tracking-tight">Navigation</span>
@@ -284,7 +281,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                 onClick={() => { setMobileMenuOpen(false); navigate('/explore'); }}
                 className={`${navBtnClass('/explore')} w-full min-h-[38px] text-xs justify-start px-3`}
               >
-                <Compass className="w-3.5 h-3.5 mr-2 flex-shrink-0" /><span>Browse Projects</span>
+                <Compass className="w-3.5 h-3.5 mr-2 flex-shrink-0" /><span>Projects</span>
               </button>
               {user && (
                 <button
@@ -327,10 +324,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
               </div>
             ) : (
               <div className="flex flex-col gap-2 pt-0.5">
-                <button onClick={() => { setMobileMenuOpen(false); navigate('/signin'); }} className="paper-button text-xs py-2 px-3 font-bold cursor-pointer justify-center min-h-[36px] w-full bg-[#FEFCF6] text-[#212121] hover:bg-[#FAF6EC]">
-                  <span>Sign In</span>
-                </button>
-                <button onClick={() => { setMobileMenuOpen(false); navigate('/signup'); }} className="paper-button paper-button-dark text-xs py-2 px-3 font-bold cursor-pointer justify-center min-h-[36px] w-full"><span>Create Portfolio</span></button>
+                <button onClick={() => { setMobileMenuOpen(false); handleGitHubSignIn(); }} className="paper-button paper-button-dark text-xs py-2 px-3 font-bold cursor-pointer justify-center min-h-[36px] w-full"><span>Continue With GitHub</span></button>
               </div>
             )}
           </div>

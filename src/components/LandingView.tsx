@@ -84,7 +84,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
     <div className="space-y-5 sm:space-y-7 pb-8 sm:pb-10 text-[#212121] w-full max-w-full">
       {/* Auth Error Banner if OAuth exchange failed */}
       {authError && (
-        <div className="paper-card p-4 bg-rose-50 border-2 border-rose-600 shadow-[4px_4px_0px_#be123c] animate-in fade-in">
+        <div className="paper-card p-4 bg-rose-50 border-2 border-rose-600 animate-in fade-in">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start space-x-3">
               <AlertTriangle className="w-5 h-5 text-rose-600 mt-0.5 flex-shrink-0 stroke-[2]" />
@@ -102,7 +102,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
             </div>
             <button
               onClick={clearAuthError}
-              className="paper-button-icon min-w-[32px] min-h-[32px] p-1 text-rose-800 hover:text-black cursor-pointer flex-shrink-0"
+              className="paper-button-icon min-w-[32px] min-h-[32px] p-1 text-rose-800 hover:text-[#0071DE] cursor-pointer flex-shrink-0"
               aria-label="Dismiss error"
             >
               <X className="w-4 h-4 stroke-[2]" />
@@ -141,25 +141,22 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
             ) : (
               <>
                 <button
-                  id="hero-browse-btn"
-                  onClick={() => navigate('/explore')}
-                  className="paper-button paper-button-dark text-xs lg:text-sm py-2 lg:py-2.5 px-4 text-white justify-center min-h-[38px] lg:min-h-[42px] font-bold"
+                  id="hero-github-signin-btn"
+                  onClick={handleGitHubSignIn}
+                  className="paper-button paper-button-dark text-xs lg:text-sm py-2 lg:py-2.5 px-4 justify-center min-h-[38px] lg:min-h-[42px] font-bold"
                 >
-                  <Compass className="w-4 h-4 mr-1.5 flex-shrink-0 stroke-[2]" />
-                  <span>Browse Projects</span>
+                  <Github className="w-4 h-4 mr-1.5 flex-shrink-0 stroke-[2]" />
+                  <span>Continue With GitHub</span>
                   <ArrowRight className="w-3.5 h-3.5 ml-1.5 flex-shrink-0 stroke-[2]" />
                 </button>
 
                 <button
-                  id="hero-github-signin-btn"
-                  onClick={() => navigate('/signin')}
+                  id="hero-browse-btn"
+                  onClick={() => navigate('/explore')}
                   className="paper-button text-xs lg:text-sm py-2 lg:py-2.5 px-4 justify-center min-h-[38px] lg:min-h-[42px] font-bold text-[#212121] bg-[#FEFCF6]"
                 >
-                  <Github className="w-3.5 h-3.5 text-[#212121] mr-1.5 flex-shrink-0 stroke-[2]" />
-                  <span>Sign In</span>
-                </button>
-                <button onClick={() => navigate('/signup')} className="paper-button paper-button-dark text-xs lg:text-sm py-2 lg:py-2.5 px-4 justify-center min-h-[38px] lg:min-h-[42px] font-bold">
-                  <Github className="w-3.5 h-3.5 mr-1.5" /><span>Create Portfolio</span>
+                  <Compass className="w-3.5 h-3.5 text-[#212121] mr-1.5 flex-shrink-0 stroke-[2]" />
+                  <span>Browse Projects</span>
                 </button>
               </>
             )}
@@ -179,7 +176,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
           {previewProjects.length > 0 && (
             <button
               onClick={() => navigate('/explore')}
-              className="text-[11px] sm:text-xs lg:text-sm font-headline uppercase tracking-wider text-stone-800 hover:text-black underline cursor-pointer font-bold flex-shrink-0 ml-2"
+              className="text-[11px] sm:text-xs lg:text-sm font-headline uppercase tracking-wider text-stone-800 hover:text-[#0071DE] underline cursor-pointer font-bold flex-shrink-0 ml-2"
             >
               Browse All Projects ({previewProjects.length}) &rarr;
             </button>
@@ -231,7 +228,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                 <div className="pt-1.5 border-t border-dashed border-[#212121]/50 flex items-center justify-between text-[11px]">
                   <button
                     onClick={() => navigate(`/u/${proj.author}`)}
-                    className="text-stone-800 hover:text-black font-headline uppercase tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold truncate max-w-[150px]"
+                    className="text-stone-800 hover:text-[#0071DE] font-headline uppercase tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold truncate max-w-[150px]"
                   >
                     <span>@{proj.author}</span>
                   </button>
@@ -239,7 +236,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                     href={proj.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-stone-700 hover:text-black flex items-center space-x-0.5 font-mono text-[10px] font-bold cursor-pointer"
+                    className="text-stone-700 hover:text-[#0071DE] flex items-center space-x-0.5 font-mono text-[10px] font-bold cursor-pointer"
                     title="View GitHub Repository"
                   >
                     <span>Repo</span>
@@ -263,10 +260,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-3.5 md:gap-4">
           <div className="p-3 sm:p-4 paper-card bg-[#FEFCF6] space-y-2 min-w-0">
             <div className="flex items-center justify-between">
-              <span className="paper-badge bg-[#212121] text-[#FEFCF6] text-[9px] font-bold">
+              <span className="paper-badge bg-[#0071DE] text-[#FEFCF6] text-[9px] font-bold">
                 STEP 01
               </span>
-              <div className="w-6 h-6 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center shadow-[1px_1px_0px_#212121]">
+              <div className="w-6 h-6 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center">
                 <Github className="w-3.5 h-3.5 text-[#212121] stroke-[2]" />
               </div>
             </div>
@@ -280,10 +277,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
 
           <div className="p-3 sm:p-4 paper-card bg-[#FEFCF6] space-y-2 min-w-0">
             <div className="flex items-center justify-between">
-              <span className="paper-badge bg-[#212121] text-[#FEFCF6] text-[9px] font-bold">
+              <span className="paper-badge bg-[#0071DE] text-[#FEFCF6] text-[9px] font-bold">
                 STEP 02
               </span>
-              <div className="w-6 h-6 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center shadow-[1px_1px_0px_#212121]">
+              <div className="w-6 h-6 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center">
                 <User className="w-3.5 h-3.5 text-[#212121] stroke-[2]" />
               </div>
             </div>
@@ -297,10 +294,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
 
           <div className="p-3 sm:p-4 paper-card bg-[#FEFCF6] space-y-2 min-w-0">
             <div className="flex items-center justify-between">
-              <span className="paper-badge bg-[#212121] text-[#FEFCF6] text-[9px] font-bold">
+              <span className="paper-badge bg-[#0071DE] text-[#FEFCF6] text-[9px] font-bold">
                 STEP 03
               </span>
-              <div className="w-6 h-6 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center shadow-[1px_1px_0px_#212121]">
+              <div className="w-6 h-6 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center">
                 <FolderGit2 className="w-3.5 h-3.5 text-[#212121] stroke-[2]" />
               </div>
             </div>

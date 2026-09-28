@@ -219,7 +219,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
         <div className="border-b border-dashed border-[#212121] pb-3.5">
           <div className="space-y-1 min-w-0">
             <div className="flex items-center space-x-2">
-              <div className="w-7 h-7 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center shadow-[1.5px_1.5px_0px_#212121] flex-shrink-0">
+              <div className="w-7 h-7 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center flex-shrink-0">
                 <FolderGit2 className="w-4 h-4 text-[#212121] stroke-[2]" />
               </div>
               <span className="text-[10px] sm:text-xs font-sketch uppercase tracking-widest text-stone-700 font-bold">
@@ -237,7 +237,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
         {/* Project Telemetry Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-0.5">
-          <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+          <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121]">
             <div className="flex items-center justify-between text-stone-700">
               <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Published Projects</span>
               <FolderGit2 className="w-3.5 h-3.5 text-stone-600" />
@@ -252,7 +252,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             </div>
           </div>
 
-          <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+          <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121]">
             <div className="flex items-center justify-between text-amber-900">
               <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Total Stars</span>
               <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-700" />
@@ -267,7 +267,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             </div>
           </div>
 
-          <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121] col-span-2 sm:col-span-1">
+          <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] col-span-2 sm:col-span-1">
             <div className="flex items-center justify-between text-stone-700">
               <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">GitHub Repositories</span>
               <Github className="w-3.5 h-3.5 text-stone-600" />
@@ -456,7 +456,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                   <div className="pt-2 border-t border-dashed border-[#212121] flex items-center justify-between text-xs font-mono">
                     <button
                       onClick={() => setPreviewProject(proj)}
-                      className="text-stone-800 hover:text-black font-bold flex items-center space-x-1 py-0.5 underline cursor-pointer"
+                      className="text-stone-800 hover:text-[#0071DE] font-bold flex items-center space-x-1 py-0.5 underline cursor-pointer"
                     >
                       <Eye className="w-3 h-3" />
                       <span>Preview</span>
@@ -468,7 +468,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                           href={proj.live_stats.homepage}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-stone-800 hover:text-black underline flex items-center space-x-0.5 font-bold"
+                          className="text-stone-800 hover:text-[#0071DE] underline flex items-center space-x-0.5 font-bold"
                           title="Visit live project URL"
                         >
                           <Globe className="w-3 h-3" />
@@ -479,7 +479,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                         href={proj.repo_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-stone-900 hover:text-black underline flex items-center space-x-0.5 font-bold"
+                        className="text-stone-900 hover:text-[#0071DE] underline flex items-center space-x-0.5 font-bold"
                         title="Open on GitHub"
                       >
                         <Github className="w-3.5 h-3.5" />
@@ -584,7 +584,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                         href={repo.html_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-stone-800 hover:text-black underline font-mono text-[11px] flex items-center space-x-0.5 font-bold"
+                        className="text-stone-800 hover:text-[#0071DE] underline font-mono text-[11px] flex items-center space-x-0.5 font-bold"
                       >
                         <span>GitHub</span>
                         <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
@@ -615,8 +615,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
       {/* MODAL 1: Add/Publish Project to Showcase */}
       {selectedRepoToAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/65 backdrop-blur-xs">
-          <div className="bg-[#FEFCF6] paper-card max-w-md w-full p-3.5 sm:p-5 space-y-3.5 shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] max-h-[90dvh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-[#57534E]/45 paper-motion-overlay">
+          <div className="bg-[#FEFCF6] paper-card paper-motion-panel max-w-md w-full p-3.5 sm:p-5 space-y-3.5 max-h-[90dvh] overflow-y-auto">
             <div className="flex items-start justify-between border-b border-dashed border-[#212121] pb-2 gap-2">
               <div className="min-w-0 flex-1">
                 <span className="text-[9px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
@@ -690,8 +690,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
       {/* MODAL 2: Edit Existing Project */}
       {editingProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/65 backdrop-blur-xs">
-          <div className="bg-[#FEFCF6] paper-card max-w-md w-full p-3.5 sm:p-5 space-y-3.5 shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] max-h-[90dvh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-[#57534E]/45 paper-motion-overlay">
+          <div className="bg-[#FEFCF6] paper-card paper-motion-panel max-w-md w-full p-3.5 sm:p-5 space-y-3.5 max-h-[90dvh] overflow-y-auto">
             <div className="flex items-start justify-between border-b border-dashed border-[#212121] pb-2 gap-2">
               <div className="min-w-0 flex-1">
                 <span className="text-[9px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
@@ -767,11 +767,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
       {/* MODAL 3: Preview Project Details */}
       {previewProject && (
         <div 
-          className="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-5"
+          className="fixed inset-0 bg-[#57534E]/45 z-50 flex items-center justify-center p-3 sm:p-5 paper-motion-overlay"
           onClick={() => setPreviewProject(null)}
         >
-          <div 
-            className="bg-[#FEFCF6] paper-card max-w-xl w-full p-4 sm:p-6 space-y-4 shadow-[6px_6px_0px_#000] max-h-[90vh] overflow-y-auto"
+          <div
+            className="bg-[#FEFCF6] paper-card paper-motion-panel max-w-xl w-full p-4 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-between items-start border-b border-dashed border-[#212121] pb-3">

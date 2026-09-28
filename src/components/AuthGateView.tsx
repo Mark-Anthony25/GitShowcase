@@ -8,7 +8,7 @@ interface AuthGateViewProps {
   mode?: 'signin' | 'signup';
 }
 
-export const AuthGateView: React.FC<AuthGateViewProps> = ({ navigate, onOpenGuide, mode = 'signin' }) => {
+export const AuthGateView: React.FC<AuthGateViewProps> = ({ navigate, onOpenGuide }) => {
   const { signInWithGitHub } = useAuth();
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,10 +37,10 @@ export const AuthGateView: React.FC<AuthGateViewProps> = ({ navigate, onOpenGuid
       </div>
       <div className="space-y-1">
         <h1 className="text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
-          {mode === 'signup' ? 'Create Your Portfolio' : 'Sign In To Open Your Project Desk'}
+          Continue With GitHub
         </h1>
         <p className="text-xs sm:text-sm font-serif-body text-stone-700 leading-relaxed">
-          {mode === 'signup' ? 'New here? GitHub creates your portfolio account on first sign-in. Already have an account? You will be signed in instead.' : 'Returning to GitShowcase? Continue with the GitHub account you already use.'}
+          Use your GitHub account to access your profile or create your portfolio on first sign-in.
         </p>
       </div>
       {error && (
@@ -55,7 +55,7 @@ export const AuthGateView: React.FC<AuthGateViewProps> = ({ navigate, onOpenGuid
           className="paper-button paper-button-dark text-xs py-2 px-4 font-bold flex items-center space-x-1.5"
         >
           {signingIn ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Github className="w-3.5 h-3.5" />}
-          <span>{signingIn ? 'Opening GitHub...' : mode === 'signup' ? 'Create Account With GitHub' : 'Continue With GitHub'}</span>
+          <span>{signingIn ? 'Opening GitHub...' : 'Continue With GitHub'}</span>
         </button>
         <button
           onClick={() => navigate('/explore')}

@@ -332,7 +332,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
           {/* Interactive Day Tooltip */}
           {hoveredDay && createPortal(
             <div
-              className="fixed z-50 pointer-events-none px-2.5 py-1.5 paper-card bg-[#212121] text-[#FEFCF6] text-[11px] font-mono shadow-[2px_2px_0px_#000] whitespace-nowrap"
+              className="fixed z-50 pointer-events-none px-2.5 py-1.5 paper-card bg-[#EFF6FF] text-[#212121] text-[11px] font-mono whitespace-nowrap"
               style={{
                 left: `${hoveredDay.left}px`,
                 top: `${hoveredDay.top}px`,
@@ -349,7 +349,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
           {/* Metric Summary Cards */}
           {showStats && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pt-1 border-t border-dashed border-[#212121]">
-              <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+              <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121]">
                 <div className="flex items-center justify-between text-stone-700">
                   <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Total Commits</span>
                   <GitCommit className="w-3.5 h-3.5 text-stone-600" />
@@ -364,7 +364,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                 </div>
               </div>
 
-              <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+              <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121]">
                 <div className="flex items-center justify-between text-amber-900">
                   <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Current Streak</span>
                   <Flame className="w-3.5 h-3.5 fill-amber-500 text-amber-700" />
@@ -379,7 +379,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                 </div>
               </div>
 
-              <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+              <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121]">
                 <div className="flex items-center justify-between text-stone-700">
                   <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Longest Streak</span>
                   <Award className="w-3.5 h-3.5 text-stone-600" />
@@ -394,7 +394,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                 </div>
               </div>
 
-              <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+              <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121]">
                 <div className="flex items-center justify-between text-stone-700">
                   <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Consistency</span>
                   <TrendingUp className="w-3.5 h-3.5 text-stone-600" />
