@@ -304,14 +304,14 @@ interface SelectedRepoMeta {
       : selectedProgramOption;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs overflow-y-auto">
-      <div className="bg-[#FEFCF6] paper-card max-w-2xl w-full p-3.5 sm:p-5 shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] my-auto text-[#212121] max-h-[90dvh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#57534E]/45 overflow-y-auto paper-motion-overlay">
+      <div className="bg-[#FEFCF6] paper-card paper-motion-panel max-w-2xl w-full p-3.5 sm:p-5 my-auto text-[#212121] max-h-[90dvh] overflow-y-auto">
         
         {/* Step Indicator Header */}
         <div className="border-b border-dashed border-[#212121] pb-3 mb-3.5">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center space-x-1.5">
-              <span className="paper-badge bg-[#212121] text-white text-[9px] font-bold">
+              <span className="paper-badge bg-[#0071DE] text-white text-[9px] font-bold">
                 GITSHOWCASE ONBOARDING
               </span>
               <span className="text-xs font-sketch text-stone-700 font-bold">
@@ -319,11 +319,11 @@ interface SelectedRepoMeta {
               </span>
             </div>
             <div className="flex items-center space-x-1 font-mono text-xs font-bold text-stone-800">
-              <span className={`px-1.5 py-0.5 rounded-xs ${currentStep === 1 ? 'bg-[#212121] text-white' : 'bg-stone-200'}`}>1. Profile</span>
+              <span className={`px-1.5 py-0.5 rounded-xs ${currentStep === 1 ? 'bg-[#0071DE] text-white' : 'bg-stone-200'}`}>1. Profile</span>
               <span>→</span>
-              <span className={`px-1.5 py-0.5 rounded-xs ${currentStep === 2 ? 'bg-[#212121] text-white' : 'bg-stone-200'}`}>2. Repositories</span>
+              <span className={`px-1.5 py-0.5 rounded-xs ${currentStep === 2 ? 'bg-[#0071DE] text-white' : 'bg-stone-200'}`}>2. Repositories</span>
               <span>→</span>
-              <span className={`px-1.5 py-0.5 rounded-xs ${currentStep === 3 ? 'bg-[#212121] text-white' : 'bg-stone-200'}`}>3. Review</span>
+              <span className={`px-1.5 py-0.5 rounded-xs ${currentStep === 3 ? 'bg-[#0071DE] text-white' : 'bg-stone-200'}`}>3. Review</span>
             </div>
           </div>
 
@@ -354,7 +354,7 @@ interface SelectedRepoMeta {
             {/* GitHub Auto-Sync Banner */}
             <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
               <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 rounded-xs border border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 shadow-[1px_1px_0px_#212121]">
+                <div className="w-10 h-10 rounded-xs border border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0">
                   <img src={avatarUrl} alt="Avatar Preview" className="w-full h-full object-cover" />
                 </div>
                 <div>
@@ -463,7 +463,7 @@ interface SelectedRepoMeta {
                 onChange={(e) => setAboutMe(e.target.value.slice(0, 50))}
                 placeholder="Crisp 50-character summary of your tech passion..."
                 className={`w-full px-2.5 py-1.5 paper-input text-xs font-serif-body min-h-[34px] ${
-                  aboutMe.length >= 50 ? 'border-amber-600 ring-1 ring-amber-600' : ''
+                  aboutMe.length >= 50 ? 'border-amber-600 outline outline-1 outline-amber-600' : ''
                 }`}
               />
               <p className="text-[10px] font-serif-body italic text-stone-600 mt-0.5">
@@ -761,7 +761,7 @@ interface SelectedRepoMeta {
 
             <div className="bg-[#FAF6EC] paper-card p-3.5 sm:p-4 border border-[#212121] space-y-3">
               <div className="flex items-center space-x-3">
-                <div className="w-14 h-14 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[2px_2px_0px_#212121]">
+                <div className="w-14 h-14 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs">
                   <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
                 </div>
                 <div className="space-y-0.5 min-w-0 flex-1">
@@ -796,7 +796,7 @@ interface SelectedRepoMeta {
                   </span>
                   <button
                     onClick={() => setCurrentStep(2)}
-                    className="text-stone-700 hover:text-black text-[11px] underline font-mono font-bold"
+                    className="text-stone-700 hover:text-[#0071DE] text-[11px] underline font-mono font-bold"
                   >
                     Change selection
                   </button>

@@ -191,12 +191,12 @@ create trigger on_auth_user_created
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-[#FEFCF6] paper-card max-w-2xl w-full max-h-[90dvh] flex flex-col overflow-hidden shadow-[4px_4px_0px_#000] sm:shadow-[6px_6px_0px_#000] text-[#212121]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#57534E]/45 paper-motion-overlay">
+      <div className="bg-[#FEFCF6] paper-card paper-motion-panel max-w-2xl w-full max-h-[90dvh] flex flex-col overflow-hidden text-[#212121]">
         {/* Header */}
         <div className="p-3 sm:p-4 border-b border-dashed border-[#212121] flex items-center justify-between bg-[#FAF6EC]">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 paper-card bg-white text-black flex items-center justify-center">
+            <div className="w-8 h-8 paper-card bg-white text-[#212121] flex items-center justify-center">
               <Database className="w-4 h-4" />
             </div>
             <div>
@@ -377,8 +377,8 @@ create trigger on_auth_user_created
                 </button>
               </div>
 
-              <div className="relative paper-card bg-[#1E1E1E] p-3 max-h-64 overflow-y-auto">
-                <pre className="text-xs font-mono font-bold text-emerald-400 whitespace-pre leading-relaxed">
+              <div className="relative paper-card bg-[#FAF6EC] p-3 max-h-64 overflow-y-auto">
+                <pre className="text-xs font-mono font-bold text-[#212121] whitespace-pre leading-relaxed">
                   {sqlSchemaCode}
                 </pre>
               </div>
@@ -403,7 +403,7 @@ create trigger on_auth_user_created
                     <div className="flex items-center justify-between p-1.5 bg-white paper-card border border-stone-400 gap-2">
                       <div className="flex items-center gap-1.5 truncate">
                         <span className="text-[10px] font-bold uppercase px-1 py-0.2 bg-stone-200">Vercel</span>
-                        <code className="font-mono text-black text-[11px] truncate select-all font-bold">
+                        <code className="font-mono text-[#212121] text-[11px] truncate select-all font-bold">
                           {vercelOrigin}
                         </code>
                       </div>
@@ -418,7 +418,7 @@ create trigger on_auth_user_created
                     <div className="flex items-center justify-between p-1.5 bg-white paper-card border border-stone-400 gap-2">
                       <div className="flex items-center gap-1.5 truncate">
                         <span className="text-[10px] font-bold uppercase px-1 py-0.2 bg-stone-200">AI Studio</span>
-                        <code className="font-mono text-black text-[11px] truncate select-all font-bold">
+                        <code className="font-mono text-[#212121] text-[11px] truncate select-all font-bold">
                           {devOrigin}
                         </code>
                       </div>
@@ -436,7 +436,7 @@ create trigger on_auth_user_created
                 <li>
                   Set <strong>Authorization callback URL</strong> to your Supabase Auth callback URL:
                   <div className="mt-1 flex items-center justify-between p-1.5 bg-white paper-card border border-stone-400 gap-2">
-                    <code className="font-mono text-black break-all text-[11px] select-all font-bold">
+                    <code className="font-mono text-[#212121] break-all text-[11px] select-all font-bold">
                       {supabaseUrl ? `${supabaseUrl}/auth/v1/callback` : 'https://<your-project-ref>.supabase.co/auth/v1/callback'}
                     </code>
                     <button
@@ -469,7 +469,7 @@ create trigger on_auth_user_created
                     <div className="flex items-center justify-between p-1.5 bg-white paper-card border border-stone-400 gap-2">
                       <div className="flex items-center gap-1.5 truncate">
                         <span className="text-[10px] font-bold uppercase px-1 py-0.2 bg-stone-200">Vercel</span>
-                        <code className="font-mono text-black text-[11px] truncate select-all font-bold">
+                        <code className="font-mono text-[#212121] text-[11px] truncate select-all font-bold">
                           {`${vercelOrigin}/**`}
                         </code>
                       </div>
@@ -484,7 +484,7 @@ create trigger on_auth_user_created
                     <div className="flex items-center justify-between p-1.5 bg-white paper-card border border-stone-400 gap-2">
                       <div className="flex items-center gap-1.5 truncate">
                         <span className="text-[10px] font-bold uppercase px-1 py-0.2 bg-stone-200">AI Dev</span>
-                        <code className="font-mono text-black text-[11px] truncate select-all font-bold">
+                        <code className="font-mono text-[#212121] text-[11px] truncate select-all font-bold">
                           {`${devOrigin}/**`}
                         </code>
                       </div>
@@ -499,7 +499,7 @@ create trigger on_auth_user_created
                     <div className="flex items-center justify-between p-1.5 bg-white paper-card border border-stone-400 gap-2">
                       <div className="flex items-center gap-1.5 truncate">
                         <span className="text-[10px] font-bold uppercase px-1 py-0.2 bg-stone-200">AI Share</span>
-                        <code className="font-mono text-black text-[11px] truncate select-all font-bold">
+                        <code className="font-mono text-[#212121] text-[11px] truncate select-all font-bold">
                           {`${preOrigin}/**`}
                         </code>
                       </div>

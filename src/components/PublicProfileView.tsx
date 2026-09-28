@@ -279,7 +279,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             <div className="bg-[#FAF6EC] paper-card p-3.5 sm:p-5 space-y-3.5">
               {/* Avatar & Names */}
               <div className="flex items-center space-x-3.5">
-                <div className="w-16 h-16 sm:w-18 sm:h-18 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs shadow-[2px_2px_0px_#212121]">
+                <div className="w-16 h-16 sm:w-18 sm:h-18 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs">
                   <img
                     src={profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'}
                     alt={profile.full_name || profile.github_username}
@@ -325,18 +325,18 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
               {/* Public Portfolio Metrics Summary */}
               <div className="grid grid-cols-3 gap-1.5 sm:gap-2 pt-2.5 border-t border-dashed border-[#212121] text-center">
-                <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+                <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121]">
                   <span className="text-[8.5px] sm:text-[9px] font-sketch uppercase text-stone-600 block font-bold truncate">Projects</span>
                   <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121]">{projects.length}</span>
                 </div>
-                <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+                <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121]">
                   <span className="text-[8.5px] sm:text-[9px] font-sketch uppercase text-stone-600 block font-bold truncate">Total Stars</span>
                   <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121] flex items-center justify-center space-x-0.5">
                     <Star className="w-3 h-3 fill-amber-500 text-amber-700 inline" />
                     <span>{projects.reduce((acc, p) => acc + (p.live_stats?.stars ?? 0), 0)}</span>
                   </span>
                 </div>
-                <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121] shadow-[1px_1px_0px_#212121]">
+                <div className="p-2 bg-[#FEFCF6] paper-card border border-[#212121]">
                   <span className="text-[8.5px] sm:text-[9px] font-sketch uppercase text-stone-600 block font-bold truncate">Total Forks</span>
                   <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121]">{projects.reduce((acc, p) => acc + (p.live_stats?.forks ?? 0), 0)}</span>
                 </div>
@@ -428,8 +428,8 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
       {/* MODAL: Owner Profile Edit Controls */}
       {isEditProfileOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/65 backdrop-blur-xs">
-          <div className="bg-[#FEFCF6] paper-card max-w-lg w-full p-4 sm:p-5 space-y-4 shadow-[5px_5px_0px_#000] max-h-[90dvh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-[#57534E]/45 paper-motion-overlay">
+          <div className="bg-[#FEFCF6] paper-card paper-motion-panel max-w-lg w-full p-4 sm:p-5 space-y-4 max-h-[90dvh] overflow-y-auto">
             <div className="flex items-start justify-between border-b border-dashed border-[#212121] pb-2.5">
               <div>
                 <span className="text-[9px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
@@ -540,7 +540,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                   onChange={(e) => setEditBio(e.target.value.slice(0, 50))}
                   placeholder="Crisp 50-character summary of your tech passion..."
                   className={`w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px] ${
-                    editBio.length >= 50 ? 'border-amber-600 ring-1 ring-amber-600' : ''
+                    editBio.length >= 50 ? 'border-amber-600 outline outline-1 outline-amber-600' : ''
                   }`}
                 />
               </div>
@@ -580,11 +580,11 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
       {/* Project Detail Modal */}
       {selectedProject && (
         <div 
-          className="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 bg-[#57534E]/45 z-50 flex items-center justify-center p-4 sm:p-6 paper-motion-overlay"
           onClick={() => setSelectedProject(null)}
         >
-          <div 
-            className="bg-[#FEFCF6] paper-card max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col shadow-[6px_6px_0px_#000]"
+          <div
+            className="bg-[#FEFCF6] paper-card paper-motion-panel max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-between items-start border-b border-dashed border-[#212121] p-4 sm:p-6">
@@ -709,7 +709,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left p-3.5 sm:p-4 paper-card bg-[#FEFCF6] transition-all flex flex-col justify-between space-y-3 cursor-pointer hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_#212121]"
+      className="w-full text-left p-3.5 sm:p-4 paper-card bg-[#FEFCF6] transition-all flex flex-col justify-between space-y-3 cursor-pointer hover:-translate-y-0.5"
     >
       <div className="space-y-2 w-full">
         {/* Header Badge */}
@@ -772,7 +772,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
         <div className="flex items-center space-x-2">
           {stats?.homepage && (
             <span
-              className="text-stone-800 hover:text-black underline flex items-center space-x-0.5 font-bold min-h-[28px] py-0.5 px-1 text-xs"
+              className="text-stone-800 hover:text-[#0071DE] underline flex items-center space-x-0.5 font-bold min-h-[28px] py-0.5 px-1 text-xs"
               onClick={(e) => { e.stopPropagation(); window.open(stats.homepage, '_blank', 'noreferrer'); }}
             >
               <Globe className="w-3 h-3 mr-0.5 flex-shrink-0" />
@@ -780,7 +780,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
             </span>
           )}
           <span
-            className="inline-flex items-center space-x-0.5 text-stone-800 hover:text-black underline font-bold min-h-[28px] py-0.5 px-1 text-xs"
+            className="inline-flex items-center space-x-0.5 text-stone-800 hover:text-[#0071DE] underline font-bold min-h-[28px] py-0.5 px-1 text-xs"
             onClick={(e) => { e.stopPropagation(); window.open(project.repo_url, '_blank', 'noreferrer'); }}
           >
             <Github className="w-3.5 h-3.5 mr-0.5 flex-shrink-0" />
