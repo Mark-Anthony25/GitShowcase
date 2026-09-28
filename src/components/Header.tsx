@@ -423,7 +423,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
             <div className="py-4 space-y-3 text-sm text-stone-800">
               <p className="font-headline font-bold text-[#212121]">Delete @{profile?.github_username || 'your'} account?</p>
               <p>Your public profile and every published project in GitShowcase will be permanently removed.</p>
-              <p className="border-l-2 border-[#212121] bg-[#FAF6EC] px-3 py-2 text-xs font-semibold text-[#212121]">Your GitHub account and repositories will not be affected.</p>
+              <p className="text-xs italic text-stone-800">Your GitHub account and repositories will not be affected.</p>
               <label className="block text-xs font-headline font-bold uppercase text-[#212121]" htmlFor="delete-account-confirmation">
                 Type DELETE to continue
                 <input

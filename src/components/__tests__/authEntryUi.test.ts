@@ -38,4 +38,12 @@ if (!packageJson.includes('accountDeletion.test.ts')) {
   throw new Error('The account deletion regression test must run in the test suite.');
 }
 
+if (!header.includes('text-xs italic text-stone-800')) {
+  throw new Error('The GitHub account note must use the plain italic description treatment.');
+}
+
+if (header.includes('border-l-2 border-[#212121] bg-[#FAF6EC] px-3 py-2')) {
+  throw new Error('The GitHub account note must not use a bordered or colored callout treatment.');
+}
+
 console.log('Unified GitHub entry UI test passed');
