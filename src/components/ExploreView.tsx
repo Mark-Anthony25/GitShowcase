@@ -274,7 +274,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                 }}
                 className="flex items-center space-x-3 p-3 bg-[#FAF6EC] paper-card cursor-pointer hover:bg-[#F3EDE0] transition-colors"
               >
-                <div className="w-10 h-10 border-1.5 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs">
+                <div className="w-10 h-10 paper-avatar">
                   <img
                     src={selectedModalItem.student.profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
                     alt={selectedModalItem.student.profile.github_username}
