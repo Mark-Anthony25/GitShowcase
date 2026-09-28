@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Github, User, Compass, FolderGit2, LogOut, Sparkles, Menu, X } from 'lucide-react';
+import { Github, User, Compass, FolderGit2, LogOut, Sparkles, Menu, X, Trash2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface HeaderProps {
@@ -9,9 +9,13 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGuide }) => {
-  const { user, profile, signInWithGitHub, signOut } = useAuth();
+  const { user, profile, signInWithGitHub, signOut, deleteAccount } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [confirmationText, setConfirmationText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleGitHubSignIn = async () => {
@@ -82,6 +86,50 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
       document.body.style.overflow = '';
     }
   }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    if (!deleteDialogOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isDeleting) {
+        setDeleteDialogOpen(false);
+        setConfirmationText('');
+        setDeleteError(null);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [deleteDialogOpen, isDeleting]);
+
+  const openDeleteDialog = () => {
+    setDropdownOpen(false);
+    setMobileMenuOpen(false);
+    setConfirmationText('');
+    setDeleteError(null);
+    setDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    if (isDeleting) return;
+    setDeleteDialogOpen(false);
+    setConfirmationText('');
+    setDeleteError(null);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (confirmationText !== 'DELETE' || isDeleting) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteAccount();
+      setDeleteDialogOpen(false);
+      navigate('/');
+    } catch (error) {
+      console.error('Account deletion failed:', error);
+      setDeleteError('We could not delete your account. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const navBtnClass = (route: string) =>
     `paper-button text-xs py-1.5 px-3.5 font-bold ${
@@ -156,7 +204,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                 aria-haspopup="menu"
                 aria-controls="user-dropdown-menu"
               >
-                <div className="w-5 h-5 border border-[#212121] bg-stone-300 overflow-hidden flex-shrink-0 rounded-xs">
+                <div className="w-5 h-5 paper-avatar">
                   <img
                     src={profile?.avatar_url || `https://github.com/${profile?.github_username || 'ghost'}.png`}
                     alt={profile?.github_username || 'Student Avatar'}
@@ -198,6 +246,14 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                     </div>
                     <div className="border-t border-dashed border-[#212121] my-1" role="separator"></div>
                     <button
+                      id="delete-account-btn"
+                      role="menuitem"
+                      onClick={openDeleteDialog}
+                      className="w-full text-left px-2.5 py-1.5 text-xs font-headline text-red-700 hover:bg-red-50 focus:bg-red-50 focus:outline-none hover:text-red-800 flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[32px] rounded-xs transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 flex-shrink-0" /><span>Delete Account</span>
+                    </button>
+                    <button
                       id="signout-btn"
                       role="menuitem"
                       onClick={() => {
@@ -221,7 +277,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
         {/* Mobile: avatar thumbnail + hamburger */}
         <div className="flex lg:hidden items-center space-x-1.5 flex-shrink-0">
           {user && (
-            <div className="w-7 h-7 border-1.5 border-[#212121] bg-stone-300 overflow-hidden flex-shrink-0 rounded-xs">
+            <div className="w-7 h-7 paper-avatar">
               <img
                 src={profile?.avatar_url || `https://github.com/${profile?.github_username || 'ghost'}.png`}
                 alt={profile?.github_username || 'Avatar'}
@@ -321,12 +377,77 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                 >
                   <LogOut className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" /><span>Sign Out</span>
                 </button>
+                <button
+                  id="mobile-delete-account-btn"
+                  onClick={openDeleteDialog}
+                  className="paper-button text-xs py-2 px-3 text-red-800 bg-red-50 border-red-500 cursor-pointer w-full justify-center font-bold min-h-[36px]"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" /><span>Delete Account</span>
+                </button>
               </div>
             ) : (
               <div className="flex flex-col gap-2 pt-0.5">
                 <button onClick={() => { setMobileMenuOpen(false); handleGitHubSignIn(); }} className="paper-button paper-button-dark text-xs py-2 px-3 font-bold cursor-pointer justify-center min-h-[36px] w-full"><span>Continue With GitHub</span></button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {deleteDialogOpen && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[#57534E]/45 p-3 sm:p-4 paper-motion-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Delete Account Confirmation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeDeleteDialog();
+          }}
+        >
+          <div className="w-full max-w-md bg-[#FEFCF6] border-2 border-[#212121] paper-card paper-motion-panel p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-3 border-b border-dashed border-[#212121] pb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 border-1.5 border-[#212121] bg-red-100 flex items-center justify-center rounded-xs" aria-hidden="true">
+                  <AlertTriangle className="w-4 h-4 text-red-800" />
+                </span>
+                <div>
+                  <p className="font-newspaper-title font-black uppercase text-sm text-[#212121]">Withdrawal Notice</p>
+                  <p className="font-sketch text-[10px] uppercase text-stone-700">Permanent account removal</p>
+                </div>
+              </div>
+              <button onClick={closeDeleteDialog} className="paper-button-icon p-1 min-w-[30px] min-h-[30px] cursor-pointer" aria-label="Close account deletion dialog" disabled={isDeleting}>
+                <X className="w-4 h-4 text-[#212121]" />
+              </button>
+            </div>
+
+            <div className="py-4 space-y-3 text-sm text-stone-800">
+              <p className="font-headline font-bold text-[#212121]">Delete @{profile?.github_username || 'your'} account?</p>
+              <p>Your public profile and every published project in GitShowcase will be permanently removed.</p>
+              <p className="border-l-2 border-[#212121] bg-[#FAF6EC] px-3 py-2 text-xs font-semibold text-[#212121]">Your GitHub account and repositories will not be affected.</p>
+              <label className="block text-xs font-headline font-bold uppercase text-[#212121]" htmlFor="delete-account-confirmation">
+                Type DELETE to continue
+                <input
+                  id="delete-account-confirmation"
+                  value={confirmationText}
+                  onChange={(event) => setConfirmationText(event.target.value)}
+                  disabled={isDeleting}
+                  className="mt-1.5 w-full border-2 border-[#212121] bg-white px-3 py-2 font-mono text-sm text-[#212121] focus:outline-none focus:ring-2 focus:ring-[#212121] rounded-xs"
+                  autoComplete="off"
+                />
+              </label>
+              {deleteError && <p role="alert" className="border border-red-500 bg-red-50 px-3 py-2 text-xs font-bold text-red-800">{deleteError}</p>}
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-dashed border-[#212121] pt-3">
+              <button onClick={closeDeleteDialog} disabled={isDeleting} className="paper-button bg-[#FEFCF6] text-xs px-3 py-2 cursor-pointer justify-center">Keep My Account</button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={confirmationText !== 'DELETE' || isDeleting}
+                className="paper-button bg-red-700 border-red-900 text-white text-xs px-3 py-2 cursor-pointer justify-center disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1.5" />{isDeleting ? 'Deleting Account...' : 'Delete Account Permanently'}
+              </button>
+            </div>
           </div>
         </div>
       )}
