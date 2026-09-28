@@ -150,7 +150,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
           <h2 className="text-base sm:text-lg lg:text-xl font-[900] uppercase font-newspaper-title text-[#212121]">
             Annual Contribution Activity
           </h2>
-          <p className="text-[11px] font-mono text-stone-600">
+          <p className="text-[11px] font-mono text-stone-800">
             GitHub public contributions over the past {compact ? '26' : '52'} weeks
           </p>
         </div>
@@ -188,7 +188,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
             <p className="text-xs font-sketch uppercase tracking-wider font-bold text-[#212121]">
               Fetching GitHub Contribution Activity...
             </p>
-            <p className="text-[11px] font-mono text-stone-600">
+            <p className="text-[11px] font-mono text-stone-800">
               Retrieving public contribution events for @{username}
             </p>
           </div>
@@ -243,7 +243,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
               <div className="flex items-start space-x-2">
                 {/* Day of Week Axis with exact row alignment (Mon, Wed, Fri) */}
                 <div
-                  className="relative w-6 sm:w-7 text-[9px] font-mono text-stone-600 select-none flex-shrink-0"
+                  className="relative w-6 sm:w-7 text-[9px] font-mono text-stone-800 select-none flex-shrink-0"
                   style={{ height: 'calc(7 * 13px + 6 * 4px)' }}
                 >
                   <span
@@ -315,7 +315,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                 </div>
 
                 <div className="flex items-center space-x-1.5">
-                  <span className="text-[10px] text-stone-600">Less</span>
+                  <span className="text-[10px] text-stone-800">Less</span>
                   <div className="flex items-center space-x-1">
                     <span className="w-2.5 h-2.5 rounded-[1px] bg-[#EAE5D9] border border-[#D8D2C4]/70" title="0 contributions" />
                     <span className="w-2.5 h-2.5 rounded-[1px] bg-[#9BE9A8] border border-[#212121]/30" title="1-2 contributions" />
@@ -323,7 +323,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                     <span className="w-2.5 h-2.5 rounded-[1px] bg-[#30A14E] border border-[#212121]/50" title="5-7 contributions" />
                     <span className="w-2.5 h-2.5 rounded-[1px] bg-[#216E39] border border-[#212121]/60" title="8+ contributions" />
                   </div>
-                  <span className="text-[10px] text-stone-600">More</span>
+                  <span className="text-[10px] text-stone-800">More</span>
                 </div>
               </div>
             </div>
@@ -352,13 +352,13 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
               <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121]">
                 <div className="flex items-center justify-between text-stone-700">
                   <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Total Commits</span>
-                  <GitCommit className="w-3.5 h-3.5 text-stone-600" />
+                  <GitCommit className="w-3.5 h-3.5 text-stone-800" />
                 </div>
                 <div className="mt-1">
                   <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121] leading-none block">
                     {calendarData.totalContributions}
                   </span>
-                  <span className="text-[9px] font-serif-body text-stone-600">
+                  <span className="text-[9px] font-serif-body text-stone-800">
                     52-week activity
                   </span>
                 </div>
@@ -373,7 +373,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                   <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121] leading-none block">
                     {calendarData.currentStreak} {calendarData.currentStreak === 1 ? 'day' : 'days'}
                   </span>
-                  <span className="text-[9px] font-serif-body text-stone-600">
+                  <span className="text-[9px] font-serif-body text-stone-800">
                     Active streak
                   </span>
                 </div>
@@ -382,13 +382,13 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
               <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121]">
                 <div className="flex items-center justify-between text-stone-700">
                   <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Longest Streak</span>
-                  <Award className="w-3.5 h-3.5 text-stone-600" />
+                  <Award className="w-3.5 h-3.5 text-stone-800" />
                 </div>
                 <div className="mt-1">
                   <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121] leading-none block">
                     {calendarData.longestStreak} {calendarData.longestStreak === 1 ? 'day' : 'days'}
                   </span>
-                  <span className="text-[9px] font-serif-body text-stone-600">
+                  <span className="text-[9px] font-serif-body text-stone-800">
                     Peak continuous
                   </span>
                 </div>
@@ -397,13 +397,13 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
               <div className="p-2 sm:p-2.5 bg-[#FAF6EC] paper-card border border-[#212121]">
                 <div className="flex items-center justify-between text-stone-700">
                   <span className="text-[9px] font-sketch uppercase font-bold tracking-wider">Consistency</span>
-                  <TrendingUp className="w-3.5 h-3.5 text-stone-600" />
+                  <TrendingUp className="w-3.5 h-3.5 text-stone-800" />
                 </div>
                 <div className="mt-1">
                   <span className="text-base sm:text-lg font-[900] font-newspaper-title text-[#212121] leading-none block">
                     {calendarData.activePercent}%
                   </span>
-                  <span className="text-[9px] font-serif-body text-stone-600">
+                  <span className="text-[9px] font-serif-body text-stone-800">
                     {calendarData.activeDaysCount} active days
                   </span>
                 </div>

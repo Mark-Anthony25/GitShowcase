@@ -47,6 +47,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   // Previewing project detail
   const [previewProject, setPreviewProject] = useState<ShowcasedProject | null>(null);
 
+  // Project awaiting an explicit PaperCSS-styled unpublish confirmation
+  const [projectPendingUnpublish, setProjectPendingUnpublish] = useState<ShowcasedProject | null>(null);
+
   // Subscribe to schema missing alerts
   useEffect(() => {
     const unsub = subscribeSchemaStatus((missing) => {
@@ -135,11 +138,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     }
   };
 
-  const handleRemoveProject = async (projectId: string) => {
-    if (!confirm('Are you sure you want to unpublish this project from your showcase?')) return;
+  const handleRemoveProject = async () => {
+    if (!projectPendingUnpublish) return;
+    const projectId = projectPendingUnpublish.id;
     try {
       await removeProjectFromShowcase(projectId, user?.id);
       setShowcased(prev => prev.filter(p => p.id !== projectId));
+      setProjectPendingUnpublish(null);
     } catch (err) {
       console.error('Failed to remove project:', err);
     }
@@ -403,7 +408,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                         <button
                           title="Unpublish from showcase"
                           aria-label="Unpublish project"
-                          onClick={() => handleRemoveProject(proj.id)}
+                          onClick={() => setProjectPendingUnpublish(proj)}
                           className="paper-button-icon min-w-[28px] min-h-[28px] p-1 text-rose-800 hover:bg-rose-100 cursor-pointer"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -764,7 +769,70 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
         </div>
       )}
 
-      {/* MODAL 3: Preview Project Details */}
+      {/* MODAL 3: Unpublish Confirmation */}
+      {projectPendingUnpublish && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#57534E]/45 paper-motion-overlay"
+          onClick={() => setProjectPendingUnpublish(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="unpublish-dispatch-title"
+            className="bg-[#FEFCF6] paper-card paper-motion-panel max-w-md w-full p-4 sm:p-5 space-y-4"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-dashed border-[#212121] pb-3">
+              <div className="min-w-0">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-[0.16em] text-[#7A2E25] font-bold">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  Withdrawal Notice
+                </span>
+                <h3 id="unpublish-dispatch-title" className="mt-1 text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
+                  Unpublish Dispatch
+                </h3>
+              </div>
+              <button
+                type="button"
+                aria-label="Keep project published"
+                onClick={() => setProjectPendingUnpublish(null)}
+                className="paper-button-icon min-w-[32px] min-h-[32px] p-1 flex items-center justify-center text-stone-800 cursor-pointer flex-shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-serif-body text-stone-800 leading-relaxed">
+                Remove this project from your public showcase? The repository stays on GitHub and can be published again later.
+              </p>
+              <p className="border-y border-dashed border-[#212121]/65 py-2 text-xs font-mono text-stone-700 truncate">
+                {projectPendingUnpublish.custom_title || projectPendingUnpublish.repo_full_name}
+              </p>
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setProjectPendingUnpublish(null)}
+                className="paper-button text-xs py-2 px-3.5 min-h-[36px] font-bold"
+              >
+                Keep Published
+              </button>
+              <button
+                type="button"
+                onClick={handleRemoveProject}
+                className="paper-button paper-button-dark text-xs py-2 px-3.5 min-h-[36px] font-bold"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Unpublish Project
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: Preview Project Details */}
       {previewProject && (
         <div 
           className="fixed inset-0 bg-[#57534E]/45 z-50 flex items-center justify-center p-3 sm:p-5 paper-motion-overlay"

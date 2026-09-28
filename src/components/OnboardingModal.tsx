@@ -262,7 +262,7 @@ interface SelectedRepoMeta {
 
       const updatedProfile: Profile = {
         ...profile,
-        github_username: username.trim().toLowerCase() || profile.github_username,
+        github_username: username.trim() || profile.github_username,
         full_name: fullName.trim() || profile.full_name || username.trim(),
         avatar_url: avatarUrl.trim() || profile.avatar_url,
         headline: profile.headline || null,
@@ -354,7 +354,7 @@ interface SelectedRepoMeta {
             {/* GitHub Auto-Sync Banner */}
             <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
               <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 rounded-xs border border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0">
+                <div className="w-10 h-10 paper-avatar">
                   <img src={avatarUrl} alt="Avatar Preview" className="w-full h-full object-cover" />
                 </div>
                 <div>
@@ -761,7 +761,7 @@ interface SelectedRepoMeta {
 
             <div className="bg-[#FAF6EC] paper-card p-3.5 sm:p-4 border border-[#212121] space-y-3">
               <div className="flex items-center space-x-3">
-                <div className="w-14 h-14 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs">
+                <div className="w-14 h-14 paper-avatar">
                   <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
                 </div>
                 <div className="space-y-0.5 min-w-0 flex-1">

@@ -279,7 +279,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             <div className="bg-[#FAF6EC] paper-card p-3.5 sm:p-5 space-y-3.5">
               {/* Avatar & Names */}
               <div className="flex items-center space-x-3.5">
-                <div className="w-16 h-16 sm:w-18 sm:h-18 border-2 border-[#212121] overflow-hidden bg-stone-300 flex-shrink-0 rounded-xs">
+                <div className="w-16 h-16 sm:w-18 sm:h-18 paper-avatar">
                   <img
                     src={profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'}
                     alt={profile.full_name || profile.github_username}

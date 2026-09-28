@@ -1,4 +1,6 @@
 import { getTooltipPosition } from '../CommitHeatmap';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 function runTests() {
   const position = getTooltipPosition(
@@ -28,7 +30,12 @@ function runTests() {
     throw new Error(`Tooltip should stay close and below cells near the top edge, got ${JSON.stringify(topEdgePosition)}`);
   }
 
-  console.log('All commit heatmap tooltip tests passed');
+  const source = readFileSync(join(process.cwd(), 'src', 'components', 'CommitHeatmap.tsx'), 'utf8');
+  if (source.includes('text-stone-600')) {
+    throw new Error('Contribution activity labels must use the high-contrast PaperCSS ink color.');
+  }
+
+  console.log('All commit heatmap tooltip and contrast tests passed');
 }
 
 runTests();
