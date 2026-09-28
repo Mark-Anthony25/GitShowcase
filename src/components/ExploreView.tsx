@@ -219,7 +219,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                           e.stopPropagation();
                           navigate(`/u/${student.profile.github_username}`);
                         }}
-                        className="text-[10px] font-sketch uppercase tracking-wider text-stone-700 font-bold hover:underline truncate max-w-[130px]"
+                        className="text-[10px] font-sketch tracking-wider text-stone-700 font-bold hover:underline truncate max-w-[130px]"
                       >
                         By {student.profile.full_name || student.profile.github_username}
                       </span>

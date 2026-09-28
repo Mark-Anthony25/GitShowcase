@@ -228,7 +228,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                 <div className="pt-1.5 border-t border-dashed border-[#212121]/50 flex items-center justify-between text-[11px]">
                   <button
                     onClick={() => navigate(`/u/${proj.author}`)}
-                    className="text-stone-800 hover:text-[#0071DE] font-headline uppercase tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold truncate max-w-[150px]"
+                    className="text-stone-800 hover:text-[#0071DE] font-headline tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold truncate max-w-[150px]"
                   >
                     <span>@{proj.author}</span>
                   </button>
