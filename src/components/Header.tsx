@@ -431,7 +431,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                   value={confirmationText}
                   onChange={(event) => setConfirmationText(event.target.value)}
                   disabled={isDeleting}
-                  className="mt-1.5 w-full border-2 border-[#212121] bg-white px-3 py-2 font-mono text-sm text-[#212121] focus:outline-none focus:ring-2 focus:ring-[#212121] rounded-xs"
+                  className="mt-1.5 w-full border-2 border-[#212121] bg-white px-3 py-2 font-mono text-sm text-[#212121] focus:outline-none focus:bg-[#FAF6EC] rounded-xs"
                   autoComplete="off"
                 />
               </label>
