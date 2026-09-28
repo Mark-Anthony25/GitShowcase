@@ -139,6 +139,24 @@ export function invalidateShowcaseCaches(profileId?: string, username?: string) 
 }
 
 /**
+ * Remove one student's app-local profile mirror and showcased projects.
+ * Remote account removal is handled by the protected AuthContext flow.
+ */
+export function purgeStudentShowcaseData(profileId: string, username?: string): void {
+  const { profiles, projects } = getLocalData();
+
+  for (const [key, profile] of Object.entries(profiles)) {
+    if (profile.id === profileId) {
+      delete profiles[key];
+    }
+  }
+
+  const remainingProjects = projects.filter(p => p.profile_id !== profileId);
+  saveLocalData(profiles, remainingProjects);
+  invalidateShowcaseCaches(profileId, username);
+}
+
+/**
  * Enrich projects with live GitHub stats (real-time stars, forks, language, topics)
  */
 export async function enrichProjectsWithLiveStats(

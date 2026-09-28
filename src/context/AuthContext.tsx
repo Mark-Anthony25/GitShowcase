@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase, isSupabaseConfigured, User, Session } from '../lib/supabase';
 import { Profile } from '../types';
-import { getProfileById, updateStudentProfile } from '../lib/showcaseStore';
+import { getProfileById, purgeStudentShowcaseData, updateStudentProfile } from '../lib/showcaseStore';
 import { fetchGitHubUserData, setActiveGitHubToken } from '../lib/github';
 import { completeOAuthCallback } from '../lib/authCallback';
 
@@ -16,6 +16,7 @@ interface AuthContextType {
   clearAuthError: () => void;
   signInWithGitHub: () => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateProfileData: (updates: Partial<Profile>) => Promise<Profile | null>;
 }
@@ -69,7 +70,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const p = await getProfileById(userId, true);
       if (p) {
-        setProfile(p);
+        let resolvedProfile = p;
+
+        // GitHub handles are case-insensitive for lookups, but its `login` field
+        // is the canonical display spelling. Keep existing profiles aligned.
+        try {
+          const liveGitUser = await fetchGitHubUserData(token || null, p.github_username);
+          if (liveGitUser?.login && liveGitUser.login !== p.github_username) {
+            const updated = await updateStudentProfile(userId, {
+              github_username: liveGitUser.login,
+            });
+            resolvedProfile = updated || { ...p, github_username: liveGitUser.login };
+          }
+        } catch (err) {
+          console.warn('Could not reconcile GitHub username casing:', err);
+        }
+
+        setProfile(resolvedProfile);
       } else if (authUser) {
         // New user after GitHub signup: Extract metadata & sync from GitHub API
         const meta = authUser.user_metadata || {};
@@ -78,11 +95,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         let initialAvatar = meta.avatar_url || `https://github.com/${githubHandle}.png`;
         let initialName = meta.full_name || meta.name || githubHandle;
         let initialBio = '';
+        let canonicalGithubUsername = githubHandle;
 
         // Try live GitHub user fetch for richest info
         try {
           const liveGitUser = await fetchGitHubUserData(token || null, githubHandle);
           if (liveGitUser) {
+            if (liveGitUser.login) canonicalGithubUsername = liveGitUser.login;
             if (liveGitUser.avatar_url) initialAvatar = liveGitUser.avatar_url;
             if (liveGitUser.name) initialName = liveGitUser.name;
             if (liveGitUser.bio) initialBio = liveGitUser.bio.slice(0, 50);
@@ -93,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const newProfile: Profile = {
           id: userId,
-          github_username: githubHandle,
+          github_username: canonicalGithubUsername,
           full_name: initialName,
           headline: 'BS Computer Science • Developer',
           avatar_url: initialAvatar,
@@ -227,6 +246,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setGithubToken(null);
   };
 
+  const deleteAccount = async (): Promise<void> => {
+    if (!user) {
+      throw new Error('You must be signed in to delete your account.');
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.functions.invoke('delete-account');
+      if (error) {
+        throw error;
+      }
+    }
+
+    purgeStudentShowcaseData(user.id, profile?.github_username);
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.auth.signOut();
+    }
+
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+    setGithubToken(null);
+  };
+
   const refreshProfile = async () => {
     if (user) {
       await loadProfile(user.id, user, githubToken);
@@ -259,6 +302,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearAuthError: () => setAuthError(null),
         signInWithGitHub,
         signOut,
+        deleteAccount,
         refreshProfile,
         updateProfileData,
       }}
