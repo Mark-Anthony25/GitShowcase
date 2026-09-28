@@ -109,18 +109,22 @@ function getLocalData(): { profiles: Record<string, Profile>; projects: Showcase
   return { profiles, projects };
 }
 
-function saveLocalData(profiles: Record<string, Profile>, projects: ShowcasedProject[]) {
+function saveLocalData(profiles: Record<string, Profile>, projects: ShowcasedProject[]): boolean {
   const cleanProjects = deduplicateProjectsList(projects);
+
+  if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY_PROFILES, JSON.stringify(profiles));
+      localStorage.setItem(LOCAL_STORAGE_KEY_PROJECTS, JSON.stringify(cleanProjects));
+    } catch (e) {
+      console.warn('Could not write to localStorage:', e);
+      return false;
+    }
+  }
+
   inMemoryProfiles = profiles;
   inMemoryProjects = cleanProjects;
-
-  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
-  try {
-    localStorage.setItem(LOCAL_STORAGE_KEY_PROFILES, JSON.stringify(profiles));
-    localStorage.setItem(LOCAL_STORAGE_KEY_PROJECTS, JSON.stringify(cleanProjects));
-  } catch (e) {
-    console.warn('Could not write to localStorage:', e);
-  }
+  return true;
 }
 
 /**
@@ -142,18 +146,19 @@ export function invalidateShowcaseCaches(profileId?: string, username?: string) 
  * Remove one student's app-local profile mirror and showcased projects.
  * Remote account removal is handled by the protected AuthContext flow.
  */
-export function purgeStudentShowcaseData(profileId: string, username?: string): void {
+export function purgeStudentShowcaseData(profileId: string, username?: string): boolean {
   const { profiles, projects } = getLocalData();
+  const remainingProfiles = Object.fromEntries(
+    Object.entries(profiles).filter(([, profile]) => profile.id !== profileId)
+  );
+  const remainingProjects = projects.filter(p => p.profile_id !== profileId);
 
-  for (const [key, profile] of Object.entries(profiles)) {
-    if (profile.id === profileId) {
-      delete profiles[key];
-    }
+  if (!saveLocalData(remainingProfiles, remainingProjects)) {
+    return false;
   }
 
-  const remainingProjects = projects.filter(p => p.profile_id !== profileId);
-  saveLocalData(profiles, remainingProjects);
   invalidateShowcaseCaches(profileId, username);
+  return true;
 }
 
 /**

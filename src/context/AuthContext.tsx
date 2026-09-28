@@ -258,7 +258,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    purgeStudentShowcaseData(user.id, profile?.github_username);
+    if (!purgeStudentShowcaseData(user.id, profile?.github_username)) {
+      throw new Error('We could not clear account data from this browser. Please try again.');
+    }
 
     if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut();
