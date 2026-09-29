@@ -125,6 +125,27 @@
   font-family: 'Space Mono', 'Courier New', monospace;
 }
 
+.skeleton {
+  display: block;
+  background: var(--paper-panel);
+  border-radius: 2px;
+  animation: skeleton-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes skeleton-pulse {
+  from { opacity: 0.55; }
+  to { opacity: 1; }
+}
+
+.content-fade-in {
+  animation: content-fade-in var(--motion-panel) var(--motion-ease) both;
+}
+
+@keyframes content-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* Paper sheet & card custom styles */
 @layer components {
   .paper-sheet {
@@ -480,6 +501,14 @@
   .paper-motion-panel,
   .paper-motion-menu {
     animation-duration: 1ms !important;
+  }
+
+  .content-fade-in {
+    animation-duration: 1ms;
+  }
+
+  .skeleton {
+    animation-duration: 1ms;
   }
 }
 

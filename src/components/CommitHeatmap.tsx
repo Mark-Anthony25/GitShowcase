@@ -4,6 +4,7 @@ import { GitCommit, Flame, Award, TrendingUp, RefreshCw, AlertCircle, ExternalLi
 import { ContributionCalendar, ContributionDay } from '../types';
 import { fetchGitHubContributions } from '../lib/github';
 import { useAuth } from '../context/AuthContext';
+import { Skeleton } from './Skeleton';
 
 interface CommitHeatmapProps {
   username: string;
@@ -31,7 +32,7 @@ const TOOLTIP_GAP = 8;
 const VIEWPORT_PADDING = 8;
 
 export function getMobileHeatmapGridStyle() {
-  return { gridTemplateColumns: 'repeat(52, minmax(0, 1fr))' };
+  return { gridTemplateColumns: 'repeat(52, 13px)' };
 }
 
 export function getCompleteWeek(days: ContributionDay[]): ContributionDay[] {
@@ -194,22 +195,19 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
             title="Refresh GitHub Contributions"
             aria-label="Refresh GitHub Contributions"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-stone-800 ${isRefreshing || isLoading ? 'animate-spin' : ''}`} />
+            {(isRefreshing || isLoading) ? <Skeleton className="h-3.5 w-3.5" /> : <RefreshCw className="w-3.5 h-3.5 text-stone-800" />}
           </button>
         </div>
       </div>
 
       {/* Loading State */}
       {isLoading && !calendarData && (
-        <div className="p-8 text-center space-y-3 bg-[#FAF6EC] paper-card border border-dashed border-[#212121]">
-          <RefreshCw className="w-6 h-6 animate-spin mx-auto text-stone-700" />
-          <div className="space-y-1">
-            <p className="text-xs font-sketch uppercase tracking-wider font-bold text-[#212121]">
-              Fetching GitHub Contribution Activity...
-            </p>
-            <p className="text-[11px] font-mono text-stone-800">
-              Retrieving public contribution events for @{username}
-            </p>
+        <div className="p-3.5 sm:p-5 space-y-4 bg-[#FAF6EC] paper-card border border-dashed border-[#212121]" aria-label="Loading contribution activity">
+          <Skeleton className="h-4 w-1/4" />
+          <Skeleton className="h-28 w-full" />
+          <div className="flex justify-between gap-3">
+            <Skeleton className="h-3 w-2/5" />
+            <Skeleton className="h-3 w-1/4" />
           </div>
         </div>
       )}
@@ -243,8 +241,8 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
       {calendarData && (
         <>
           {/* Scrollable / Responsive Calendar Container with Maximized Cell Spacing */}
-          <div className="relative pb-2 -mx-1 px-1 sm:mx-0 sm:px-0">
-            <div className="min-w-0 sm:min-w-[880px] flex flex-col space-y-1.5">
+          <div className="content-fade-in relative pb-2 -mx-1 overflow-x-auto px-1 sm:mx-0 sm:px-0">
+            <div className="min-w-max sm:min-w-[880px] flex flex-col space-y-1.5">
               {/* Month Labels Bar */}
               <div className="relative text-[10px] font-mono font-bold text-stone-700 pl-7 sm:pl-8 h-4 select-none">
                 {monthLabels.map((m, idx) => (

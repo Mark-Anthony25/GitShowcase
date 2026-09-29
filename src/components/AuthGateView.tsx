@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Github, LockKeyhole, RefreshCw } from 'lucide-react';
+import { Github, LockKeyhole } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { Skeleton } from './Skeleton';
 
 interface AuthGateViewProps {
   navigate: (route: string) => void;
@@ -54,7 +55,7 @@ export const AuthGateView: React.FC<AuthGateViewProps> = ({ navigate, onOpenGuid
           disabled={signingIn}
           className="paper-button paper-button-dark text-xs py-2 px-4 font-bold flex items-center space-x-1.5"
         >
-          {signingIn ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Github className="w-3.5 h-3.5" />}
+          {signingIn ? <Skeleton className="h-3.5 w-3.5" /> : <Github className="w-3.5 h-3.5" />}
           <span>{signingIn ? 'Opening GitHub...' : 'Continue With GitHub'}</span>
         </button>
         <button
