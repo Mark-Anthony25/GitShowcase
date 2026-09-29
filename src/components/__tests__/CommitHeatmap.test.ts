@@ -1,8 +1,21 @@
-import { getTooltipPosition } from '../CommitHeatmap';
+import { getCompleteWeek, getMobileHeatmapGridStyle, getTooltipPosition } from '../CommitHeatmap';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 function runTests() {
+  const mobileGrid = getMobileHeatmapGridStyle();
+  if (mobileGrid.gridTemplateColumns !== 'repeat(52, minmax(0, 1fr))') {
+    throw new Error('Mobile heatmap must fit all 52 weekly columns without horizontal clipping.');
+  }
+
+  const paddedWeek = getCompleteWeek([
+    { date: '2026-09-27', count: 3, level: 1 },
+    { date: '2026-09-28', count: 0, level: 0 },
+  ]);
+  if (paddedWeek.length !== 7 || paddedWeek[2].date !== '2026-09-29' || paddedWeek[2].count !== 0) {
+    throw new Error('Partial contribution weeks must render seven days, including zero-contribution cells.');
+  }
+
   const position = getTooltipPosition(
     { left: 100, top: 200, width: 13, height: 13 },
     { width: 1000, height: 800 },

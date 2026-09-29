@@ -141,7 +141,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
   return (
     <header className="w-full bg-[#FEFCF6] border-1.5 border-[#212121] text-[#212121] select-none p-1.5 sm:p-2.5 mb-2.5 sm:mb-3 relative z-30 rounded-[255px_15px_225px_15px/15px_225px_15px_255px]">
       {/* Top Utility Bar */}
-      <div className="flex items-center justify-between border-b border-dashed border-[#212121] px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-sketch uppercase tracking-wider text-stone-700 bg-[#FAF6EC] gap-1">
+      <div className="hidden sm:flex items-center justify-between border-b border-dashed border-[#212121] px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-sketch uppercase tracking-wider text-stone-700 bg-[#FAF6EC] gap-1">
         <span className="truncate max-w-[150px] sm:max-w-none font-bold">ISU Cauayan</span>
         <span className="hidden md:inline font-bold">{getFormattedDate()}</span>
         <span className="font-bold truncate flex-shrink-0">Project Showcase</span>
