@@ -4,8 +4,8 @@ import { join } from 'node:path';
 
 function runTests() {
   const mobileGrid = getMobileHeatmapGridStyle();
-  if (mobileGrid.gridTemplateColumns !== 'repeat(52, minmax(0, 1fr))') {
-    throw new Error('Mobile heatmap must fit all 52 weekly columns without horizontal clipping.');
+  if (mobileGrid.gridTemplateColumns !== 'repeat(52, 13px)') {
+    throw new Error('Mobile heatmap must retain readable 13px weekly columns for horizontal scrolling.');
   }
 
   const paddedWeek = getCompleteWeek([
@@ -44,6 +44,10 @@ function runTests() {
   }
 
   const source = readFileSync(join(process.cwd(), 'src', 'components', 'CommitHeatmap.tsx'), 'utf8');
+  if (!source.includes('overflow-x-auto') || source.includes('repeat(52, minmax(0, 1fr))')) {
+    throw new Error('Mobile heatmap must scroll horizontally instead of compressing all 52 weeks.');
+  }
+
   if (source.includes('text-stone-600')) {
     throw new Error('Contribution activity labels must use the high-contrast PaperCSS ink color.');
   }

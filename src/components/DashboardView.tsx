@@ -16,6 +16,7 @@ import {
   updateShowcaseProject,
   subscribeSchemaStatus 
 } from '../lib/showcaseStore';
+import { Skeleton } from './Skeleton';
 
 interface DashboardViewProps {
   navigate: (route: string) => void;
@@ -338,7 +339,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             title="Refresh List from GitHub"
             aria-label="Refresh List from GitHub"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-stone-800 ${(loadingShowcase || loadingRepos) ? 'animate-spin' : ''}`} />
+            {(loadingShowcase || loadingRepos) ? <Skeleton className="h-3.5 w-3.5" /> : <RefreshCw className="w-3.5 h-3.5 text-stone-800" />}
           </button>
         </div>
       </div>
@@ -347,11 +348,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
       {activeTab === 'showcase' && (
         <div className="space-y-4">
           {loadingShowcase ? (
-            <div className="text-center py-12 paper-card bg-[#FEFCF6]">
-              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-stone-700" />
-              <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 mt-2 font-bold">
-                Fetching latest project stats from GitHub...
-              </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4" aria-label="Loading published projects">
+              {[0, 1, 2, 3].map((index) => (
+                <div key={index} className="p-3.5 sm:p-4 paper-card bg-[#FEFCF6] space-y-3">
+                  <Skeleton className="h-3 w-2/3" />
+                  <Skeleton className="h-4 w-4/5" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-5/6" />
+                  <Skeleton className="h-5 w-1/3" />
+                </div>
+              ))}
             </div>
           ) : showcased.length === 0 ? (
             <div className="text-center py-12 px-4 paper-card bg-[#FEFCF6] space-y-3 border-dashed">
@@ -379,7 +385,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4">
+            <div className="content-fade-in grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4">
               {filteredShowcased.map((proj) => (
                 <div
                   key={proj.id}
@@ -518,11 +524,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
           </div>
 
           {loadingRepos ? (
-            <div className="text-center py-12 paper-card bg-[#FEFCF6]">
-              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-stone-700" />
-              <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 mt-2 font-bold">
-                Fetching repositories from GitHub API...
-              </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4" aria-label="Loading GitHub repositories">
+              {[0, 1, 2, 3].map((index) => (
+                <div key={index} className="p-3.5 sm:p-4 paper-card bg-[#FEFCF6] space-y-3">
+                  <Skeleton className="h-3 w-3/5" />
+                  <Skeleton className="h-4 w-4/5" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-5 w-1/3" />
+                </div>
+              ))}
             </div>
           ) : filteredAvailableRepos.length === 0 ? (
             <div className="text-center py-10 px-4 paper-card bg-[#FEFCF6]">
@@ -531,7 +541,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4">
+            <div className="content-fade-in grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4">
               {filteredAvailableRepos.map((repo) => {
                 const isAlreadyShowcased = showcasedRepoNames.has(repo.full_name.trim().toLowerCase());
 

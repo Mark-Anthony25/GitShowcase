@@ -8,6 +8,7 @@ import { Profile, GitHubRepoItem, GitHubUserData } from '../types';
 import { fetchUserRepos, fetchGitHubUserData } from '../lib/github';
 import { addProjectToShowcase, getStudentShowcasedProjects, syncStudentShowcaseProjects } from '../lib/showcaseStore';
 import { DEGREE_PROGRAM_OPTIONS, getCanonicalProgram } from '../lib/programs';
+import { Skeleton } from './Skeleton';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -377,7 +378,7 @@ interface SelectedRepoMeta {
                   className="paper-button text-xs py-1 px-2.5 font-bold flex items-center space-x-1 cursor-pointer"
                   title="Re-import latest avatar, name, and bio from GitHub"
                 >
-                  <RefreshCw className={`w-3 h-3 text-stone-800 ${isSyncingGitHubUser ? 'animate-spin' : ''}`} />
+                  {isSyncingGitHubUser ? <Skeleton className="h-3 w-3" /> : <RefreshCw className="w-3 h-3 text-stone-800" />}
                   <span>Re-sync GitHub</span>
                 </button>
               </div>
@@ -593,7 +594,7 @@ interface SelectedRepoMeta {
                   className="paper-button text-xs py-1 px-2.5 font-bold flex items-center space-x-1"
                   title="Reload GitHub Repositories"
                 >
-                  <RefreshCw className={`w-3 h-3 text-stone-800 ${loadingRepos ? 'animate-spin' : ''}`} />
+                  {loadingRepos ? <Skeleton className="h-3 w-3" /> : <RefreshCw className="w-3 h-3 text-stone-800" />}
                   <span>Refresh</span>
                 </button>
                 <span className="paper-badge bg-stone-200 text-[#212121] font-bold">
@@ -614,11 +615,13 @@ interface SelectedRepoMeta {
             {/* Repos List */}
             <div className="paper-card bg-[#FEFCF6] max-h-64 overflow-y-auto divide-y divide-dashed divide-stone-300 p-1.5">
               {loadingRepos ? (
-                <div className="p-8 text-center space-y-2">
-                  <RefreshCw className="w-5 h-5 animate-spin mx-auto text-stone-700" />
-                  <p className="text-xs font-sketch uppercase text-stone-700 font-bold">
-                    Connecting to GitHub repositories for @{username}...
-                  </p>
+                <div className="space-y-2 p-2.5" aria-label="Loading GitHub repositories">
+                  {[0, 1, 2, 3].map((index) => (
+                    <div key={index} className="space-y-2 border-b border-dashed border-stone-300 pb-2.5 last:border-0">
+                      <Skeleton className="h-3 w-2/5" />
+                      <Skeleton className="h-3 w-3/4" />
+                    </div>
+                  ))}
                 </div>
               ) : filteredRepos.length === 0 ? (
                 <div className="p-8 text-center text-xs font-mono text-stone-600 space-y-2">
@@ -848,7 +851,7 @@ interface SelectedRepoMeta {
               >
                 {savingShowcase ? (
                   <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <Skeleton className="h-3.5 w-3.5" />
                     <span>Publishing Showcase...</span>
                   </>
                 ) : (

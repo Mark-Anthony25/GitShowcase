@@ -68,6 +68,16 @@ if (!vintagePalette.every((color) => sharedStyles.includes(color))) {
   throw new Error('PaperCSS must define the approved vintage newspaper palette.');
 }
 
+const semanticPaletteTokens = [
+  '--paper-surface-raised:',
+  '--paper-focus:',
+  '--paper-success:',
+  '--paper-danger:',
+];
+if (!semanticPaletteTokens.every((token) => sharedStyles.includes(token))) {
+  throw new Error('PaperCSS must define semantic elevated, focus, success, and danger color tokens.');
+}
+
 if (!sharedStyles.includes('[class*="bg-[#0071DE]"]') || !sharedStyles.includes('[class*="text-[#212121]"]')) {
   throw new Error('Vintage theme overrides must cover existing PaperCSS utility surfaces and ink text.');
 }

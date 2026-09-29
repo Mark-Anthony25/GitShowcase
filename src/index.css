@@ -4,11 +4,17 @@
   --paper-canvas: #D8C6A2;
   --paper-sheet: #F6EBD5;
   --paper-panel: #EBD9B8;
+  --paper-surface-raised: #F1DEBA;
+  --paper-input: #FFF8E7;
   --paper-ink: #342018;
   --paper-primary: #7A2E25;
   --paper-primary-hover: #602018;
   --paper-highlight: #B7863F;
-  --paper-focus: #D4A551;
+  --paper-focus: #8A5A14;
+  --paper-success: #2F6B45;
+  --paper-warning: #7A5612;
+  --paper-danger: #8C3028;
+  --paper-danger-surface: #F0D3C7;
   --motion-fast: 120ms;
   --motion-panel: 180ms;
   --motion-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -119,6 +125,27 @@
   font-family: 'Space Mono', 'Courier New', monospace;
 }
 
+.skeleton {
+  display: block;
+  background: var(--paper-panel);
+  border-radius: 2px;
+  animation: skeleton-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes skeleton-pulse {
+  from { opacity: 0.55; }
+  to { opacity: 1; }
+}
+
+.content-fade-in {
+  animation: content-fade-in var(--motion-panel) var(--motion-ease) both;
+}
+
+@keyframes content-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* Paper sheet & card custom styles */
 @layer components {
   .paper-sheet {
@@ -195,7 +222,7 @@
   .paper-input {
     border-radius: 255px 15px 225px 15px/15px 225px 15px 255px !important;
     border: 1.5px solid var(--paper-ink) !important;
-    background-color: #FFF8E7 !important;
+    background-color: var(--paper-input) !important;
     min-height: 36px;
     padding: 0.35rem 0.65rem;
     font-size: 0.8125rem;
@@ -369,13 +396,13 @@
   }
 
   .paper-button-success {
-    background-color: #86e08c;
-    color: #124015;
+    background-color: var(--paper-success);
+    color: var(--paper-sheet);
   }
 
   .paper-button-warning {
-    background-color: #ffc93c;
-    color: #3b2c00;
+    background-color: var(--paper-warning);
+    color: var(--paper-sheet);
   }
 
   .paper-badge {
@@ -475,6 +502,14 @@
   .paper-motion-menu {
     animation-duration: 1ms !important;
   }
+
+  .content-fade-in {
+    animation-duration: 1ms;
+  }
+
+  .skeleton {
+    animation-duration: 1ms;
+  }
 }
 
 /* Vintage newspaper bridge for existing PaperCSS utility surfaces. */
@@ -490,7 +525,7 @@
 [class*="bg-[#FAF6EC]"],
 [class*="bg-[#F3EDE0]"],
 [class*="hover:bg-[#FAF6EC]"]:hover {
-  background-color: var(--paper-panel) !important;
+  background-color: var(--paper-surface-raised) !important;
 }
 
 [class*="bg-[#EFE9DB]"] {
@@ -516,6 +551,27 @@
 [class*="hover:text-[#0071DE]"]:hover,
 [class~="text-blue-800"] {
   color: var(--paper-primary) !important;
+}
+
+/* Keep validation states within the print palette. */
+[class*="bg-red-100"] {
+  background-color: var(--paper-danger-surface) !important;
+}
+
+[class*="bg-red-700"],
+[class*="border-red-"],
+[class*="text-red-"] {
+  border-color: var(--paper-danger) !important;
+  color: var(--paper-danger) !important;
+}
+
+[class*="bg-red-700"] {
+  background-color: var(--paper-danger) !important;
+  color: var(--paper-sheet) !important;
+}
+
+[class*="text-amber-"] {
+  color: var(--paper-warning) !important;
 }
 
 

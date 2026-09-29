@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Copy, Check, ExternalLink, X, Database, Key, ShieldCheck, Github, Sparkles, AlertTriangle, RefreshCw } from 'lucide-react';
 import { isSupabaseConfigured, updateSupabaseConfig, supabaseUrl, supabaseAnonKey, supabase } from '../lib/supabase';
+import { Skeleton } from './Skeleton';
 
 interface SupabaseGuideModalProps {
   isOpen: boolean;
@@ -321,7 +322,7 @@ create trigger on_auth_user_created
                         disabled={testStatus?.testing}
                         className="paper-button text-xs py-1 px-2.5 min-h-[30px] font-bold flex items-center space-x-1"
                       >
-                        <RefreshCw className={`w-3 h-3 ${testStatus?.testing ? 'animate-spin' : ''}`} />
+                        {testStatus?.testing ? <Skeleton className="h-3 w-3" /> : <RefreshCw className="w-3 h-3" />}
                         <span>Test DB Connection</span>
                       </button>
                     )}

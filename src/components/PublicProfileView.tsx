@@ -10,6 +10,7 @@ import { CommitHeatmap } from './CommitHeatmap';
 import { useAuth } from '../context/AuthContext';
 import { DEGREE_PROGRAM_OPTIONS, getCanonicalProgram } from '../lib/programs';
 import { getStarCountLabel } from '../lib/projectStats';
+import { Skeleton } from './Skeleton';
 
 interface PublicProfileViewProps {
   username: string;
@@ -147,14 +148,22 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
   if (loading) {
     return (
-      <div className="py-20 text-center space-y-3 paper-card bg-[#FEFCF6]">
-        <RefreshCw className="w-8 h-8 animate-spin mx-auto text-stone-700" />
-        <h2 className="text-xl font-[900] uppercase font-newspaper-title text-[#212121]">
-          Loading profile...
-        </h2>
-        <p role="status" aria-live="polite" className="text-xs font-sketch uppercase tracking-wider text-stone-700 font-bold">
-          Retrieving student identity and coding activity for @{username}...
-        </p>
+      <div className="space-y-5 paper-card bg-[#FEFCF6] p-4 sm:p-6" aria-label="Loading profile">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-16 w-16 flex-none" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-6 w-2/5" />
+            <Skeleton className="h-3 w-1/4" />
+          </div>
+        </div>
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-5/6" />
+        <div className="grid grid-cols-3 gap-2 pt-3">
+          {[0, 1, 2].map((index) => <Skeleton key={index} className="h-16 w-full" />)}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {[0, 1].map((index) => <Skeleton key={index} className="h-36 w-full" />)}
+        </div>
       </div>
     );
   }
@@ -229,7 +238,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
   return (
     <>
-      <div className="space-y-5 sm:space-y-6 pb-8 text-[#212121]">
+      <div className="content-fade-in space-y-5 sm:space-y-6 pb-8 text-[#212121]">
         {/* Top Action Bar */}
         <div className="flex flex-wrap items-center justify-between border-b border-dashed border-[#212121] pb-2 gap-2 max-[380px]:flex-col max-[380px]:items-stretch">
           <button

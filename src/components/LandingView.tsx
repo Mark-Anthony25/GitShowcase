@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getAllStudentsShowcase } from '../lib/showcaseStore';
+import { Skeleton } from './Skeleton';
 
 interface LandingViewProps {
   navigate: (route: string) => void;
@@ -184,10 +185,16 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
         </div>
 
         {loadingProjects ? (
-          <div className="p-8 text-center paper-card bg-[#FEFCF6]">
-            <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 font-bold">
-              Loading dispatches...
-            </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4" aria-label="Loading student dispatches">
+            {[0, 1, 2, 3].map((index) => (
+              <div key={index} className="p-3 sm:p-3.5 paper-card bg-[#FAF6EC] space-y-2">
+                <Skeleton className="h-3 w-3/5" />
+                <Skeleton className="h-4 w-4/5" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+                <Skeleton className="mt-3 h-3 w-1/2" />
+              </div>
+            ))}
           </div>
         ) : previewProjects.length === 0 ? (
           <div className="p-8 text-center paper-card bg-[#FEFCF6] border-dashed space-y-2">
@@ -200,7 +207,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">
+          <div className="content-fade-in grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">
             {previewProjects.slice(0, 4).map((proj) => (
               <div
                 key={proj.id}

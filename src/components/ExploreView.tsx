@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Github, ArrowRight, RefreshCw, Star, Globe, X, User, GitFork } from 'lucide-react';
+import { Search, Github, ArrowRight, Star, Globe, X, User, GitFork } from 'lucide-react';
 import { StudentShowcaseData, ShowcasedProject } from '../types';
 import { getAllStudentsShowcase } from '../lib/showcaseStore';
 import { DEGREE_PROGRAM_OPTIONS, matchesProgramFilter, getProgramBadgeLabel } from '../lib/programs';
 import { getStarCountLabel } from '../lib/projectStats';
 import { useAuth } from '../context/AuthContext';
+import { Skeleton } from './Skeleton';
 
 interface ExploreViewProps {
   navigate: (route: string) => void;
@@ -148,9 +149,15 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
 
         {/* Main Content Area */}
         {loading ? (
-          <div className="text-center py-12 paper-card bg-[#FEFCF6]">
-            <RefreshCw className="w-5 h-5 animate-spin mx-auto text-stone-700" />
-            <p className="text-xs font-sketch uppercase tracking-wider text-stone-700 mt-2 font-bold">Loading student projects...</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5" aria-label="Loading student projects">
+            {[0, 1, 2, 3].map((index) => (
+              <div key={index} className="paper-card bg-[#FEFCF6] p-3.5 sm:p-4 space-y-3">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-5/6" />
+                <Skeleton className="h-5 w-1/3" />
+              </div>
+            ))}
           </div>
         ) : (
           filteredProjects.length === 0 ? (
@@ -164,7 +171,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+            <div className="content-fade-in grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
               {filteredProjects.map(({ project, student }) => {
                 return (
                   <div
