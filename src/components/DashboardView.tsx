@@ -244,20 +244,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
         </div>
       )}
 
-      {/* Project Workbench Masthead Banner */}
+      {/* My Projects Masthead Banner */}
       <section className="paper-card bg-[#FEFCF6] p-3.5 sm:p-5 space-y-3.5">
         <div className="border-b border-dashed border-[#212121] pb-3.5">
           <div className="space-y-1 min-w-0">
-            <div className="flex items-center space-x-2">
-              <div className="w-7 h-7 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center flex-shrink-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-[900] uppercase font-newspaper-title text-[#212121] leading-tight flex items-center space-x-2">
+              <span className="w-7 h-7 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center flex-shrink-0">
                 <FolderGit2 className="w-4 h-4 text-[#212121] stroke-[2]" />
-              </div>
-              <span className="text-[10px] sm:text-xs font-sketch uppercase tracking-widest text-stone-700 font-bold">
-                PROJECT WORKBENCH
               </span>
-            </div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-[900] uppercase font-newspaper-title text-[#212121] leading-tight">
-              My Projects
+              <span>My Projects</span>
             </h1>
             <p className="text-xs sm:text-sm font-serif-body text-stone-700 max-w-2xl leading-relaxed">
               Manage, publish, edit, and curate your projects and GitHub repositories displayed across GitShowcase.
