@@ -140,7 +140,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
               GITSHOWCASE
             </h1>
             <p className="text-[9px] sm:text-[11px] font-sketch text-stone-700 font-semibold truncate">
-              Explore. Build. Collab
+              Explore. Build. Collaborate.
             </p>
           </div>
         </button>
@@ -200,7 +200,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                 >
                   <div className="w-full bg-[#FEFCF6] border-2 border-[#212121] p-1.5 rounded-[255px_15px_225px_15px/15px_225px_15px_255px]">
                     <div className="p-2 border-b border-dashed border-[#212121] mb-1 bg-[#FAF6EC] rounded-xs">
-                      <p className="text-xs font-bold font-headline uppercase text-[#212121] truncate">{profile?.full_name || 'Student Author'}</p>
+                      <p className="text-xs font-bold font-headline uppercase text-[#212121] truncate">{profile?.full_name || (profile?.github_username ? `@${profile.github_username}` : 'Student')}</p>
                       <p className="text-[10px] font-mono text-stone-700 truncate">@{profile?.github_username || 'student'}</p>
                     </div>
                     <div className="flex flex-col gap-0.5" role="none">
@@ -341,7 +341,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
               <div className="space-y-2 pt-0.5">
                 <div className="px-2.5 py-1.5 bg-[#FAF6EC] border border-[#212121] rounded-xs">
                   <p className="text-xs font-bold font-headline uppercase text-[#212121] truncate">
-                    {profile?.full_name || 'Student Author'}
+                    {profile?.full_name || (profile?.github_username ? `@${profile.github_username}` : 'Student')}
                   </p>
                   <p className="text-[10px] font-mono text-stone-700">
                     @{profile?.github_username || 'student'}
@@ -388,8 +388,8 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                   <AlertTriangle className="w-4 h-4 text-red-800" />
                 </span>
                 <div>
-                  <p className="font-newspaper-title font-black uppercase text-sm text-[#212121]">Withdrawal Notice</p>
-                  <p className="font-sketch text-[10px] uppercase text-stone-700">Permanent account removal</p>
+                  <p className="font-newspaper-title font-black uppercase text-sm text-[#212121]">Delete Account</p>
+                  <p className="font-sketch text-[10px] uppercase text-stone-700">Permanent removal</p>
                 </div>
               </div>
               <button onClick={closeDeleteDialog} className="paper-button-icon p-1 min-w-[30px] min-h-[30px] cursor-pointer" aria-label="Close account deletion dialog" disabled={isDeleting}>

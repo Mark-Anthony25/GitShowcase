@@ -70,7 +70,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
     if (students.length === 0) {
       return {
         title: `No ${noun} published yet`,
-        description: 'Sign in with GitHub to publish the first showcase from the ISU community.',
+        description: 'Sign in with GitHub to publish the first project from the ISU community.',
       };
     }
 

@@ -60,7 +60,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               repo: p.repo_full_name,
               author: s.profile.github_username,
               badge: 'PROJECT',
-              desc: p.custom_description || p.live_stats?.description || 'Student repository project showcased on GitShowcase.',
+              desc: p.custom_description || p.live_stats?.description || 'No description provided.',
               stars: p.live_stats?.stars ?? 0,
               url: p.repo_url,
             });
@@ -91,14 +91,11 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               <AlertTriangle className="w-5 h-5 text-rose-600 mt-0.5 flex-shrink-0 stroke-[2]" />
               <div>
                 <h4 className="font-newspaper-title font-[900] uppercase text-sm text-rose-950">
-                  GitHub Authentication Notice
+                  GitHub Sign-In Notice
                 </h4>
                 <p className="text-xs font-serif-body text-rose-900 mt-1 leading-relaxed">
                   {authError}
                 </p>
-                <div className="mt-2 text-[11px] font-mono text-rose-800">
-                  Tip: In GitHub OAuth App, click "Generate a new client secret", copy it, and paste it into Supabase Dashboard &gt; Authentication &gt; Providers &gt; GitHub.
-                </div>
               </div>
             </div>
             <button
@@ -117,13 +114,13 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 sm:gap-6">
           <div className="space-y-2 sm:space-y-2.5 max-w-xl lg:max-w-2xl xl:max-w-3xl min-w-0">
             <span className="paper-badge text-[9px] sm:text-[10px] lg:text-xs font-sketch uppercase tracking-wider text-stone-800 font-bold bg-[#EFE9DB]">
-              Explore. Build. Collab
+              Explore. Build. Collaborate.
             </span>
             <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-[2.65rem] font-[900] uppercase font-newspaper-title tracking-tight text-[#212121] leading-tight break-words">
               Discover Student Projects
             </h2>
             <p className="text-xs sm:text-sm lg:text-base font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed">
-              GitShowcase is a GitHub-connected portfolio and collaboration platform for Isabela State University and its alumni. <strong className="font-bold">Explore</strong> projects from past students, <strong className="font-bold">build</strong> and showcase your own work, and <strong className="font-bold">collab</strong> with others across class years.
+              GitShowcase is a GitHub-connected portfolio and collaboration platform for Isabela State University students and alumni. <strong className="font-bold">Explore</strong> projects from peers, <strong className="font-bold">build</strong> and showcase your own work, and <strong className="font-bold">collaborate</strong> across class years.
             </p>
           </div>
 
@@ -200,10 +197,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
           <div className="p-8 text-center paper-card bg-[#FEFCF6] border-dashed space-y-2">
             <FolderGit2 className="w-8 h-8 text-stone-500 mx-auto" />
             <h4 className="text-sm font-[900] uppercase font-newspaper-title text-[#212121]">
-              No student projects published yet
+              No projects published yet
             </h4>
             <p className="text-xs font-serif-body text-stone-600 max-w-md mx-auto">
-              Sign in with your GitHub account to publish and showcase your capstones and repositories.
+              Sign in with GitHub to publish and showcase your repositories.
             </p>
           </div>
         ) : (
@@ -275,7 +272,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               1. Sign in with GitHub
             </h4>
             <p className="text-xs sm:text-sm font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed">
-              Connect your GitHub account to get started.
+              Link your GitHub account to automatically import your repositories.
             </p>
           </div>
 
@@ -292,7 +289,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               2. Set Up Your Profile
             </h4>
             <p className="text-xs sm:text-sm font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed">
-              Add your name, program, and a short introduction about yourself.
+              Add your degree program, academic year, and a brief bio.
             </p>
           </div>
 
@@ -306,10 +303,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               </div>
             </div>
             <h4 className="text-sm font-[900] uppercase font-newspaper-title text-[#212121] break-words">
-              3. Add Your Projects
+              3. Publish Your Work
             </h4>
             <p className="text-xs sm:text-sm font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed">
-              Select which repositories to showcase and publish them instantly to your public profile.
+              Select up to 3 repositories to feature on your public showcase.
             </p>
           </div>
         </div>

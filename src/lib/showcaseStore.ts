@@ -632,6 +632,7 @@ export async function addProjectToShowcase(params: {
     // Fetch live stats immediately for the newly added/updated repo
     const stats = await fetchLiveRepoStats(createdProject.repo_full_name, params.token ?? null, true);
     createdProject.live_stats = stats || undefined;
+    saveLocalData(profiles, projects);
   }
 
   // Invalidate affected caches immediately so changes reflect everywhere

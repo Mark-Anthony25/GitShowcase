@@ -38,10 +38,10 @@ export const AuthGateView: React.FC<AuthGateViewProps> = ({ navigate, onOpenGuid
       </div>
       <div className="space-y-1">
         <h1 className="text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
-          Continue With GitHub
+          Sign In to GitShowcase
         </h1>
         <p className="text-xs sm:text-sm font-serif-body text-stone-700 leading-relaxed">
-          Use your GitHub account to access your profile or create your portfolio on first sign-in.
+          Connect your GitHub account to manage your profile and showcase your projects.
         </p>
       </div>
       {error && (

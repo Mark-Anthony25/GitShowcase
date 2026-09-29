@@ -145,7 +145,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           window.location.replace('/signin');
           return;
         }
-        const result = await completeOAuthCallback(window.location.search, (code) => supabase.auth.exchangeCodeForSession(code));
+        const result = await completeOAuthCallback(window.location.search, async (code) => {
+          const res = await supabase.auth.exchangeCodeForSession(code);
+          const tok = res.data?.session?.provider_token;
+          if (tok) {
+            try {
+              sessionStorage.setItem('gitshowcase_gh_token', tok);
+              localStorage.setItem('gitshowcase_gh_token', tok);
+              if (res.data?.session?.user?.id) {
+                sessionStorage.setItem(`gh_token_${res.data.session.user.id}`, tok);
+                localStorage.setItem(`gh_token_${res.data.session.user.id}`, tok);
+              }
+            } catch (e) {
+              console.warn('Failed to persist provider_token:', e);
+            }
+          }
+          return res;
+        });
         if (result.status === 'success') {
           window.location.replace('/dashboard');
         } else {
@@ -164,10 +180,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Recover from sessionStorage if the live value is missing.
             const storageKey = `gh_token_${session.user.id}`;
             const liveTok = session.provider_token || null;
-            const tok = liveTok || sessionStorage.getItem(storageKey);
-            if (liveTok) sessionStorage.setItem(storageKey, liveTok);
+            const storedTok = 
+              sessionStorage.getItem(storageKey) || 
+              localStorage.getItem(storageKey) || 
+              sessionStorage.getItem('gitshowcase_gh_token') || 
+              localStorage.getItem('gitshowcase_gh_token') || 
+              null;
+            const tok = liveTok || storedTok;
+            if (liveTok) {
+              try {
+                sessionStorage.setItem(storageKey, liveTok);
+                localStorage.setItem(storageKey, liveTok);
+                sessionStorage.setItem('gitshowcase_gh_token', liveTok);
+                localStorage.setItem('gitshowcase_gh_token', liveTok);
+              } catch {}
+            }
             if (tok) {
               setGithubToken(tok);
+              setActiveGitHubToken(tok);
             }
             lastLoadedUserId = session.user.id;
             await loadProfile(session.user.id, session.user, tok);
@@ -183,12 +213,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           const liveTok = newSession?.provider_token || null;
           if (liveTok && newSession?.user) {
-            // Persist fresh token so page refreshes can recover it
-            sessionStorage.setItem(`gh_token_${newSession.user.id}`, liveTok);
+            try {
+              sessionStorage.setItem(`gh_token_${newSession.user.id}`, liveTok);
+              localStorage.setItem(`gh_token_${newSession.user.id}`, liveTok);
+              sessionStorage.setItem('gitshowcase_gh_token', liveTok);
+              localStorage.setItem('gitshowcase_gh_token', liveTok);
+            } catch {}
           }
-          const tok = liveTok || (newSession?.user ? sessionStorage.getItem(`gh_token_${newSession.user.id}`) : null);
+          const tok = liveTok || (newSession?.user 
+            ? (sessionStorage.getItem(`gh_token_${newSession.user.id}`) ||
+               localStorage.getItem(`gh_token_${newSession.user.id}`) ||
+               sessionStorage.getItem('gitshowcase_gh_token') ||
+               localStorage.getItem('gitshowcase_gh_token'))
+            : null);
           if (tok) {
             setGithubToken(tok);
+            setActiveGitHubToken(tok);
           }
 
           if (newSession?.user) {
@@ -251,7 +291,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await supabase.auth.signOut();
     }
     // Clear persisted GitHub token
-    if (user?.id) sessionStorage.removeItem(`gh_token_${user.id}`);
+    if (user?.id) {
+      sessionStorage.removeItem(`gh_token_${user.id}`);
+      localStorage.removeItem(`gh_token_${user.id}`);
+    }
+    sessionStorage.removeItem('gitshowcase_gh_token');
+    localStorage.removeItem('gitshowcase_gh_token');
+    setActiveGitHubToken(null);
     setUser(null);
     setSession(null);
     setProfile(null);

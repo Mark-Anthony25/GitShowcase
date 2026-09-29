@@ -26,12 +26,13 @@ interface DashboardViewProps {
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGuide }) => {
-  const { user, profile, githubToken } = useAuth();
+  const { user, profile, githubToken, signInWithGitHub } = useAuth();
 
   // State
   const [showcased, setShowcased] = useState<ShowcasedProject[]>([]);
   const [availableRepos, setAvailableRepos] = useState<GitHubRepoItem[]>([]);
   const [loadingRepos, setLoadingRepos] = useState(false);
+  const [repoError, setRepoError] = useState<string | null>(null);
   const [loadingShowcase, setLoadingShowcase] = useState(true);
   const [activeTab, setActiveTab] = useState<'showcase' | 'repos'>('showcase');
   const [searchQuery, setSearchQuery] = useState('');
@@ -61,18 +62,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     return unsub;
   }, []);
 
-  // Load showcase projects
+  // Load showcase projects - re-run when user or token updates
   useEffect(() => {
     if (!user) return;
     loadShowcasedProjects(true);
-  }, [user]);
+  }, [user, githubToken]);
 
-  // Load GitHub repos when switching to 'repos' tab or initial mount
+  // Load GitHub repos when switching to 'repos' tab or when user/token/profile arrives
   useEffect(() => {
     if (user && (activeTab === 'repos' || availableRepos.length === 0)) {
       loadGitHubRepos(true);
     }
-  }, [user, activeTab]);
+  }, [user, activeTab, githubToken, profile?.github_username]);
 
   const loadShowcasedProjects = async (force = false) => {
     if (!user) return;
@@ -88,12 +89,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   };
 
   const loadGitHubRepos = async (force = false) => {
+    const resolvedUsername = 
+      profile?.github_username || 
+      (user?.user_metadata as any)?.user_name || 
+      (user?.user_metadata as any)?.preferred_username || 
+      null;
+
+    if (!githubToken && !resolvedUsername) {
+      return;
+    }
+
     setLoadingRepos(true);
+    setRepoError(null);
     try {
-      const repos = await fetchUserRepos(githubToken, profile?.github_username || null, force);
+      const repos = await fetchUserRepos(githubToken, resolvedUsername, force);
       setAvailableRepos(repos);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading GitHub repos:', err);
+      setRepoError('Unable to load GitHub repositories. Try reconnecting with GitHub.');
     } finally {
       setLoadingRepos(false);
     }
@@ -261,10 +274,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             </div>
             <div className="mt-1">
               <span className="text-lg sm:text-xl font-[900] font-newspaper-title text-[#212121] leading-none block">
-                {showcased.length}
+                {showcased.length} / {MAX_SHOWCASE_PROJECTS}
               </span>
               <span className="text-[10px] font-serif-body text-stone-600">
-                Live on public profile
+                Max {MAX_SHOWCASE_PROJECTS} published
               </span>
             </div>
           </div>
@@ -313,7 +326,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             }`}
           >
             <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>Published Projects ({showcased.length})</span>
+            <span>Published Projects ({showcased.length}/{MAX_SHOWCASE_PROJECTS})</span>
           </button>
 
           <button
@@ -534,6 +547,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             </span>
           </div>
 
+          {repoError && (
+            <div className="p-3 bg-amber-50 border border-amber-600 text-amber-950 text-xs font-mono flex items-center justify-between gap-2 rounded-xs">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-700" />
+                <span>{repoError}</span>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    await signInWithGitHub();
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+                className="paper-button text-xs py-1 px-2.5 font-bold whitespace-nowrap cursor-pointer"
+              >
+                Reconnect
+              </button>
+            </div>
+          )}
+
           {loadingRepos ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4" aria-label="Loading GitHub repositories">
               {[0, 1, 2, 3].map((index) => (
@@ -553,16 +587,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                   No repositories found
                 </h3>
                 <p className="text-xs sm:text-sm font-serif-body text-stone-700 max-w-md mx-auto leading-relaxed">
-                  Could not load your GitHub repositories. This may be due to a session expiry or GitHub API rate limit. Try signing out and back in.
+                  Unable to load your GitHub repositories. This can happen if your session expired or GitHub's rate limit was reached. Try reconnecting with GitHub.
                 </p>
               </div>
-              <button
-                onClick={() => loadGitHubRepos(true)}
-                className="paper-button text-xs py-1.5 px-4 font-bold min-h-[34px] inline-flex items-center space-x-1.5"
-              >
-                <RefreshCw className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>Retry</span>
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                <button
+                  onClick={() => loadGitHubRepos(true)}
+                  className="paper-button text-xs py-1.5 px-4 font-bold min-h-[34px] inline-flex items-center space-x-1.5 cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>Retry</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await signInWithGitHub();
+                    } catch (e) {
+                      console.error(e);
+                    }
+                  }}
+                  className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold min-h-[34px] inline-flex items-center space-x-1.5 cursor-pointer"
+                >
+                  <Github className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>Reconnect GitHub</span>
+                </button>
+              </div>
             </div>
           ) : filteredAvailableRepos.length === 0 ? (
             <div className="text-center py-10 px-4 paper-card bg-[#FEFCF6]">
@@ -669,10 +718,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             <div className="flex items-start justify-between border-b border-dashed border-[#212121] pb-2 gap-2">
               <div className="min-w-0 flex-1">
                 <span className="text-[9px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
-                  PUBLISH WORK
+                  SHOWCASE PROJECT
                 </span>
                 <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
-                  Publish to Showcase
+                  Publish
                 </h3>
                 <p className="text-[10px] text-stone-700 font-mono truncate">
                   {selectedRepoToAdd.full_name}
@@ -735,7 +784,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                   disabled={addingInProgress}
                   className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold disabled:opacity-50 min-h-[34px]"
                 >
-                  {addingInProgress ? 'Publishing...' : 'Publish to Showcase'}
+                  {addingInProgress ? 'Publishing...' : 'Publish'}
                 </button>
               </div>
             </form>

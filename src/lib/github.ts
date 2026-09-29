@@ -1,10 +1,18 @@
 import { GitHubRepoItem, RepoLiveStats, ContributionCalendar, ContributionDay, GitHubUserData } from '../types';
-import { getCachedOrFetch, invalidateCache, CACHE_TTL } from './cache';
+import { getCachedOrFetch, getFromCache, invalidateCache, CACHE_TTL } from './cache';
 
 let globalGitHubToken: string | null = null;
 
+export function getValidToken(token?: string | null): string | null {
+  const t = token !== undefined ? token : globalGitHubToken;
+  if (!t) return null;
+  const trimmed = t.trim();
+  if (trimmed === 'null' || trimmed === 'undefined' || trimmed.length < 10) return null;
+  return trimmed;
+}
+
 export function setActiveGitHubToken(token: string | null) {
-  globalGitHubToken = token;
+  globalGitHubToken = getValidToken(token);
 }
 
 export function getActiveGitHubToken(): string | null {
@@ -27,7 +35,7 @@ export async function fetchGitHubUserData(
   username?: string | null,
   forceRefresh = false
 ): Promise<GitHubUserData | null> {
-  const effectiveToken = token !== undefined ? token : globalGitHubToken;
+  const effectiveToken = getValidToken(token);
   const targetKey = username ? `user_${username.toLowerCase()}` : `auth_user_${effectiveToken ? 'authed' : 'anon'}`;
   const cacheKey = `github_user_${targetKey}`;
 
@@ -113,7 +121,7 @@ export async function fetchUserRepos(
   username?: string | null,
   forceRefresh = false
 ): Promise<GitHubRepoItem[]> {
-  const effectiveToken = githubToken !== undefined ? githubToken : globalGitHubToken;
+  const effectiveToken = getValidToken(githubToken);
   const targetKey = username ? `user_${username.toLowerCase()}` : `auth_user_${effectiveToken ? 'authed' : 'anon'}`;
   const cacheKey = `github_repos_${targetKey}`;
 
@@ -143,8 +151,8 @@ export async function fetchUserRepos(
 
         const res = await fetch(url, { headers });
         if (!res.ok) {
-          if ((res.status === 401 || res.status === 403) && username) {
-            console.warn('GitHub API rate limited or token expired, attempting public user repos');
+          if (username) {
+            console.warn('GitHub API authenticated repos failed, attempting public user repos');
             const publicRes = await fetch(
               `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=100`,
               {
@@ -155,16 +163,42 @@ export async function fetchUserRepos(
               }
             );
             if (publicRes.ok) {
-              return await publicRes.json();
+              const pubRepos = await publicRes.json();
+              if (Array.isArray(pubRepos)) return pubRepos;
             }
+          }
+          if (res.status === 403) {
+            throw new Error('GITHUB_RATE_LIMIT');
           }
           throw new Error(`GitHub API returned status ${res.status}: ${res.statusText}`);
         }
 
-        const repos: GitHubRepoItem[] = await res.json();
+        let repos: GitHubRepoItem[] = await res.json();
+        // If authenticated user/repos returned empty but username is available, check public repos
+        if ((!Array.isArray(repos) || repos.length === 0) && username) {
+          const publicRes = await fetch(
+            `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=100`,
+            {
+              headers: {
+                Accept: 'application/vnd.github+json',
+                'X-GitHub-Api-Version': '2022-11-28',
+              },
+            }
+          );
+          if (publicRes.ok) {
+            const pubRepos = await publicRes.json();
+            if (Array.isArray(pubRepos) && pubRepos.length > 0) {
+              repos = pubRepos;
+            }
+          }
+        }
         return Array.isArray(repos) ? repos : [];
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching repos from GitHub:', error);
+        const cachedFallback = getFromCache<GitHubRepoItem[]>(cacheKey);
+        if (cachedFallback && cachedFallback.length > 0) {
+          return cachedFallback;
+        }
         return [];
       }
     },
@@ -185,8 +219,8 @@ export async function fetchLiveRepoStats(
     return null;
   }
 
-  const effectiveToken = token !== undefined ? token : globalGitHubToken;
-  const cacheKey = `github_stats_${cleanRepoName}_${effectiveToken ? 'auth' : 'public'}`;
+  const effectiveToken = getValidToken(token);
+  const cacheKey = `github_stats_${cleanRepoName.toLowerCase()}`;
 
   return getCachedOrFetch(
     cacheKey,
@@ -228,6 +262,11 @@ export async function fetchLiveRepoStats(
               };
               return stats;
             }
+          }
+          // On rate limit or network error, fallback to previous cached stats if available
+          const cachedFallback = getFromCache<RepoLiveStats>(cacheKey);
+          if (cachedFallback) {
+            return cachedFallback;
           }
           return null;
         }

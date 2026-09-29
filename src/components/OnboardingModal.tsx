@@ -315,10 +315,10 @@ interface SelectedRepoMeta {
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center space-x-1.5">
               <span className="paper-badge bg-[#0071DE] text-white text-[9px] font-bold">
-                GITSHOWCASE ONBOARDING
+                PROFILE SETUP
               </span>
               <span className="text-xs font-sketch text-stone-700 font-bold">
-                ISU Cauayan Campus
+                Isabela State University
               </span>
             </div>
             <div className="flex items-center space-x-1 font-mono text-xs font-bold text-stone-800">
@@ -337,9 +337,9 @@ interface SelectedRepoMeta {
             {currentStep === 4 && 'Publishing Your Portfolio...'}
           </h2>
           <p className="text-xs font-serif-body text-stone-700 mt-0.5">
-            {currentStep === 1 && 'Information is pre-filled from your authenticated GitHub account. Review and adjust your details.'}
-            {currentStep === 2 && 'Choose which public repositories to showcase on your profile and customize their summaries.'}
-            {currentStep === 3 && 'Double-check all imported information before launching your public showcase page.'}
+            {currentStep === 1 && 'Your details were auto-filled from GitHub. Review or adjust them below.'}
+            {currentStep === 2 && 'Choose up to 3 repositories to feature on your public profile.'}
+            {currentStep === 3 && 'Review your details before publishing your public showcase.'}
             {currentStep === 4 && 'Saving your student profile and connecting your showcase projects.'}
           </p>
         </div>
