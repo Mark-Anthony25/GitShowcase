@@ -35,6 +35,10 @@ function runTests() {
     throw new Error('Contribution activity labels must use the high-contrast PaperCSS ink color.');
   }
 
+  if (!source.includes('font-bold text-[#065F46]') || !source.includes('text-stone-800 text-[10px]')) {
+    throw new Error('Contribution tooltip text must use colors that contrast with its light background.');
+  }
+
   console.log('All commit heatmap tooltip and contrast tests passed');
 }
 

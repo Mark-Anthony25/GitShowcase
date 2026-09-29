@@ -338,10 +338,10 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                 top: `${hoveredDay.top}px`,
               }}
             >
-              <div className="font-bold text-emerald-400">
+              <div className="font-bold text-[#065F46]">
                 {hoveredDay.day.count} {hoveredDay.day.count === 1 ? 'contribution' : 'contributions'}
               </div>
-              <div className="text-stone-300 text-[10px]">{formatDate(hoveredDay.day.date)}</div>
+              <div className="text-stone-800 text-[10px]">{formatDate(hoveredDay.day.date)}</div>
             </div>,
             document.body,
           )}
