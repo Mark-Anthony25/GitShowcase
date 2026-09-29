@@ -171,7 +171,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
           <div className="flex items-center space-x-2 min-w-0">
             <FolderGit2 className="w-4 h-4 text-[#212121] stroke-[2] flex-shrink-0" />
             <h3 className="text-sm sm:text-base lg:text-lg font-[900] uppercase font-newspaper-title text-[#212121] truncate">
-              Latest Student Dispatches
+              Latest Uploaded Projects
             </h3>
           </div>
           {previewProjects.length > 0 && (
@@ -214,10 +214,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                 className="p-3 sm:p-3.5 paper-card bg-[#FAF6EC] flex flex-col justify-between space-y-2 hover:bg-[#FAF8F2] transition-colors"
               >
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between gap-1 text-[9px]">
-                    <span className="text-[10px] font-mono text-stone-600 truncate max-w-[130px]">
-                      {proj.repo.split('/')[1] || proj.repo}
-                    </span>
+                  <div className="flex items-center justify-end gap-1 text-[9px]">
                     <div className="flex items-center space-x-1 text-stone-800 font-mono text-[10px] font-bold flex-shrink-0 ml-auto">
                       <Star className="w-3 h-3 text-[#212121] stroke-[2]" />
                       <span>{proj.stars}</span>

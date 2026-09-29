@@ -30,22 +30,6 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
 
   const myUsername = profile?.github_username || '';
 
-  const getFormattedDate = () => {
-    const today = new Date();
-    const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
-    const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
-    const dayName = days[today.getDay()];
-    const dateNum = today.getDate();
-    const monthName = months[today.getMonth()];
-    const year = today.getFullYear();
-    const getOrdinal = (n: number) => {
-      const s = ['TH', 'ST', 'ND', 'RD'];
-      const v = n % 100;
-      return s[(v - 20) % 10] || s[v] || s[0];
-    };
-    return `${dayName}, ${dateNum}${getOrdinal(dateNum)} ${monthName} ${year}`;
-  };
-
   useEffect(() => {
     if (!dropdownOpen) return;
     const handleClick = (e: MouseEvent) => {
@@ -139,14 +123,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
     }`;
 
   return (
-    <header className="w-full bg-[#FEFCF6] border-1.5 border-[#212121] text-[#212121] select-none p-1.5 sm:p-2.5 mb-2.5 sm:mb-3 relative z-30 rounded-[255px_15px_225px_15px/15px_225px_15px_255px]">
-      {/* Top Utility Bar */}
-      <div className="hidden sm:flex items-center justify-between border-b border-dashed border-[#212121] px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-sketch uppercase tracking-wider text-stone-700 bg-[#FAF6EC] gap-1">
-        <span className="truncate max-w-[150px] sm:max-w-none font-bold">ISU Cauayan</span>
-        <span className="hidden md:inline font-bold">{getFormattedDate()}</span>
-        <span className="font-bold truncate flex-shrink-0">Project Showcase</span>
-      </div>
-
+    <header className="w-full mt-2 sm:mt-3 bg-[#FEFCF6] border-1.5 border-[#212121] text-[#212121] select-none p-1.5 sm:p-2.5 mb-2.5 sm:mb-3 relative z-30 rounded-[255px_15px_225px_15px/15px_225px_15px_255px]">
       {/* Main Brand Title and Nav Bar */}
       <div className="py-1.5 sm:py-2 px-1 sm:px-3 flex items-center justify-between gap-3 lg:gap-6">
         {/* Brand / Logo */}
