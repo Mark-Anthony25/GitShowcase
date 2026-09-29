@@ -30,6 +30,25 @@ const TOOLTIP_HEIGHT = 48;
 const TOOLTIP_GAP = 8;
 const VIEWPORT_PADDING = 8;
 
+export function getMobileHeatmapGridStyle() {
+  return { gridTemplateColumns: 'repeat(52, minmax(0, 1fr))' };
+}
+
+export function getCompleteWeek(days: ContributionDay[]): ContributionDay[] {
+  if (days.length === 7) return days;
+
+  const firstDate = new Date(`${days[0]?.date}T00:00:00Z`);
+  const weekStart = new Date(firstDate);
+  weekStart.setUTCDate(firstDate.getUTCDate() - firstDate.getUTCDay());
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(weekStart);
+    date.setUTCDate(weekStart.getUTCDate() + index);
+    const isoDate = date.toISOString().slice(0, 10);
+    return days.find((day) => day.date === isoDate) ?? { date: isoDate, count: 0, level: 0 };
+  });
+}
+
 export function getTooltipPosition(rect: TooltipRect, viewport: ViewportSize) {
   const rightOfCell = rect.left + rect.width + TOOLTIP_GAP;
   const leftOfCell = rect.left - TOOLTIP_WIDTH - TOOLTIP_GAP;
@@ -143,7 +162,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
   };
 
   return (
-    <div className={`w-full max-w-full overflow-hidden p-3.5 sm:p-5 paper-card bg-[#FEFCF6] space-y-4 ${className}`}>
+    <div className={`w-full max-w-full overflow-hidden p-3.5 sm:p-5 paper-sheet bg-[#FEFCF6] space-y-4 ${className}`}>
       {/* Header with Title & GitHub Link */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-dashed border-[#212121] pb-3">
         <div className="space-y-0.5">
@@ -224,15 +243,15 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
       {calendarData && (
         <>
           {/* Scrollable / Responsive Calendar Container with Maximized Cell Spacing */}
-          <div className="relative overflow-x-auto pb-2 -mx-1 px-1 sm:mx-0 sm:px-0">
-            <div className="min-w-[780px] sm:min-w-[880px] flex flex-col space-y-1.5">
+          <div className="relative pb-2 -mx-1 px-1 sm:mx-0 sm:px-0">
+            <div className="min-w-0 sm:min-w-[880px] flex flex-col space-y-1.5">
               {/* Month Labels Bar */}
               <div className="relative text-[10px] font-mono font-bold text-stone-700 pl-7 sm:pl-8 h-4 select-none">
                 {monthLabels.map((m, idx) => (
                   <span
                     key={`${m.label}-${idx}`}
                     className="absolute font-bold"
-                    style={{ left: `calc(${m.weekIndex} * (13px + 4px) + 2rem)` }}
+                    style={{ left: `calc(${(m.weekIndex / calendarData.weeks.length) * 100}% + 2rem)` }}
                   >
                     {m.label}
                   </span>
@@ -240,37 +259,36 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
               </div>
 
               {/* Heatmap Grid & Day-of-week Axis */}
-              <div className="flex items-start space-x-2">
+              <div className="flex items-stretch sm:items-start space-x-2">
                 {/* Day of Week Axis with exact row alignment (Mon, Wed, Fri) */}
                 <div
-                  className="relative w-6 sm:w-7 text-[9px] font-mono text-stone-800 select-none flex-shrink-0"
-                  style={{ height: 'calc(7 * 13px + 6 * 4px)' }}
+                  className="relative w-6 sm:w-7 text-[9px] font-mono text-stone-800 select-none flex-shrink-0 self-stretch"
                 >
                   <span
                     className="absolute leading-none right-1"
-                    style={{ top: 'calc(1 * (13px + 4px) + 1px)' }}
+                    style={{ top: 'calc(14.285% + 1px)' }}
                   >
                     Mon
                   </span>
                   <span
                     className="absolute leading-none right-1"
-                    style={{ top: 'calc(3 * (13px + 4px) + 1px)' }}
+                    style={{ top: 'calc(42.857% + 1px)' }}
                   >
                     Wed
                   </span>
                   <span
                     className="absolute leading-none right-1"
-                    style={{ top: 'calc(5 * (13px + 4px) + 1px)' }}
+                    style={{ top: 'calc(71.428% + 1px)' }}
                   >
                     Fri
                   </span>
                 </div>
 
                 {/* 52 Columns (Weeks) with generous gap and cell dimensions */}
-                <div className="flex items-center gap-1 sm:gap-[4px] flex-1">
+                <div className="grid sm:flex items-center gap-px sm:gap-[4px] flex-1 min-w-0" style={getMobileHeatmapGridStyle()}>
                   {calendarData.weeks.map((week, wIndex) => (
-                    <div key={wIndex} className="flex flex-col gap-1 sm:gap-[4px]">
-                      {week.days.map((day, dIndex) => (
+                    <div key={wIndex} className="grid grid-rows-7 gap-px sm:flex sm:flex-col sm:gap-[4px] min-w-0">
+                      {getCompleteWeek(week.days).map((day, dIndex) => (
                         <button
                           key={`${day.date}-${dIndex}`}
                           type="button"
@@ -293,7 +311,7 @@ export const CommitHeatmap: React.FC<CommitHeatmapProps> = ({
                           onBlur={() => setHoveredDay(null)}
                           onMouseLeave={() => setHoveredDay(null)}
                           aria-label={`${day.count} contributions on ${day.date}`}
-                          className={`w-[11.5px] h-[11.5px] sm:w-[13px] sm:h-[13px] rounded-[2px] border transition-transform hover:scale-125 hover:z-20 cursor-pointer ${getLevelColor(
+                          className={`w-full aspect-square sm:w-[13px] sm:h-[13px] rounded-[2px] border transition-transform hover:scale-125 hover:z-20 cursor-pointer ${getLevelColor(
                             day.level
                           )}`}
                         />

@@ -489,7 +489,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
                 <div>
                   <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
-                    Year Level
+                    Academic Level
                   </label>
                   <select
                     value={editYearLevel}
@@ -500,7 +500,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                     <option value="2nd Year">2nd Year</option>
                     <option value="3rd Year">3rd Year</option>
                     <option value="4th Year">4th Year</option>
-                    <option value="Graduate / Alumni">Graduate / Alumni</option>
+                    <option value="Graduate / Alumni">Alumni</option>
                   </select>
                 </div>
               </div>

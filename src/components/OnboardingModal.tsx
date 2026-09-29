@@ -494,7 +494,7 @@ interface SelectedRepoMeta {
 
                 <div>
                   <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
-                    Year Level
+                    Academic Level
                   </label>
                   <select
                     id="onboarding-year-select"
@@ -503,7 +503,7 @@ interface SelectedRepoMeta {
                     className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px] cursor-pointer"
                   >
                     {YEAR_OPTIONS.map((yr) => (
-                      <option key={yr} value={yr}>{yr}</option>
+                      <option key={yr} value={yr}>{yr === 'Graduate / Alumni' ? 'Alumni' : yr}</option>
                     ))}
                   </select>
                 </div>

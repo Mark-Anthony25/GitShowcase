@@ -112,7 +112,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             id="explore-program-filter"
             value={filterProgram}
             onChange={(e) => setFilterProgram(e.target.value)}
-            className="w-full sm:w-auto px-3 py-1.5 paper-input text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold min-h-[36px]"
+            className="w-full sm:w-auto px-3 py-1.5 paper-input paper-select text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold min-h-[36px]"
           >
             <option value="all">All Programs</option>
             {DEGREE_PROGRAM_OPTIONS.map((opt) => (
