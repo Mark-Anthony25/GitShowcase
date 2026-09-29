@@ -42,6 +42,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/github/repos/:username",
+      "destination": "/api/github-repos?username=:username"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

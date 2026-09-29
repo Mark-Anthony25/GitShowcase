@@ -264,7 +264,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               <span className="paper-badge bg-[#0071DE] text-[#FEFCF6] text-[9px] font-bold">
                 STEP 01
               </span>
-              <div className="w-6 h-6 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center">
+              <div className="w-6 h-6 rounded-[255px_15px_225px_15px/15px_225px_15px_255px] border-1.5 border-black bg-[#FAF6EC] flex items-center justify-center">
                 <Github className="w-3.5 h-3.5 text-[#212121] stroke-[2]" />
               </div>
             </div>
@@ -281,7 +281,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               <span className="paper-badge bg-[#0071DE] text-[#FEFCF6] text-[9px] font-bold">
                 STEP 02
               </span>
-              <div className="w-6 h-6 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center">
+              <div className="w-6 h-6 rounded-[255px_15px_225px_15px/15px_225px_15px_255px] border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center">
                 <User className="w-3.5 h-3.5 text-[#212121] stroke-[2]" />
               </div>
             </div>
@@ -298,7 +298,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               <span className="paper-badge bg-[#0071DE] text-[#FEFCF6] text-[9px] font-bold">
                 STEP 03
               </span>
-              <div className="w-6 h-6 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center">
+              <div className="w-6 h-6 rounded-[255px_15px_225px_15px/15px_225px_15px_255px] border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center">
                 <FolderGit2 className="w-3.5 h-3.5 text-[#212121] stroke-[2]" />
               </div>
             </div>

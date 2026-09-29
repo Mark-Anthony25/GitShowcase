@@ -180,21 +180,34 @@ export async function getCachedOrFetch<T>(
   const persistLocal = options?.persistLocal ?? true;
   const cacheEmpty = options?.cacheEmpty ?? false;
 
-  if (!skipCache) {
-    const cached = getFromCache<T>(key);
-    if (cached !== null && cached !== undefined) {
-      return cached;
-    }
+  const cached = getFromCache<T>(key);
+  if (!skipCache && cached !== null && cached !== undefined) {
+    return cached;
   }
 
   return await dedupeRequest(key, async () => {
-    const result = await fetcher();
-    if (result !== null && result !== undefined) {
-      // Do not store empty arrays into persistent localStorage unless explicitly enabled
-      const isEmptyArray = Array.isArray(result) && result.length === 0;
-      const shouldPersist = persistLocal && (!isEmptyArray || cacheEmpty);
-      setInCache(key, result, isEmptyArray ? Math.min(ttlMs, 1000 * 15) : ttlMs, shouldPersist);
+    try {
+      const result = await fetcher();
+      if (result !== null && result !== undefined) {
+        const isEmptyArray = Array.isArray(result) && result.length === 0;
+        // If fetcher returned an empty array, but we have valid existing data in cache, preserve it
+        if (isEmptyArray && Array.isArray(cached) && cached.length > 0) {
+          return cached;
+        }
+        const shouldPersist = persistLocal && (!isEmptyArray || cacheEmpty);
+        setInCache(key, result, isEmptyArray ? Math.min(ttlMs, 1000 * 15) : ttlMs, shouldPersist);
+        return result;
+      }
+      // If result is null/undefined, preserve cached if available
+      if (cached !== null && cached !== undefined) {
+        return cached;
+      }
+      return result;
+    } catch (err) {
+      if (cached !== null && cached !== undefined) {
+        return cached;
+      }
+      throw err;
     }
-    return result;
   });
 }

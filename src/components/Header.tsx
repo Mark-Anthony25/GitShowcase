@@ -132,7 +132,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
           onClick={() => navigate('/')}
           className="text-left group cursor-pointer flex items-center space-x-2 sm:space-x-3 shrink-0 focus:outline-none"
         >
-          <div className="w-8 h-8 sm:w-9 sm:h-9 border-1.5 sm:border-2 border-[#212121] bg-[#FEFCF6] text-[#212121] flex items-center justify-center flex-shrink-0 rounded-xs group-hover:bg-[#FAF6EC] transition-colors">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 border-2 border-black bg-[#FEFCF6] text-[#212121] flex items-center justify-center flex-shrink-0 rounded-[255px_15px_225px_15px/15px_225px_15px_255px] group-hover:bg-[#FAF6EC] transition-colors">
             <Github className="w-4 h-4 sm:w-5 sm:h-5 text-[#212121] stroke-[2]" />
           </div>
           <div className="min-w-0">
@@ -288,7 +288,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
             {/* Modal Top Masthead */}
             <div className="flex items-center justify-between border-b border-dashed border-[#212121] pb-2">
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 border-1.5 border-[#212121] bg-[#FEFCF6] text-[#212121] flex items-center justify-center rounded-xs">
+                <div className="w-6 h-6 border-1.5 border-black bg-[#FEFCF6] text-[#212121] flex items-center justify-center rounded-[255px_15px_225px_15px/15px_225px_15px_255px]">
                   <Github className="w-3.5 h-3.5 text-[#212121] stroke-[2]" />
                 </div>
                 <span className="font-newspaper-title font-[900] uppercase text-sm text-[#212121] tracking-tight">Navigation</span>

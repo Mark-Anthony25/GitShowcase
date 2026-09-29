@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { 
   Github, Plus, Trash2, Edit3, Star, GitFork, ExternalLink, 
   RefreshCw, Eye, Search, CheckCircle2, FolderGit2, 
-  X, Globe, Sparkles, AlertCircle, Layers
+  X, Globe, Sparkles, AlertCircle, Layers, Key
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
 import { getStarCountLabel } from '../lib/projectStats';
 import { GitHubRepoItem, ShowcasedProject } from '../types';
-import { fetchUserRepos } from '../lib/github';
+import { fetchUserRepos, getValidToken, setActiveGitHubToken } from '../lib/github';
 import { 
   getStudentShowcasedProjects, 
   addProjectToShowcase, 
@@ -79,7 +79,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     if (!user) return;
     setLoadingShowcase(true);
     try {
-      const items = await getStudentShowcasedProjects(user.id, githubToken, force);
+      const effectiveToken = getValidToken(githubToken);
+      const items = await getStudentShowcasedProjects(user.id, effectiveToken, force);
       setShowcased(items);
     } catch (err) {
       console.error('Error fetching showcase projects:', err);
@@ -95,20 +96,48 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
       (user?.user_metadata as any)?.preferred_username || 
       null;
 
-    if (!githubToken && !resolvedUsername) {
+    const effectiveToken = getValidToken(githubToken);
+
+    if (!effectiveToken && !resolvedUsername) {
       return;
     }
 
     setLoadingRepos(true);
     setRepoError(null);
     try {
-      const repos = await fetchUserRepos(githubToken, resolvedUsername, force);
+      const repos = await fetchUserRepos(effectiveToken, resolvedUsername, force);
       setAvailableRepos(repos);
     } catch (err: any) {
       console.error('Error loading GitHub repos:', err);
-      setRepoError('Unable to load GitHub repositories. Try reconnecting with GitHub.');
+      setRepoError('Unable to load GitHub repositories. Try reconnecting with GitHub or enter a Personal Access Token.');
     } finally {
       setLoadingRepos(false);
+    }
+  };
+
+  const handlePromptAddToken = () => {
+    const current = getValidToken(githubToken) || '';
+    const input = window.prompt(
+      'Enter your GitHub Personal Access Token (classic or fine-grained with repo access) to bypass rate limits:',
+      current
+    );
+    if (input !== null) {
+      const clean = input.trim();
+      if (clean.length >= 10) {
+        try {
+          localStorage.setItem('gitshowcase_gh_token', clean);
+          sessionStorage.setItem('gitshowcase_gh_token', clean);
+          if (user?.id) {
+            localStorage.setItem(`gh_token_${user.id}`, clean);
+            sessionStorage.setItem(`gh_token_${user.id}`, clean);
+          }
+          setActiveGitHubToken(clean);
+          loadGitHubRepos(true);
+          loadShowcasedProjects(true);
+        } catch (e) {
+          console.error('Failed to save GitHub token:', e);
+        }
+      }
     }
   };
 
@@ -249,7 +278,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
         <div className="border-b border-dashed border-[#212121] pb-3.5">
           <div className="space-y-1 min-w-0">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-[900] uppercase font-newspaper-title text-[#212121] leading-tight flex items-center space-x-2">
-              <span className="w-7 h-7 rounded-xs border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center flex-shrink-0">
+              <span className="w-7 h-7 rounded-[255px_15px_225px_15px/15px_225px_15px_255px] border-1.5 border-[#212121] bg-[#FAF6EC] flex items-center justify-center flex-shrink-0">
                 <FolderGit2 className="w-4 h-4 text-[#212121] stroke-[2]" />
               </span>
               <span>My Projects</span>
@@ -543,23 +572,32 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
           </div>
 
           {repoError && (
-            <div className="p-3 bg-amber-50 border border-amber-600 text-amber-950 text-xs font-mono flex items-center justify-between gap-2 rounded-xs">
+            <div className="p-3 bg-amber-50 border border-amber-600 text-amber-950 text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xs">
               <div className="flex items-center space-x-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-700" />
                 <span>{repoError}</span>
               </div>
-              <button
-                onClick={async () => {
-                  try {
-                    await signInWithGitHub();
-                  } catch (e) {
-                    console.error(e);
-                  }
-                }}
-                className="paper-button text-xs py-1 px-2.5 font-bold whitespace-nowrap cursor-pointer"
-              >
-                Reconnect
-              </button>
+              <div className="flex items-center space-x-2 shrink-0">
+                <button
+                  onClick={handlePromptAddToken}
+                  className="paper-button text-xs py-1 px-2.5 font-bold cursor-pointer"
+                  title="Enter GitHub Personal Access Token to bypass rate limits"
+                >
+                  Enter Token
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await signInWithGitHub();
+                    } catch (e) {
+                      console.error(e);
+                    }
+                  }}
+                  className="paper-button paper-button-dark text-xs py-1 px-2.5 font-bold cursor-pointer"
+                >
+                  Reconnect
+                </button>
+              </div>
             </div>
           )}
 
@@ -582,7 +620,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                   No repositories found
                 </h3>
                 <p className="text-xs sm:text-sm font-serif-body text-stone-700 max-w-md mx-auto leading-relaxed">
-                  Unable to load your GitHub repositories. This can happen if your session expired or GitHub's rate limit was reached. Try reconnecting with GitHub.
+                  Unable to load your GitHub repositories. This can happen if your session expired or GitHub's rate limit was reached. Try reconnecting or enter a GitHub token.
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
@@ -592,6 +630,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                 >
                   <RefreshCw className="w-3.5 h-3.5 flex-shrink-0" />
                   <span>Retry</span>
+                </button>
+                <button
+                  onClick={handlePromptAddToken}
+                  className="paper-button text-xs py-1.5 px-4 font-bold min-h-[34px] inline-flex items-center space-x-1.5 cursor-pointer"
+                >
+                  <Key className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>Enter Token</span>
                 </button>
                 <button
                   onClick={async () => {

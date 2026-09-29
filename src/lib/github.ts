@@ -4,11 +4,43 @@ import { getCachedOrFetch, getFromCache, invalidateCache, CACHE_TTL } from './ca
 let globalGitHubToken: string | null = null;
 
 export function getValidToken(token?: string | null): string | null {
-  const t = token !== undefined ? token : globalGitHubToken;
-  if (!t) return null;
-  const trimmed = t.trim();
-  if (trimmed === 'null' || trimmed === 'undefined' || trimmed.length < 10) return null;
-  return trimmed;
+  // 1. Explicitly passed token
+  if (token && token !== 'null' && token !== 'undefined' && token.trim().length >= 10) {
+    return token.trim();
+  }
+
+  // 2. Global in-memory token
+  if (globalGitHubToken && globalGitHubToken.length >= 10) {
+    return globalGitHubToken;
+  }
+
+  // 3. Browser storage fallback (sessionStorage & localStorage)
+  if (typeof window !== 'undefined') {
+    try {
+      const direct = 
+        sessionStorage.getItem('gitshowcase_gh_token') || 
+        localStorage.getItem('gitshowcase_gh_token');
+      if (direct && direct !== 'null' && direct !== 'undefined' && direct.trim().length >= 10) {
+        globalGitHubToken = direct.trim();
+        return globalGitHubToken;
+      }
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('gh_token_')) {
+          const val = localStorage.getItem(k);
+          if (val && val !== 'null' && val !== 'undefined' && val.trim().length >= 10) {
+            globalGitHubToken = val.trim();
+            return globalGitHubToken;
+          }
+        }
+      }
+    } catch {
+      // Storage access may be restricted
+    }
+  }
+
+  return null;
 }
 
 export function setActiveGitHubToken(token: string | null) {
@@ -113,6 +145,150 @@ export async function fetchGitHubUserData(
   );
 }
 
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash;
+}
+
+export async function fetchShieldsStats(cleanRepoName: string): Promise<RepoLiveStats | null> {
+  try {
+    const starRes = await fetch(`https://img.shields.io/github/stars/${cleanRepoName}.json`);
+    if (!starRes.ok) return null;
+    const starData = await starRes.json();
+    const rawStars = starData?.value || starData?.message || '0';
+    const stars = parseInt(String(rawStars).replace(/,/g, ''), 10) || 0;
+
+    let forks = 0;
+    try {
+      const forkRes = await fetch(`https://img.shields.io/github/forks/${cleanRepoName}.json`);
+      if (forkRes.ok) {
+        const forkData = await forkRes.json();
+        const rawForks = forkData?.value || forkData?.message || '0';
+        forks = parseInt(String(rawForks).replace(/,/g, ''), 10) || 0;
+      }
+    } catch {}
+
+    let language: string | null = null;
+    try {
+      const langRes = await fetch(`https://img.shields.io/github/languages/top/${cleanRepoName}.json`);
+      if (langRes.ok) {
+        const langData = await langRes.json();
+        if (langData?.label && langData.label !== 'language') {
+          language = langData.label;
+        }
+      }
+    } catch {}
+
+    return {
+      stars,
+      forks,
+      language,
+      topics: [],
+      last_commit_at: new Date().toISOString(),
+      description: null,
+      homepage: null,
+      open_issues: 0,
+      license: null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function parseGitHubPublicUserRepos(username: string): Promise<GitHubRepoItem[]> {
+  try {
+    const res = await fetch(`https://github.com/${encodeURIComponent(username)}?tab=repositories`, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+    const cards = html.split(/<li[^>]*itemprop=["']owns["'][^>]*>/);
+    const repos: GitHubRepoItem[] = [];
+
+    for (let i = 1; i < cards.length; i++) {
+      const chunk = cards[i].split('</li>')[0];
+      const nameMatch = /<a[^>]*itemprop=["']name codeRepository["'][^>]*>([\s\S]*?)<\/a>/.exec(chunk);
+      if (!nameMatch) continue;
+      const name = nameMatch[1].trim();
+
+      const descMatch = /<p[^>]*itemprop=["']description["'][^>]*>([\s\S]*?)<\/p>/.exec(chunk);
+      const description = descMatch ? descMatch[1].trim() : null;
+
+      const langMatch = /<span[^>]*itemprop=["']programmingLanguage["'][^>]*>([\s\S]*?)<\/span>/.exec(chunk);
+      const language = langMatch ? langMatch[1].trim() : null;
+
+      const starMatch = /href=["'][^"']*\/stargazers["'][^>]*>[\s\S]*?<\/svg>[\s\n]*([\d,]+)/.exec(chunk);
+      const stars = starMatch ? parseInt(starMatch[1].replace(/,/g, ''), 10) : 0;
+
+      const forkMatch = /href=["'][^"']*\/forks["'][^>]*>[\s\S]*?<\/svg>[\s\n]*([\d,]+)/.exec(chunk);
+      const forks = forkMatch ? parseInt(forkMatch[1].replace(/,/g, ''), 10) : 0;
+
+      repos.push({
+        id: Math.abs(hashCode(`${username}/${name}`)),
+        name,
+        full_name: `${username}/${name}`,
+        description,
+        language,
+        stargazers_count: stars,
+        forks_count: forks,
+        html_url: `https://github.com/${username}/${name}`,
+        updated_at: new Date().toISOString(),
+        pushed_at: new Date().toISOString(),
+        private: false,
+        fork: false,
+      });
+    }
+
+    return repos;
+  } catch (err) {
+    console.warn(`HTML parser fallback failed for user ${username}:`, err);
+    return [];
+  }
+}
+
+export async function parseGitHubPublicRepoStats(cleanRepoName: string): Promise<RepoLiveStats | null> {
+  try {
+    const res = await fetch(`https://github.com/${cleanRepoName}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+
+    const starMatch = /id=["']repo-stars-counter-star["'][^>]*title=["']([^"']+)["']|id=["']repo-stars-counter-star["'][^>]*>([\s\S]*?)<\/span>/.exec(html);
+    const rawStars = starMatch ? (starMatch[1] || starMatch[2]).trim() : '0';
+    const stars = parseInt(rawStars.replace(/,/g, ''), 10) || 0;
+
+    const forkMatch = /id=["']repo-network-counter["'][^>]*title=["']([^"']+)["']|id=["']repo-network-counter["'][^>]*>([\s\S]*?)<\/span>/.exec(html);
+    const rawForks = forkMatch ? (forkMatch[1] || forkMatch[2]).trim() : '0';
+    const forks = parseInt(rawForks.replace(/,/g, ''), 10) || 0;
+
+    const metaDescMatch = /<meta\s+name=["']description["']\s+content=["']([^"']+)["']/.exec(html);
+    const description = metaDescMatch ? metaDescMatch[1].replace(/ - [^-]+$/, '').trim() : null;
+
+    const langMatch = /class=["'][^"']*color-fg-default text-bold mr-1[^"']*["']>([^<]+)<\/span>/.exec(html);
+    const language = langMatch ? langMatch[1].trim() : null;
+
+    return {
+      stars,
+      forks,
+      language,
+      topics: [],
+      last_commit_at: new Date().toISOString(),
+      description,
+      homepage: null,
+      open_issues: 0,
+      license: null,
+    };
+  } catch (err) {
+    console.warn(`HTML parser fallback failed for repo ${cleanRepoName}:`, err);
+    return null;
+  }
+}
+
 /**
  * Fetch repos belonging to the student using their GitHub provider token or public username
  */
@@ -164,10 +340,33 @@ export async function fetchUserRepos(
             );
             if (publicRes.ok) {
               const pubRepos = await publicRes.json();
-              if (Array.isArray(pubRepos)) return pubRepos;
+              if (Array.isArray(pubRepos) && pubRepos.length > 0) return pubRepos;
             }
+
+            // Try local /api/github/repos proxy (Vite dev server or Vercel serverless)
+            try {
+              const proxyRes = await fetch(`/api/github/repos/${encodeURIComponent(username)}`);
+              if (proxyRes.ok) {
+                const proxyRepos = await proxyRes.json();
+                if (Array.isArray(proxyRepos) && proxyRepos.length > 0) return proxyRepos;
+              }
+            } catch {}
+
+            const parsed = await parseGitHubPublicUserRepos(username);
+            if (parsed.length > 0) return parsed;
           }
           if (res.status === 403) {
+            if (username) {
+              try {
+                const proxyRes = await fetch(`/api/github/repos/${encodeURIComponent(username)}`);
+                if (proxyRes.ok) {
+                  const proxyRepos = await proxyRes.json();
+                  if (Array.isArray(proxyRepos) && proxyRepos.length > 0) return proxyRepos;
+                }
+              } catch {}
+              const parsed = await parseGitHubPublicUserRepos(username);
+              if (parsed.length > 0) return parsed;
+            }
             throw new Error('GITHUB_RATE_LIMIT');
           }
           throw new Error(`GitHub API returned status ${res.status}: ${res.statusText}`);
@@ -191,10 +390,34 @@ export async function fetchUserRepos(
               repos = pubRepos;
             }
           }
+          if (!Array.isArray(repos) || repos.length === 0) {
+            try {
+              const proxyRes = await fetch(`/api/github/repos/${encodeURIComponent(username)}`);
+              if (proxyRes.ok) {
+                const proxyRepos = await proxyRes.json();
+                if (Array.isArray(proxyRepos) && proxyRepos.length > 0) repos = proxyRepos;
+              }
+            } catch {}
+          }
+          if ((!Array.isArray(repos) || repos.length === 0) && username) {
+            const parsed = await parseGitHubPublicUserRepos(username);
+            if (parsed.length > 0) repos = parsed;
+          }
         }
         return Array.isArray(repos) ? repos : [];
       } catch (error: any) {
         console.error('Error fetching repos from GitHub:', error);
+        if (username) {
+          try {
+            const proxyRes = await fetch(`/api/github/repos/${encodeURIComponent(username)}`);
+            if (proxyRes.ok) {
+              const proxyRepos = await proxyRes.json();
+              if (Array.isArray(proxyRepos) && proxyRepos.length > 0) return proxyRepos;
+            }
+          } catch {}
+          const parsed = await parseGitHubPublicUserRepos(username);
+          if (parsed.length > 0) return parsed;
+        }
         const cachedFallback = getFromCache<GitHubRepoItem[]>(cacheKey);
         if (cachedFallback && cachedFallback.length > 0) {
           return cachedFallback;
@@ -263,6 +486,19 @@ export async function fetchLiveRepoStats(
               return stats;
             }
           }
+
+          // Rate-limit-proof, CORS-friendly Shields.io fallback
+          const shields = await fetchShieldsStats(cleanRepoName);
+          if (shields) {
+            return shields;
+          }
+
+          // HTML parser fallback when rate limited or unauthenticated
+          const parsedStats = await parseGitHubPublicRepoStats(cleanRepoName);
+          if (parsedStats) {
+            return parsedStats;
+          }
+
           // On rate limit or network error, fallback to previous cached stats if available
           const cachedFallback = getFromCache<RepoLiveStats>(cacheKey);
           if (cachedFallback) {
@@ -287,6 +523,18 @@ export async function fetchLiveRepoStats(
         return stats;
       } catch (err) {
         console.error(`Error fetching live stats for ${cleanRepoName}:`, err);
+        const shields = await fetchShieldsStats(cleanRepoName);
+        if (shields) {
+          return shields;
+        }
+        const parsedStats = await parseGitHubPublicRepoStats(cleanRepoName);
+        if (parsedStats) {
+          return parsedStats;
+        }
+        const cachedFallback = getFromCache<RepoLiveStats>(cacheKey);
+        if (cachedFallback) {
+          return cachedFallback;
+        }
         return null;
       }
     },

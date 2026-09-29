@@ -170,17 +170,28 @@ export async function enrichProjectsWithLiveStats(
   forceRefresh = false
 ): Promise<ShowcasedProject[]> {
   if (!projects || projects.length === 0) return [];
+  const { projects: localProjects } = getLocalData();
   return await Promise.all(
     projects.map(async (p) => {
       try {
         const stats = await fetchLiveRepoStats(p.repo_full_name, token, forceRefresh);
+        const localMatch = localProjects.find(
+          lp => lp.repo_full_name.trim().toLowerCase() === p.repo_full_name.trim().toLowerCase()
+        );
+        const resolvedStats = stats || p.live_stats || localMatch?.live_stats || undefined;
         return {
           ...p,
-          live_stats: stats || p.live_stats || undefined,
+          live_stats: resolvedStats,
         };
       } catch (err) {
         console.warn(`Error enriching live stats for ${p.repo_full_name}:`, err);
-        return p;
+        const localMatch = localProjects.find(
+          lp => lp.repo_full_name.trim().toLowerCase() === p.repo_full_name.trim().toLowerCase()
+        );
+        return {
+          ...p,
+          live_stats: p.live_stats || localMatch?.live_stats || undefined,
+        };
       }
     })
   );
