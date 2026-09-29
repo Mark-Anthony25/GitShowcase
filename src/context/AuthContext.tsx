@@ -160,7 +160,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (session && mounted) {
             setSession(session);
             setUser(session.user);
-            const tok = session.provider_token || null;
+            // provider_token is not persisted by Supabase PKCE across page refreshes.
+            // Recover from sessionStorage if the live value is missing.
+            const storageKey = `gh_token_${session.user.id}`;
+            const liveTok = session.provider_token || null;
+            const tok = liveTok || sessionStorage.getItem(storageKey);
+            if (liveTok) sessionStorage.setItem(storageKey, liveTok);
             if (tok) {
               setGithubToken(tok);
             }
@@ -176,7 +181,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(newSession);
           setUser(newSession?.user || null);
 
-          const tok = newSession?.provider_token || null;
+          const liveTok = newSession?.provider_token || null;
+          if (liveTok && newSession?.user) {
+            // Persist fresh token so page refreshes can recover it
+            sessionStorage.setItem(`gh_token_${newSession.user.id}`, liveTok);
+          }
+          const tok = liveTok || (newSession?.user ? sessionStorage.getItem(`gh_token_${newSession.user.id}`) : null);
           if (tok) {
             setGithubToken(tok);
           }
@@ -240,6 +250,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut();
     }
+    // Clear persisted GitHub token
+    if (user?.id) sessionStorage.removeItem(`gh_token_${user.id}`);
     setUser(null);
     setSession(null);
     setProfile(null);

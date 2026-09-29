@@ -127,10 +127,12 @@ export async function fetchUserRepos(
         };
 
         let url: string;
-        if (username) {
-          url = `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=100`;
-        } else if (effectiveToken) {
+        if (effectiveToken) {
+          // Authenticated: fetch all repos (public + private + org)
           url = 'https://api.github.com/user/repos?sort=updated&per_page=100&type=all';
+        } else if (username) {
+          // Unauthenticated: public repos for named user only
+          url = `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=100`;
         } else {
           return [];
         }

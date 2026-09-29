@@ -14,7 +14,8 @@ import {
   addProjectToShowcase, 
   removeProjectFromShowcase, 
   updateShowcaseProject,
-  subscribeSchemaStatus 
+  subscribeSchemaStatus,
+  MAX_SHOWCASE_PROJECTS,
 } from '../lib/showcaseStore';
 import { Skeleton } from './Skeleton';
 
@@ -41,6 +42,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   const [customTitle, setCustomTitle] = useState('');
   const [customDescription, setCustomDescription] = useState('');
   const [addingInProgress, setAddingInProgress] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   // Editing existing showcase project
   const [editingProject, setEditingProject] = useState<ShowcasedProject | null>(null);
@@ -88,7 +90,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   const loadGitHubRepos = async (force = false) => {
     setLoadingRepos(true);
     try {
-      const repos = await fetchUserRepos(githubToken, profile?.github_username || '', force);
+      const repos = await fetchUserRepos(githubToken, profile?.github_username || null, force);
       setAvailableRepos(repos);
     } catch (err) {
       console.error('Error loading GitHub repos:', err);
@@ -101,6 +103,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     setSelectedRepoToAdd(repo);
     setCustomTitle(repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
     setCustomDescription(repo.description || '');
+    setAddError(null);
   };
 
   const handleConfirmAdd = async (e: React.FormEvent) => {
@@ -108,6 +111,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     if (!user || !selectedRepoToAdd || addingInProgress) return;
 
     setAddingInProgress(true);
+    setAddError(null);
     try {
       const newProj = await addProjectToShowcase({
         profileId: user.id,
@@ -115,6 +119,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
         repoUrl: selectedRepoToAdd.html_url,
         customTitle: customTitle.trim() || null,
         customDescription: customDescription.trim() || null,
+        token: githubToken,
       });
 
       if (newProj) {
@@ -132,8 +137,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
           // confetti optional
         }
       }
-    } catch (err) {
-      console.error('Failed to add project to showcase:', err);
+    } catch (err: any) {
+      if (err?.message === 'PROJECT_LIMIT_REACHED') {
+        setAddError(`Showcase limit reached. You can publish at most ${MAX_SHOWCASE_PROJECTS} projects. Remove one to add another.`);
+      } else {
+        console.error('Failed to add project to showcase:', err);
+        setAddError('Failed to publish project. Please try again.');
+      }
     } finally {
       setAddingInProgress(false);
     }
@@ -192,6 +202,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
   const username = profile?.github_username || '';
   const totalStars = showcased.reduce((acc, p) => acc + (p.live_stats?.stars ?? 0), 0);
+  const isAtLimit = showcased.length >= MAX_SHOWCASE_PROJECTS;
 
   return (
     <div className="space-y-4 sm:space-y-5 pb-8 text-[#212121] w-full max-w-full">
@@ -534,6 +545,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                 </div>
               ))}
             </div>
+          ) : availableRepos.length === 0 ? (
+            <div className="text-center py-12 px-4 paper-card bg-[#FEFCF6] space-y-3 border-dashed">
+              <Github className="w-8 h-8 text-stone-600 mx-auto" />
+              <div className="space-y-1">
+                <h3 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
+                  No repositories found
+                </h3>
+                <p className="text-xs sm:text-sm font-serif-body text-stone-700 max-w-md mx-auto leading-relaxed">
+                  Could not load your GitHub repositories. This may be due to a session expiry or GitHub API rate limit. Try signing out and back in.
+                </p>
+              </div>
+              <button
+                onClick={() => loadGitHubRepos(true)}
+                className="paper-button text-xs py-1.5 px-4 font-bold min-h-[34px] inline-flex items-center space-x-1.5"
+              >
+                <RefreshCw className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>Retry</span>
+              </button>
+            </div>
           ) : filteredAvailableRepos.length === 0 ? (
             <div className="text-center py-10 px-4 paper-card bg-[#FEFCF6]">
               <p className="text-xs font-serif-body text-stone-700">
@@ -610,6 +640,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                           <CheckCircle2 className="w-3 h-3 text-emerald-700" />
                           <span>Published</span>
                         </span>
+                      ) : isAtLimit ? (
+                        <span className="paper-badge text-[10px] font-bold bg-stone-100 text-stone-600 border-stone-400 py-0.5 px-2" title={`Limit: ${MAX_SHOWCASE_PROJECTS} projects max. Remove one to add another.`}>
+                          Limit reached
+                        </span>
                       ) : (
                         <button
                           onClick={() => handleOpenAddModal(repo)}
@@ -655,6 +689,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             </div>
 
             <form onSubmit={handleConfirmAdd} className="space-y-3">
+              {addError && (
+                <div className="p-2.5 bg-red-50 border border-red-500 text-red-950 text-xs font-mono flex items-start space-x-1.5 rounded-xs">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-red-600" />
+                  <span>{addError}</span>
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
                   Project Title

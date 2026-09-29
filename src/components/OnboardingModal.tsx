@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Profile, GitHubRepoItem, GitHubUserData } from '../types';
 import { fetchUserRepos, fetchGitHubUserData } from '../lib/github';
-import { addProjectToShowcase, getStudentShowcasedProjects, syncStudentShowcaseProjects } from '../lib/showcaseStore';
+import { addProjectToShowcase, getStudentShowcasedProjects, syncStudentShowcaseProjects, MAX_SHOWCASE_PROJECTS } from '../lib/showcaseStore';
 import { DEGREE_PROGRAM_OPTIONS, getCanonicalProgram } from '../lib/programs';
 import { Skeleton } from './Skeleton';
 
@@ -157,20 +157,20 @@ interface SelectedRepoMeta {
       const fetched = await fetchUserRepos(githubToken, username || profile.github_username);
       setRepos(fetched);
 
-      // Pre-select already showcased repos or first 2 if none selected yet
+      // Pre-select already showcased repos or first N if none selected yet
       if (Object.keys(selectedRepoMap).length === 0) {
         const existing = await getStudentShowcasedProjects(profile.id);
         const preSelected: Record<string, any> = {};
         
         if (existing.length > 0) {
-          existing.forEach(p => {
+          existing.slice(0, MAX_SHOWCASE_PROJECTS).forEach(p => {
             preSelected[p.repo_full_name] = {
               customTitle: p.custom_title || '',
               customDescription: p.custom_description || '',
             };
           });
         } else if (fetched.length > 0) {
-          fetched.slice(0, 2).forEach((r) => {
+          fetched.slice(0, MAX_SHOWCASE_PROJECTS).forEach((r) => {
             preSelected[r.full_name] = {
               customTitle: r.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
               customDescription: r.description || '',
@@ -218,6 +218,8 @@ interface SelectedRepoMeta {
     if (existingKey) {
       delete updated[existingKey];
     } else {
+      // Enforce 3-project limit during onboarding selection
+      if (Object.keys(updated).length >= MAX_SHOWCASE_PROJECTS) return;
       updated[repo.full_name] = {
         customTitle: repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
         customDescription: repo.description || '',
@@ -598,7 +600,7 @@ interface SelectedRepoMeta {
                   <span>Refresh</span>
                 </button>
                 <span className="paper-badge bg-stone-200 text-[#212121] font-bold">
-                  {selectedCount} Selected
+                  {selectedCount} / {MAX_SHOWCASE_PROJECTS} Selected
                 </span>
               </div>
             </div>

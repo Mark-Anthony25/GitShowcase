@@ -496,15 +496,28 @@ export async function getStudentShowcasedProjects(
  * Add or update a repository in showcase & invalidate affected caches
  * Automatically makes the project publicly visible and protects against duplicate additions
  */
+export const MAX_SHOWCASE_PROJECTS = 3;
+
 export async function addProjectToShowcase(params: {
   profileId: string;
   repoFullName: string;
   repoUrl: string;
   customTitle?: string | null;
   customDescription?: string | null;
+  token?: string | null;
 }): Promise<ShowcasedProject | null> {
   let createdProject: ShowcasedProject | null = null;
   const normalizedRepoName = params.repoFullName.trim();
+
+  // --- Limit enforcement: max 3 projects per user ---
+  // Count existing BEFORE writing. Allow if this repo is already showcased (it's an update).
+  const existing = await getStudentShowcasedProjects(params.profileId);
+  const alreadyIn = existing.some(
+    p => p.repo_full_name.trim().toLowerCase() === normalizedRepoName.toLowerCase()
+  );
+  if (!alreadyIn && existing.length >= MAX_SHOWCASE_PROJECTS) {
+    throw new Error(`PROJECT_LIMIT_REACHED`);
+  }
 
   if (isSupabaseConfigured && supabase) {
     try {
@@ -617,7 +630,7 @@ export async function addProjectToShowcase(params: {
 
   if (createdProject) {
     // Fetch live stats immediately for the newly added/updated repo
-    const stats = await fetchLiveRepoStats(createdProject.repo_full_name, undefined, true);
+    const stats = await fetchLiveRepoStats(createdProject.repo_full_name, params.token ?? null, true);
     createdProject.live_stats = stats || undefined;
   }
 
