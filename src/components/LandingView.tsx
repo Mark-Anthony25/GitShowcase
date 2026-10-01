@@ -117,10 +117,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               Explore. Build. Collaborate.
             </span>
             <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-[2.65rem] font-[900] uppercase font-newspaper-title tracking-tight text-[#212121] leading-tight break-words">
-              Discover Student Projects
+              Discover Great Projects
             </h2>
             <p className="text-xs sm:text-sm lg:text-base font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed">
-              GitShowcase is a GitHub-connected portfolio and collaboration platform for Isabela State University students and alumni. <strong className="font-bold">Explore</strong> projects from peers, <strong className="font-bold">build</strong> and showcase your own work, and <strong className="font-bold">collaborate</strong> across class years.
+              GitShowcase is a GitHub-connected portfolio and collaboration platform for creators. <strong className="font-bold">Explore</strong> projects from peers, <strong className="font-bold">build</strong> and showcase your own work, and <strong className="font-bold">collaborate</strong> with others.
             </p>
           </div>
 
@@ -162,7 +162,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
         </div>
       </section>
 
-      {/* Real Student Projects Preview Strip */}
+      {/* Recent projects preview */}
       <section className="space-y-2.5 sm:space-y-3.5">
         <div className="border-b border-dashed border-[#212121] pb-2 flex items-center justify-between">
           <div className="flex items-center space-x-2 min-w-0">
@@ -182,7 +182,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
         </div>
 
         {loadingProjects ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4" aria-label="Loading student dispatches">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4" aria-label="Loading projects">
             {[0, 1, 2, 3].map((index) => (
               <div key={index} className="p-3 sm:p-3.5 paper-card bg-[#FAF6EC] space-y-2">
                 <Skeleton className="h-3 w-3/5" />
@@ -289,7 +289,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               2. Set Up Your Profile
             </h4>
             <p className="text-xs sm:text-sm font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed">
-              Add your degree program, academic year, and a brief bio.
+              Add your focus area, experience stage, and a brief bio.
             </p>
           </div>
 

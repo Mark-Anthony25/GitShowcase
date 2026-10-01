@@ -70,7 +70,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
     if (students.length === 0) {
       return {
         title: `No ${noun} published yet`,
-        description: 'Sign in with GitHub to publish the first project from the ISU community.',
+        description: 'Sign in with GitHub to publish the first project in the community.',
       };
     }
 
@@ -91,7 +91,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             Projects
           </h1>
           <p className="text-xs font-serif-body text-stone-700 mt-0.5">
-            Explore portfolios, capstones, and repositories from Isabela State University students and alumni.
+            Explore portfolios, projects, and repositories from creators everywhere.
           </p>
         </div>
 
@@ -102,7 +102,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             <input
               id="explore-search-input"
               type="text"
-              placeholder="Search students or projects..."
+              placeholder="Search creators or projects..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 paper-input text-xs font-mono text-[#212121] placeholder:text-stone-500 min-h-[36px]"
@@ -115,7 +115,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             onChange={(e) => setFilterProgram(e.target.value)}
             className="w-full sm:w-auto px-3 py-1.5 paper-input paper-select text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold min-h-[36px]"
           >
-            <option value="all">All Programs</option>
+            <option value="all">All Focus Areas</option>
             {DEGREE_PROGRAM_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
@@ -137,7 +137,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
               )}
               {filterProgram !== 'all' && (
                 <button onClick={clearProgram} className="paper-badge cursor-pointer hover:bg-[#FAF6EC]">
-                  Program: {filterProgram} ×
+                  Focus Area: {filterProgram} ×
                 </button>
               )}
               <button onClick={clearAllFilters} className="underline font-bold">
@@ -295,7 +295,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                     {selectedModalItem.student.profile.full_name || selectedModalItem.student.profile.github_username}
                   </p>
                   <p className="text-[10px] text-stone-700 font-serif-body truncate">
-                    {selectedModalItem.student.profile.program || 'Student'} {selectedModalItem.student.profile.year_level ? `• ${selectedModalItem.student.profile.year_level}` : ''}
+                    {selectedModalItem.student.profile.program || 'Focus area not specified'} {selectedModalItem.student.profile.year_level ? `• ${selectedModalItem.student.profile.year_level}` : ''}
                   </p>
                 </div>
                 <button 

@@ -18,7 +18,7 @@ interface OnboardingModalProps {
   onCancel?: () => void;
 }
 
-const YEAR_OPTIONS = ['1st Year', '2nd Year', '3rd Year', '4th Year', 'Graduate / Alumni'];
+const YEAR_OPTIONS = ['Getting Started', 'Building Experience', 'Independent Creator', 'Experienced Contributor', 'Professional'];
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   isOpen,
@@ -259,8 +259,8 @@ interface SelectedRepoMeta {
 
       // 3. Prepare updated profile with is_onboarded: true
       const effectiveProgram =
-        selectedProgramOption === 'Other Programs'
-          ? (customProgramName.trim() || 'Other Programs')
+        selectedProgramOption === 'Other Focus Area'
+          ? (customProgramName.trim() || 'Other Focus Area')
           : selectedProgramOption;
 
       const updatedProfile: Profile = {
@@ -302,8 +302,8 @@ interface SelectedRepoMeta {
   const selectedCount = Object.keys(selectedRepoMap).length;
 
   const effectiveProgramDisplay =
-    selectedProgramOption === 'Other Programs'
-      ? (customProgramName.trim() || 'Other Programs')
+    selectedProgramOption === 'Other Focus Area'
+      ? (customProgramName.trim() || 'Other Focus Area')
       : selectedProgramOption;
 
   return (
@@ -318,7 +318,7 @@ interface SelectedRepoMeta {
                 PROFILE SETUP
               </span>
               <span className="text-xs font-sketch text-stone-700 font-bold">
-                Isabela State University
+                GitHub Portfolio
               </span>
             </div>
             <div className="flex items-center space-x-1 font-mono text-xs font-bold text-stone-800">
@@ -331,7 +331,7 @@ interface SelectedRepoMeta {
           </div>
 
           <h2 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title mt-2 text-[#212121]">
-            {currentStep === 1 && 'Step 1: Set Up Student Identity & Profile'}
+            {currentStep === 1 && 'Step 1: Set Up Your Profile'}
             {currentStep === 2 && 'Step 2: Select Repositories from GitHub'}
             {currentStep === 3 && 'Step 3: Review & Publish Your Showcase'}
             {currentStep === 4 && 'Publishing Your Portfolio...'}
@@ -340,7 +340,7 @@ interface SelectedRepoMeta {
             {currentStep === 1 && 'Your details were auto-filled from GitHub. Review or adjust them below.'}
             {currentStep === 2 && 'Choose up to 3 repositories to feature on your public profile.'}
             {currentStep === 3 && 'Review your details before publishing your public showcase.'}
-            {currentStep === 4 && 'Saving your student profile and connecting your showcase projects.'}
+            {currentStep === 4 && 'Saving your profile and connecting your showcase projects.'}
           </p>
         </div>
 
@@ -470,7 +470,7 @@ interface SelectedRepoMeta {
                 }`}
               />
               <p className="text-[10px] font-serif-body italic text-stone-600 mt-0.5">
-                Keep it concise and punchy for visiting students and faculty mentors.
+                Keep it concise and memorable for people viewing your work.
               </p>
             </div>
 
@@ -479,7 +479,7 @@ interface SelectedRepoMeta {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
-                    ISU Degree Program
+                    Focus Area
                   </label>
                   <select
                     id="onboarding-program-select"
@@ -497,7 +497,7 @@ interface SelectedRepoMeta {
 
                 <div>
                   <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
-                    Academic Level
+                    Experience Stage
                   </label>
                   <select
                     id="onboarding-year-select"
@@ -506,24 +506,24 @@ interface SelectedRepoMeta {
                     className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px] cursor-pointer"
                   >
                     {YEAR_OPTIONS.map((yr) => (
-                      <option key={yr} value={yr}>{yr === 'Graduate / Alumni' ? 'Alumni' : yr}</option>
+                      <option key={yr} value={yr}>{yr}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* Conditional custom program input when Other Programs is selected */}
-              {selectedProgramOption === 'Other Programs' && (
+              {/* Conditional custom focus-area input */}
+              {selectedProgramOption === 'Other Focus Area' && (
                 <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] space-y-1 animate-in fade-in duration-100">
                   <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
-                    Specify Degree Program Name
+                    Specify Focus Area
                   </label>
                   <input
                     id="onboarding-custom-program-input"
                     type="text"
                     value={customProgramName}
                     onChange={(e) => setCustomProgramName(e.target.value)}
-                    placeholder="e.g. BS Information Systems"
+                  placeholder="e.g. Community Organizing"
                     className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px]"
                   />
                 </div>
@@ -784,7 +784,7 @@ interface SelectedRepoMeta {
 
               <div className="space-y-1 pt-2 border-t border-dashed border-[#212121] text-xs">
                 <div className="flex items-center space-x-2">
-                  <span className="font-sketch font-bold uppercase text-stone-600 text-[10px]">Program:</span>
+                  <span className="font-sketch font-bold uppercase text-stone-600 text-[10px]">Focus Area:</span>
                   <span className="font-serif-body font-bold text-[#212121]">{effectiveProgramDisplay}</span>
                 </div>
                 <div className="flex items-start space-x-2 pt-0.5">

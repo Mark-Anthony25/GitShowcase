@@ -110,8 +110,8 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
     setProfileError(null);
     try {
       const effectiveProgram =
-        editProgramOption === 'Other Programs'
-          ? (editCustomProgram.trim() || 'Other Programs')
+        editProgramOption === 'Other Focus Area'
+          ? (editCustomProgram.trim() || 'Other Focus Area')
           : editProgramOption;
 
       const updated = await updateProfileData({
@@ -209,7 +209,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
         </div>
         <div className="space-y-1">
           <h1 className="text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
-            Student Profile Not Found
+            Profile Not Found
           </h1>
           <p className="text-xs sm:text-sm font-serif-body text-stone-700 leading-relaxed">
             No profile exists for @{username} on GitHub or GitShowcase.
@@ -405,7 +405,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                   <p className="text-xs font-serif-body text-stone-600 max-w-sm mx-auto">
                     {isOwner
                       ? 'Add repositories from your GitHub account to showcase them here.'
-                      : 'This student has not published any projects yet.'}
+                      : 'This creator has not published any projects yet.'}
                   </p>
                   {isOwner && (
                     <button
@@ -481,7 +481,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
-                    Degree Program
+                    Focus Area
                   </label>
                   <select
                     value={editProgramOption}
@@ -498,32 +498,32 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
                 <div>
                   <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
-                    Academic Level
+                    Experience Stage
                   </label>
                   <select
                     value={editYearLevel}
                     onChange={(e) => setEditYearLevel(e.target.value)}
                     className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px]"
                   >
-                    <option value="1st Year">1st Year</option>
-                    <option value="2nd Year">2nd Year</option>
-                    <option value="3rd Year">3rd Year</option>
-                    <option value="4th Year">4th Year</option>
-                    <option value="Graduate / Alumni">Alumni</option>
+                    <option value="Getting Started">Getting Started</option>
+                    <option value="Building Experience">Building Experience</option>
+                    <option value="Independent Creator">Independent Creator</option>
+                    <option value="Experienced Contributor">Experienced Contributor</option>
+                    <option value="Professional">Professional</option>
                   </select>
                 </div>
               </div>
 
-              {editProgramOption === 'Other Programs' && (
+              {editProgramOption === 'Other Focus Area' && (
                 <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] space-y-1">
                   <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
-                    Specify Degree Program Name
+                    Specify Focus Area
                   </label>
                   <input
                     type="text"
                     value={editCustomProgram}
                     onChange={(e) => setEditCustomProgram(e.target.value)}
-                    placeholder="e.g. BS Information Systems"
+                    placeholder="e.g. Community Organizing"
                     className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px]"
                   />
                 </div>
