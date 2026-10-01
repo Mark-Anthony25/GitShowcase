@@ -6,7 +6,7 @@ Reposition GitShowcase as a general-purpose student portfolio and project showca
 
 ## Scope
 
-- Remove or replace every ISU–Cauayan / Isabela State University–Cauayan Campus reference from shipped UI, metadata, seed/demo data, repository documentation, screenshots scripts, and tests.
+- Remove or replace every former-institution reference from shipped UI, metadata, seed/demo data, repository documentation, screenshots scripts, and tests.
 - Keep GitShowcase as the product name; no replacement institution is introduced.
 - Keep GitHub OAuth, Supabase tables and stored field names, public profile URLs, project selection, live GitHub statistics, and PaperCSS visuals unchanged.
 - Change academic-only user-facing concepts to optional, institution-neutral profile concepts: `Degree Program` becomes `Focus Area`; `Academic Level` becomes `Experience Stage`; student-specific nouns become creator/profile/project wording where displayed.
