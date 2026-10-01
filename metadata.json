@@ -1,6 +1,6 @@
 {
   "name": "GitShowcase",
-  "description": "GitShowcase is a GitHub-connected portfolio and collaboration platform for Isabela State University and its alumni. Explore projects from past students, build and showcase your own work, and collab with others across class years.",
+  "description": "GitShowcase is a GitHub-connected portfolio and project showcase platform. Explore work from creators, build your own portfolio, and collaborate with others.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

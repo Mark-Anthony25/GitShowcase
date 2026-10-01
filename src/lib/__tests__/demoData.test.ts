@@ -12,6 +12,13 @@ async function runTests() {
   }
 
   const first = students[0];
+  if (first.profile.github_username !== 'ava-cole' || first.profile.program !== 'Software Development') {
+    throw new Error('Demo data test failed: first profile must use neutral creator data');
+  }
+
+  if (first.projects.some((project) => project.custom_title?.includes('Campus'))) {
+    throw new Error('Demo data test failed: demo projects must be institution-neutral');
+  }
   const lookup = getDemoShowcaseByUsername(first.profile.github_username);
   if (!lookup || lookup.profile.github_username !== first.profile.github_username) {
     throw new Error('Demo data test failed: username lookup did not return deterministic profile');

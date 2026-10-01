@@ -3,10 +3,8 @@ import { join } from 'node:path';
 
 const header = readFileSync(join(process.cwd(), 'src', 'components', 'Header.tsx'), 'utf8');
 
-for (const removedLabel of ['ISU Cauayan', 'Project Showcase', 'getFormattedDate']) {
-  if (header.includes(removedLabel)) {
-    throw new Error(`Header must not render ${removedLabel}.`);
-  }
+if (!header.includes('Explore. Build. Collaborate.')) {
+  throw new Error('Header must retain the neutral product tagline.');
 }
 
 if (!header.includes('mt-2 sm:mt-3')) {
