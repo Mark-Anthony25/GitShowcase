@@ -5,6 +5,7 @@ const components = join(process.cwd(), 'src', 'components');
 const landing = readFileSync(join(components, 'LandingView.tsx'), 'utf8');
 const header = readFileSync(join(components, 'Header.tsx'), 'utf8');
 const authGate = readFileSync(join(components, 'AuthGateView.tsx'), 'utf8');
+const authContext = readFileSync(join(process.cwd(), 'src', 'context', 'AuthContext.tsx'), 'utf8');
 const packageJson = readFileSync(join(process.cwd(), 'package.json'), 'utf8');
 
 for (const [name, source] of [['landing', landing], ['header', header]] as const) {
@@ -19,6 +20,12 @@ if (!landing.includes('Continue With GitHub') || !header.includes('Continue With
 
 if (authGate.includes("mode === 'signup'") || authGate.includes('Create Account With GitHub')) {
   throw new Error('The auth gate must describe one unified GitHub entry path.');
+}
+
+for (const source of [authContext, readFileSync(join(components, 'OnboardingModal.tsx'), 'utf8'), readFileSync(join(components, 'SupabaseGuideModal.tsx'), 'utf8')]) {
+  if (source.includes('BS Computer Science') || source.includes('1st Year')) {
+    throw new Error('New-profile defaults must use neutral focus-area and experience-stage values.');
+  }
 }
 
 for (const requirement of [

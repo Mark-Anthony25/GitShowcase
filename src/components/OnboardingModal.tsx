@@ -45,7 +45,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   );
   const [selectedProgramOption, setSelectedProgramOption] = useState(initialProg.selectedOptionValue);
   const [customProgramName, setCustomProgramName] = useState(initialProg.customProgramName);
-  const [yearLevel, setYearLevel] = useState(profile.year_level || '1st Year');
+  const [yearLevel, setYearLevel] = useState(profile.year_level || 'Getting Started');
   const [step1Error, setStep1Error] = useState<string | null>(null);
   const [isSyncingGitHubUser, setIsSyncingGitHubUser] = useState(false);
   const [githubSyncSuccess, setGithubSyncSuccess] = useState(false);

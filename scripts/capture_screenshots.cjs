@@ -164,7 +164,7 @@ async function run() {
     }
   }
 
-  console.log('4. Capturing Public Student Profile...');
+  console.log('4. Capturing Public Creator Profile...');
   await publicPage.goto('http://127.0.0.1:3456/u/Mark-Anthony25', { waitUntil: 'networkidle' });
   await publicPage.waitForTimeout(1500);
   await publicPage.screenshot({
@@ -192,7 +192,7 @@ async function run() {
     localStorage.setItem(`sb-${ref}-auth-token`, JSON.stringify(session));
     localStorage.setItem('gitshowcase_profiles', JSON.stringify(profiles));
     localStorage.setItem('gitshowcase_projects', JSON.stringify(projects));
-    // Cache user profile and student projects in gitshowcase cache layer
+    // Cache user profile and creator projects in gitshowcase cache layer
     localStorage.setItem(`gitshowcase_cache_v2_profile_id_${userId}`, JSON.stringify({
       data: profiles['mark-anthony25'],
       timestamp: Date.now(),

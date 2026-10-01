@@ -167,8 +167,8 @@ begin
     new.raw_user_meta_data->>'avatar_url',
     null,
     'Creator',
-    'BS Computer Science',
-    '1st Year',
+    'Software Development',
+    'Getting Started',
     false
   )
   on conflict (id) do update set
