@@ -68,7 +68,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
       }
     } catch (err: any) {
       console.error('Error loading student showcase:', err);
-      setError(err?.message || 'Failed to load student profile. Please check your connection.');
+      setError(err?.message || 'Failed to load profile. Please check your connection.');
     } finally {
       if (timeoutId) window.clearTimeout(timeoutId);
       setLoading(false);
@@ -299,7 +299,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                 </div>
                 <div className="space-y-0.5 min-w-0 flex-1">
                   <span className="text-[9px] sm:text-[10px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
-                    {isOwner ? 'YOUR PUBLIC PROFILE' : 'STUDENT DEVELOPER'}
+                    {isOwner ? 'YOUR PUBLIC PROFILE' : 'CREATOR PROFILE'}
                   </span>
                   <h1 className="text-lg sm:text-xl font-[900] uppercase font-newspaper-title text-[#212121] truncate leading-tight">
                     {profile.full_name || profile.github_username}

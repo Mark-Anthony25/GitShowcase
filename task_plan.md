@@ -1,7 +1,7 @@
 # Task Plan: Professional README.md Creation for GitShowcase
 
 ## Goal
-Create a complete, professional, production-grade `README.md` for **GitShowcase** (Isabela State University - Cauayan Campus Student Project Showcase) with real application screenshots captured from the running web app.
+Create a complete, professional, production-grade `README.md` for **GitShowcase**, with real application screenshots captured from the running web app.
 
 ## Status: IN_PROGRESS
 

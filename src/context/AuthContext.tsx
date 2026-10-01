@@ -90,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (authUser) {
         // New user after GitHub signup: Extract metadata & sync from GitHub API
         const meta = authUser.user_metadata || {};
-        const githubHandle = meta.user_name || meta.preferred_username || meta.name || authUser.email?.split('@')[0] || 'student';
+        const githubHandle = meta.user_name || meta.preferred_username || meta.name || authUser.email?.split('@')[0] || 'creator';
         
         let initialAvatar = meta.avatar_url || `https://github.com/${githubHandle}.png`;
         let initialName = meta.full_name || meta.name || githubHandle;

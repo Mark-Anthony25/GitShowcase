@@ -1,4 +1,4 @@
-# GitShowcase • Isabela State University - Cauayan Campus
+# GitShowcase
 
 <div align="center">
 
@@ -10,7 +10,7 @@
 [![GitHub API](https://img.shields.io/badge/GitHub_API-GraphQL_%26_REST-181717?style=flat-square&logo=github&logoColor=white)](https://docs.github.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-**A centralized student portfolio, capstone showcase, and GitHub repository registry tailored for computing students at Isabela State University — Cauayan Campus.**
+**A centralized portfolio, project showcase, and GitHub repository registry for creators.**
 
 [Explore Projects](https://gitshowcase.vercel.app/explore) • [Getting Started](#getting-started) • [Architecture](#architecture) • [Database & Security](#database--supabase-architecture) • [Optimization](#performance--resource-optimization)
 
@@ -20,7 +20,7 @@
 
 ## Overview
 
-**GitShowcase** is a specialized portfolio and repository directory designed for computing students (BS Computer Science, BS Information Technology, BS Entertainment and Multimedia Computing, BS Accounting Information Systems) at **Isabela State University — Cauayan Campus**.
+**GitShowcase** is a portfolio and repository directory for students, organizations, and independent creators.
 
 Traditional generic portfolio sites often require manual project metric entry and lack academic context. GitShowcase bridges academic identity with real-world developer output by directly integrating with **GitHub OAuth** and **Supabase**. Students can authenticate with one click, curate projects, display GitHub repository stats (stars, forks, languages, topics), and present a 52-week commit activity heatmap—all wrapped in an authentic, tactile **PaperCSS** newspaper editorial motif.
 
@@ -452,6 +452,6 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more details
 
 <div align="center">
 
-Made with ☕ and passion by the student computing community of **Isabela State University — Cauayan Campus**.
+Made with ☕ and passion for creators sharing their work.
 
 </div>

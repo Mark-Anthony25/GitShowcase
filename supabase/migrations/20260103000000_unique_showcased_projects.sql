@@ -1,4 +1,4 @@
--- Migration: Ensure uniqueness for showcased projects per student profile
+-- Migration: Ensure uniqueness for showcased projects per creator profile
 -- Prevents duplicate project associations at the database layer
 
 -- 1. Remove any existing duplicate project rows (keeping the latest record)

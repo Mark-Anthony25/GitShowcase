@@ -1,5 +1,5 @@
 -- ==============================================================================
--- Student GitHub Project Showcase: Initial Schema & RLS Policies
+-- GitHub Portfolio Showcase: Initial Schema & RLS Policies
 -- ==============================================================================
 
 -- 1. Create Profiles Table (linked to Supabase Auth)
@@ -21,8 +21,8 @@ create table if not exists public.showcased_projects (
   profile_id uuid not null references public.profiles(id) on delete cascade,
   repo_full_name text not null,   -- e.g. "octocat/hello-world"
   repo_url text not null,         -- e.g. "https://github.com/octocat/hello-world"
-  custom_title text,              -- optional student override for display
-  custom_description text,        -- optional student override for context/role
+  custom_title text,              -- optional creator override for display
+  custom_description text,        -- optional creator override for context/role
   is_featured boolean default false,
   display_order int default 0,
   added_at timestamptz default now()
@@ -66,17 +66,17 @@ create policy "Showcased projects are viewable by everyone"
   on public.showcased_projects for select
   using (true);
 
--- Students can add projects to their own showcase
+-- Creators can add projects to their own showcase
 create policy "Users can insert their own showcased projects"
   on public.showcased_projects for insert
   with check (auth.uid() = profile_id);
 
--- Students can edit their own showcased projects
+-- Creators can edit their own showcased projects
 create policy "Users can update their own showcased projects"
   on public.showcased_projects for update
   using (auth.uid() = profile_id);
 
--- Students can remove projects from their own showcase
+-- Creators can remove projects from their own showcase
 create policy "Users can delete their own showcased projects"
   on public.showcased_projects for delete
   using (auth.uid() = profile_id);
@@ -100,7 +100,7 @@ begin
     new.raw_user_meta_data->>'user_name',
     new.raw_user_meta_data->>'preferred_username',
     new.raw_user_meta_data->>'name',
-    split_part(coalesce(new.email, 'student'), '@', 1)
+    split_part(coalesce(new.email, 'creator'), '@', 1)
   );
 
   insert into public.profiles (id, github_username, full_name, avatar_url)

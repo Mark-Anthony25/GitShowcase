@@ -1,6 +1,6 @@
 ---
 name: GitShowcase
-description: Hand-drawn PaperCSS project showcase and collaboration platform for Isabela State University students and alumni.
+description: Hand-drawn PaperCSS portfolio and project showcase platform for creators.
 colors:
   primary: "#212121"
   primary-surface: "#FEFCF6"
@@ -106,7 +106,7 @@ components:
 
 **Creative North Star: "The Campus Gazette & Developer Workbench"**
 
-GitShowcase fuses an authentic editorial broadsheet newspaper with an engineer's tactile workbench. Built specifically for Isabela State University - Cauayan Campus computing students, the visual language departs sharply from generic flat SaaS cards and sterile dark-mode consoles. It treats repositories, capstones, and commit activity as published dispatches in an academic gazette.
+GitShowcase fuses an authentic editorial broadsheet newspaper with an engineer's tactile workbench. The visual language departs sharply from generic flat SaaS cards and sterile dark-mode consoles. It treats repositories, projects, and commit activity as published dispatches in a creator gazette.
 
 Every container, button, badge, and input feels hand-drafted on warm parchment sheets with dark inked outlines, asymmetric organic radii, and crisp drop-shadow offsets that evoke ink stamped onto newsprint. 
 

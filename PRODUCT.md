@@ -8,17 +8,17 @@ web
 
 ## Users
 
-Students and alumni of Isabela State University (across computing programs including BS Computer Science, BS Information Technology, BS Entertainment and Multimedia Computing, BS Accounting Information Systems, and related disciplines) preparing portfolios, sharing capstone projects, learning from past cohorts, and finding collaborators across class years.
+Students, organizations, and independent creators preparing portfolios, sharing projects, learning from peers, and finding collaborators.
 
 ## Product Purpose
 
-GitShowcase is a GitHub-connected portfolio and collaboration platform for Isabela State University and its alumni. **Explore** projects from past students, **build** and showcase your own work, and **collab** with others across class years.
+GitShowcase is a GitHub-connected portfolio and collaboration platform. **Explore** projects from peers, **build** and showcase your own work, and **collaborate** with others.
 
 Beyond serving as a portfolio registry, GitShowcase functions as a discovery and networking hub: incoming and current students can browse past and ongoing projects to understand the kind of work they'll be doing and get inspiration for their own, while the platform's connections make it easy to find and reach out to other members for collaboration, whether alumni connecting with fellow alumni, freshmen learning from seniors, or students partnering with alumni on new ideas.
 
 ## Positioning
 
-Unlike generic portfolio builders or raw GitHub profiles, GitShowcase is tailored specifically to the ISU community, combining academic and alumni identity with live GitHub contribution telemetry, cross-cohort repository discovery, and an authentic editorial PaperCSS aesthetic.
+Unlike generic portfolio builders or raw GitHub profiles, GitShowcase combines creator identity with live GitHub contribution telemetry, project discovery, and an authentic editorial PaperCSS aesthetic.
 
 ## Operating Context
 
@@ -37,7 +37,7 @@ Unlike generic portfolio builders or raw GitHub profiles, GitShowcase is tailore
 
 ## Brand Commitments
 
-- **Name:** GitShowcase • Isabela State University - Cauayan Campus.
+- **Name:** GitShowcase.
 - **Aesthetic System:** Hand-drawn / sketchy newspaper editorial motif using PaperCSS (`Neucha`, `Patrick Hand`, warm parchment `#FEFCF6` / `#F7F3E9`, rough border radiuses, dark inked shadows).
 - **Tone:** Academic yet student-centric, authentic, tactile, and community-driven.
 

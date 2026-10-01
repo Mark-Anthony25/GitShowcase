@@ -184,11 +184,11 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                 <div className="w-5 h-5 paper-avatar">
                   <img
                     src={profile?.avatar_url || `https://github.com/${profile?.github_username || 'ghost'}.png`}
-                    alt={profile?.github_username || 'Student Avatar'}
+                    alt={profile?.github_username || 'Creator avatar'}
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <span className="max-w-[100px] truncate font-mono text-[11px]">@{profile?.github_username || 'student'}</span>
+                <span className="max-w-[100px] truncate font-mono text-[11px]">@{profile?.github_username || 'creator'}</span>
               </button>
               {dropdownOpen && (
                 <div
@@ -200,8 +200,8 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                 >
                   <div className="w-full bg-[#FEFCF6] border-2 border-[#212121] p-1.5 rounded-[255px_15px_225px_15px/15px_225px_15px_255px]">
                     <div className="p-2 border-b border-dashed border-[#212121] mb-1 bg-[#FAF6EC] rounded-xs">
-                      <p className="text-xs font-bold font-headline uppercase text-[#212121] truncate">{profile?.full_name || (profile?.github_username ? `@${profile.github_username}` : 'Student')}</p>
-                      <p className="text-[10px] font-mono text-stone-700 truncate">@{profile?.github_username || 'student'}</p>
+                      <p className="text-xs font-bold font-headline uppercase text-[#212121] truncate">{profile?.full_name || (profile?.github_username ? `@${profile.github_username}` : 'Creator')}</p>
+                      <p className="text-[10px] font-mono text-stone-700 truncate">@{profile?.github_username || 'creator'}</p>
                     </div>
                     <div className="flex flex-col gap-0.5" role="none">
                       <button
@@ -341,10 +341,10 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
               <div className="space-y-2 pt-0.5">
                 <div className="px-2.5 py-1.5 bg-[#FAF6EC] border border-[#212121] rounded-xs">
                   <p className="text-xs font-bold font-headline uppercase text-[#212121] truncate">
-                    {profile?.full_name || (profile?.github_username ? `@${profile.github_username}` : 'Student')}
+                    {profile?.full_name || (profile?.github_username ? `@${profile.github_username}` : 'Creator')}
                   </p>
                   <p className="text-[10px] font-mono text-stone-700">
-                    @{profile?.github_username || 'student'}
+                    @{profile?.github_username || 'creator'}
                   </p>
                 </div>
                 <button

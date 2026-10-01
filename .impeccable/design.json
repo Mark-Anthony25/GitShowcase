@@ -115,7 +115,7 @@
   ],
   "narrative": {
     "northStar": "The Campus Gazette & Developer Workbench",
-    "overview": "GitShowcase fuses an authentic editorial broadsheet newspaper with an engineer's tactile workbench. Built specifically for Isabela State University - Cauayan Campus computing students, the visual language departs sharply from generic flat SaaS cards and sterile dark-mode consoles. It treats repositories, capstones, and commit activity as published dispatches in an academic gazette.\n\nEvery container, button, badge, and input feels hand-drafted on warm parchment sheets with dark inked outlines, asymmetric organic radii, and crisp drop-shadow offsets that evoke ink stamped onto newsprint.",
+    "overview": "GitShowcase fuses an authentic editorial broadsheet newspaper with an engineer's tactile workbench. Its visual language departs sharply from generic flat SaaS cards and sterile dark-mode consoles. It treats repositories, projects, and commit activity as published dispatches in a creator gazette.\n\nEvery container, button, badge, and input feels hand-drafted on warm parchment sheets with dark inked outlines, asymmetric organic radii, and crisp drop-shadow offsets that evoke ink stamped onto newsprint.",
     "keyCharacteristics": [
       "Tactile Parchment Foundation: Warm newsprint backgrounds (#F7F3E9) layered over crisp paper sheets (#FEFCF6) and card stock (#FAF6EC).",
       "Organic Hand-Drawn Outlines: Authentic PaperCSS bounding curves (255px 15px 225px 15px/15px 225px 15px 255px) with inked 2px solid #212121 strokes.",

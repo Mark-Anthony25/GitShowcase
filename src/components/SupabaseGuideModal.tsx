@@ -56,7 +56,7 @@ export const SupabaseGuideModal: React.FC<SupabaseGuideModalProps> = ({ isOpen, 
   };
 
   const sqlSchemaCode = `-- ==============================================================================
--- Student GitHub Project Showcase: Initial Schema & RLS Policies
+-- GitHub Portfolio Showcase: Initial Schema & RLS Policies
 -- ==============================================================================
 
 -- 1. Create Profiles Table
@@ -156,7 +156,7 @@ begin
     new.raw_user_meta_data->>'user_name',
     new.raw_user_meta_data->>'preferred_username',
     new.raw_user_meta_data->>'name',
-    split_part(coalesce(new.email, 'student'), '@', 1)
+    split_part(coalesce(new.email, 'creator'), '@', 1)
   );
 
   insert into public.profiles (id, github_username, full_name, avatar_url, bio, headline, program, year_level, is_onboarded)
@@ -166,7 +166,7 @@ begin
     coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', github_handle),
     new.raw_user_meta_data->>'avatar_url',
     null,
-    'Student Developer',
+    'Creator',
     'BS Computer Science',
     '1st Year',
     false
@@ -264,7 +264,7 @@ create trigger on_auth_user_created
                     </h4>
                     <p className="text-xs mt-0.5 font-serif-body leading-relaxed text-stone-800">
                       {isSupabaseConfigured
-                        ? 'Your Supabase client is active. Students can log in with GitHub, save showcased projects, and persist public profiles in Postgres.'
+                        ? 'Your Supabase client is active. Creators can log in with GitHub, save showcased projects, and persist public profiles in Postgres.'
                         : 'You can explore all dashboard and showcase features right now in Sandbox mode! To connect your real live Supabase Postgres database, enter your credentials below or configure environment variables in .env.'}
                     </p>
                   </div>

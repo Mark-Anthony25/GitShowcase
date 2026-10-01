@@ -1,8 +1,8 @@
 # Discoveries & Findings: GitShowcase
 
 ## Project Identity & Context
-- **Name:** GitShowcase (GitShowcase • Isabela State University - Cauayan Campus)
-- **Target Audience:** Student developers (BSCS, BSIT, BSEMC, BSAIS, and related computing programs at ISU Cauayan Campus), faculty advisers, evaluators, and peer student developers.
+- **Name:** GitShowcase
+- **Target Audience:** Students, organizations, evaluators, and independent creators.
 - **Core Purpose:** Centralized repository showcase and academic portfolio registry linking students' GitHub activity, highlighted capstone projects, academic identities, and verified commit heatmaps.
 - **Design System:** PaperCSS tactile newspaper/sketch aesthetic (`Neucha`, `Patrick Hand`, warm parchment `#FEFCF6` / `#F7F3E9`, `#FAF6EC`, hand-drawn borders, dark inked shadows).
 

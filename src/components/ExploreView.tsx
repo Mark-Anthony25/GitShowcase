@@ -149,7 +149,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
 
         {/* Main Content Area */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5" aria-label="Loading student projects">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5" aria-label="Loading projects">
             {[0, 1, 2, 3].map((index) => (
               <div key={index} className="paper-card bg-[#FEFCF6] p-3.5 sm:p-4 space-y-3">
                 <Skeleton className="h-4 w-3/4" />

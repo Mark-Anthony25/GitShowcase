@@ -8,7 +8,7 @@ Fresh browser review of the guest-facing experience at `/`, `/explore`, `/u/Mark
 
 ## User goal and accessibility target
 
-Help an ISU student or alumnus discover projects, understand a student's work, and start a portfolio with minimal friction. Accessibility target: clear hierarchy, keyboard-operable navigation and filters, readable states, and robust recovery when data or authentication is unavailable.
+Help a creator discover projects, understand a peer's work, and start a portfolio with minimal friction. Accessibility target: clear hierarchy, keyboard-operable navigation and filters, readable states, and robust recovery when data or authentication is unavailable.
 
 ## Captured steps
 

@@ -22,7 +22,7 @@ The intended path is easy to understand at the entry point, but it breaks at the
 
 ### 1. Discovery value is not demonstrated
 
-The flow asks users to browse before showing any student or project. This creates a dead end immediately after the strongest CTA. Seed a few representative projects in demo/empty environments, or replace the empty region with a clear campus call-to-action such as “Be the first ISU student to publish.”
+The flow asks users to browse before showing any creator or project. This creates a dead end immediately after the strongest CTA. Seed a few representative projects in demo/empty environments, or replace the empty region with a clear call-to-action such as “Be the first creator to publish.”
 
 ### 2. Search cannot help users recover
 
