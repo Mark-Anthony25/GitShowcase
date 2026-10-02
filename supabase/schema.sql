@@ -18,11 +18,18 @@ create table if not exists public.profiles (
   updated_at timestamptz default now()
 );
 
+-- Schema migration helpers for existing installations
+alter table public.profiles add column if not exists headline text;
+alter table public.profiles add column if not exists is_onboarded boolean default false;
+alter table public.profiles add column if not exists program text;
+alter table public.profiles add column if not exists year_level text;
+
 -- 2. Create Showcased Projects Table
 create table if not exists public.showcased_projects (
   id uuid primary key default gen_random_uuid(),
   profile_id uuid not null references public.profiles(id) on delete cascade,
   repo_full_name text not null,   -- e.g. "octocat/hello-world"
+  repo_key text,                  -- e.g. "octocat/hello-world" (lowercase, trimmed)
   repo_url text not null,         -- e.g. "https://github.com/octocat/hello-world"
   custom_title text,              -- optional creator override for display
   custom_description text,        -- optional creator override for context/role
@@ -32,6 +39,9 @@ create table if not exists public.showcased_projects (
   constraint unique_profile_project unique (profile_id, repo_full_name)
 );
 
+alter table public.showcased_projects add column if not exists repo_key text;
+update public.showcased_projects set repo_key = lower(trim(repo_full_name)) where repo_key is null;
+
 -- 3. Create Repo Stats Cache Table (Shared caching across all users)
 create table if not exists public.repo_stats_cache (
   repo_full_name text primary key,
@@ -40,8 +50,15 @@ create table if not exists public.repo_stats_cache (
   language text,
   topics text[] default '{}',
   last_commit_at timestamptz,
-  fetched_at timestamptz default now()
+  fetched_at timestamptz default now(),
+  description text,
+  homepage text,
+  refresh_after timestamptz default now()
 );
+
+alter table public.repo_stats_cache add column if not exists description text;
+alter table public.repo_stats_cache add column if not exists homepage text;
+alter table public.repo_stats_cache add column if not exists refresh_after timestamptz default now();
 
 -- 4. High-Performance Database Indexes
 -- Deduplicate any existing duplicate project rows before applying unique index
@@ -180,3 +197,37 @@ $$;
 
 revoke all on function public.delete_user() from public;
 grant execute on function public.delete_user() to authenticated;
+
+-- 10. Atomic Project Save RPC function
+create or replace function public.save_showcased_project(
+  p_repo_full_name text,
+  p_repo_url text,
+  p_custom_title text default null,
+  p_custom_description text default null
+) returns public.showcased_projects
+language plpgsql security definer set search_path = public as $$
+declare
+  saved public.showcased_projects;
+  canonical_key text := lower(trim(p_repo_full_name));
+begin
+  if auth.uid() is null or canonical_key = '' or position('/' in canonical_key) = 0 then
+    raise exception 'INVALID_REPOSITORY';
+  end if;
+  perform pg_advisory_xact_lock(hashtext(auth.uid()::text));
+  if not exists (select 1 from public.showcased_projects sp where sp.profile_id = auth.uid() and sp.repo_key = canonical_key)
+     and (select count(*) from public.showcased_projects where profile_id = auth.uid()) >= 3 then
+    raise exception 'PROJECT_LIMIT_REACHED';
+  end if;
+  insert into public.showcased_projects (profile_id, repo_full_name, repo_key, repo_url, custom_title, custom_description)
+  values (auth.uid(), trim(p_repo_full_name), canonical_key, p_repo_url, p_custom_title, p_custom_description)
+  on conflict (profile_id, repo_key) do update set
+    repo_full_name = excluded.repo_full_name,
+    repo_url = excluded.repo_url,
+    custom_title = excluded.custom_title,
+    custom_description = excluded.custom_description
+  returning * into saved;
+  return saved;
+end $$;
+
+revoke all on function public.save_showcased_project(text, text, text, text) from public;
+grant execute on function public.save_showcased_project(text, text, text, text) to authenticated;

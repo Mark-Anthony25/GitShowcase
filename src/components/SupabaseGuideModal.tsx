@@ -85,6 +85,7 @@ create table if not exists public.showcased_projects (
   id uuid primary key default gen_random_uuid(),
   profile_id uuid not null references public.profiles(id) on delete cascade,
   repo_full_name text not null,
+  repo_key text,
   repo_url text not null,
   custom_title text,
   custom_description text,
@@ -92,6 +93,9 @@ create table if not exists public.showcased_projects (
   display_order int default 0,
   added_at timestamptz default now()
 );
+
+alter table public.showcased_projects add column if not exists repo_key text;
+update public.showcased_projects set repo_key = lower(trim(repo_full_name)) where repo_key is null;
 
 -- 3. Create Repo Stats Cache Table
 create table if not exists public.repo_stats_cache (
@@ -101,8 +105,15 @@ create table if not exists public.repo_stats_cache (
   language text,
   topics text[] default '{}',
   last_commit_at timestamptz,
-  fetched_at timestamptz default now()
+  fetched_at timestamptz default now(),
+  description text,
+  homepage text,
+  refresh_after timestamptz default now()
 );
+
+alter table public.repo_stats_cache add column if not exists description text;
+alter table public.repo_stats_cache add column if not exists homepage text;
+alter table public.repo_stats_cache add column if not exists refresh_after timestamptz default now();
 
 -- 4. High-Performance Database Indexes
 delete from public.showcased_projects where ctid not in (select min(ctid) from public.showcased_projects group by profile_id, lower(repo_full_name));

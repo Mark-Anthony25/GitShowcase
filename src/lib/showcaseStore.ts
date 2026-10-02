@@ -38,15 +38,17 @@ export function reportSchemaMissing() {
 export function isSchemaError(err: any): boolean {
   if (!err) return false;
   const msg = (typeof err === 'string' ? err : err.message || '').toLowerCase();
+  if (msg.includes('column') && msg.includes('does not exist')) {
+    return false;
+  }
   const isErr = (
     msg.includes('schema cache') ||
-    msg.includes('does not exist') ||
-    msg.includes('relation') ||
-    msg.includes('pgrst204') ||
-    msg.includes('pgrst205') ||
+    (msg.includes('relation') && msg.includes('does not exist')) ||
+    (msg.includes('table') && msg.includes('does not exist')) ||
+    msg.includes('could not find the table') ||
     msg.includes('42p01') ||
-    msg.includes('not found') ||
-    msg.includes('could not find the table')
+    msg.includes('pgrst204') ||
+    msg.includes('pgrst205')
   );
   if (isErr) {
     reportSchemaMissing();
@@ -90,7 +92,7 @@ export async function getPublicDirectoryPage({ query = '', program = 'all', offs
     const projects = getDemoStudentsShowcase().flatMap(s => s.projects.map(project => ({ profile: s.profile, projects: [project] })));
     return { items: projects.slice(offset, offset + take), hasMore: projects.length > offset + take };
   }
-  let request: any = supabase.from('showcased_projects').select('id,profile_id,repo_full_name,repo_key,repo_url,custom_title,custom_description,display_order,added_at,profiles!inner(id,github_username,full_name,headline,avatar_url,bio,program,year_level,is_onboarded,created_at,updated_at)').order('added_at', { ascending: false }).order('id', { ascending: false }).range(offset, offset + take);
+  let request: any = supabase.from('showcased_projects').select('id,profile_id,repo_full_name,repo_key,repo_url,custom_title,custom_description,display_order,added_at,profiles!inner(*)').order('added_at', { ascending: false }).order('id', { ascending: false }).range(offset, offset + take);
   if (program !== 'all') request = request.eq('profiles.program', program);
   if (query.trim()) request = request.or(`repo_full_name.ilike.%${query.trim()}%,custom_title.ilike.%${query.trim()}%,custom_description.ilike.%${query.trim()}%`);
   const { data, error } = await request;
@@ -434,18 +436,29 @@ export async function addProjectToShowcase(params: {
   const normalizedRepoName = params.repoFullName.trim();
 
   if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase.rpc('save_showcased_project', {
-      p_repo_full_name: normalizedRepoName,
-      p_repo_url: params.repoUrl,
-      p_custom_title: params.customTitle ?? null,
-      p_custom_description: params.customDescription ?? null,
-    });
-    if (error || !data) throw new Error(error?.message || 'Unable to save project. Please retry.');
-    createdProject = data as ShowcasedProject;
-    const { data: stats } = await supabase.functions.invoke('refresh-repo-stats', { body: { repoFullName: normalizedRepoName } });
-    if (stats) createdProject.live_stats = cachedStats({ repo_stats_cache: stats });
-    invalidateShowcaseCaches(params.profileId);
-    return createdProject;
+    try {
+      const { data, error } = await supabase.rpc('save_showcased_project', {
+        p_repo_full_name: normalizedRepoName,
+        p_repo_url: params.repoUrl,
+        p_custom_title: params.customTitle ?? null,
+        p_custom_description: params.customDescription ?? null,
+      });
+      if (!error && data) {
+        createdProject = data as ShowcasedProject;
+        try {
+          const { data: stats } = await supabase.functions.invoke('refresh-repo-stats', { body: { repoFullName: normalizedRepoName } });
+          if (stats) createdProject.live_stats = cachedStats({ repo_stats_cache: stats });
+        } catch {}
+        invalidateShowcaseCaches(params.profileId);
+        return createdProject;
+      }
+      if (error && error.message?.includes('PROJECT_LIMIT_REACHED')) {
+        throw new Error('PROJECT_LIMIT_REACHED');
+      }
+    } catch (rpcErr: any) {
+      if (rpcErr?.message === 'PROJECT_LIMIT_REACHED') throw rpcErr;
+      console.warn('save_showcased_project RPC unavailable, falling back to direct table write:', rpcErr);
+    }
   }
 
   // --- Limit enforcement: max 3 projects per user ---
@@ -568,8 +581,12 @@ export async function addProjectToShowcase(params: {
   saveLocalData(profiles, projects);
 
   if (createdProject && isSupabaseConfigured && supabase) {
-    const { data } = await supabase.functions.invoke('refresh-repo-stats', { body: { repoFullName: createdProject.repo_full_name } });
-    if (data) createdProject.live_stats = cachedStats({ repo_stats_cache: data });
+    try {
+      const { data } = await supabase.functions.invoke('refresh-repo-stats', { body: { repoFullName: createdProject.repo_full_name } });
+      if (data) createdProject.live_stats = cachedStats({ repo_stats_cache: data });
+    } catch (err) {
+      console.warn('refresh-repo-stats edge function unavailable:', err);
+    }
   }
 
   // Invalidate affected caches immediately so changes reflect everywhere

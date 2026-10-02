@@ -273,9 +273,17 @@ export async function fetchUserRepos(
   forceRefresh = false
 ): Promise<GitHubRepoItem[]> {
   if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase.functions.invoke('github-repos');
-    if (error) throw new Error(error.message);
-    return Array.isArray(data) ? data : [];
+    try {
+      const { data, error } = await supabase.functions.invoke('github-repos');
+      if (!error && Array.isArray(data)) {
+        return data;
+      }
+      if (error) {
+        console.warn('Edge function github-repos error, falling back to direct GitHub API:', error.message);
+      }
+    } catch (err) {
+      console.warn('Edge function github-repos invoke failed, falling back to direct GitHub API:', err);
+    }
   }
   const effectiveToken = getValidToken(githubToken);
   const targetKey = username ? `user_${username.toLowerCase()}` : `auth_user_${effectiveToken ? 'authed' : 'anon'}`;
