@@ -83,7 +83,7 @@ function cachedStats(row: any): RepoLiveStats | undefined {
 
 function publicItem(row: any): StudentShowcaseData {
   const p = row.profiles;
-  return { profile: { id: p.id, github_username: p.github_username, full_name: p.full_name, headline: p.headline || null, avatar_url: p.avatar_url, bio: p.bio, program: p.program, year_level: p.year_level, is_onboarded: Boolean(p.is_onboarded), created_at: p.created_at, updated_at: p.updated_at }, projects: [{ id: row.id, profile_id: row.profile_id, repo_full_name: row.repo_full_name, repo_key: row.repo_key, repo_url: row.repo_url, custom_title: row.custom_title, custom_description: row.custom_description, display_order: row.display_order, added_at: row.added_at, live_stats: cachedStats(row) }] };
+  return { profile: { id: p.id, github_username: p.github_username, full_name: p.full_name, headline: p.headline || null, avatar_url: p.avatar_url, bio: p.bio, website_url: p.website_url || null, program: p.program, year_level: p.year_level, is_onboarded: Boolean(p.is_onboarded), created_at: p.created_at, updated_at: p.updated_at }, projects: [{ id: row.id, profile_id: row.profile_id, repo_full_name: row.repo_full_name, repo_key: row.repo_key, repo_url: row.repo_url, custom_title: row.custom_title, custom_description: row.custom_description, display_order: row.display_order, added_at: row.added_at, live_stats: cachedStats(row) }] };
 }
 
 export async function getPublicDirectoryPage({ query = '', program = 'all', offset = 0, limit = 24 }: { query?: string; program?: string; offset?: number; limit?: number }): Promise<PublicDirectoryPage> {
@@ -742,6 +742,7 @@ export async function updateStudentProfile(
         headline: updates.headline !== undefined ? updates.headline : (existingProfile?.headline ?? null),
         avatar_url: updates.avatar_url !== undefined ? updates.avatar_url : (existingProfile?.avatar_url ?? null),
         bio: updates.bio !== undefined ? updates.bio : (existingProfile?.bio ?? null),
+        website_url: updates.website_url !== undefined ? updates.website_url : (existingProfile?.website_url ?? null),
         program: updates.program !== undefined ? updates.program : (existingProfile?.program ?? null),
         year_level: updates.year_level !== undefined ? updates.year_level : (existingProfile?.year_level ?? null),
         is_onboarded: updates.is_onboarded !== undefined ? Boolean(updates.is_onboarded) : Boolean(existingProfile?.is_onboarded),
@@ -759,13 +760,14 @@ export async function updateStudentProfile(
         dbResult = data as Profile;
       } else if (error) {
         dbError = error;
-        // Check if error is due to missing optional columns (e.g. headline / is_onboarded on older schema)
+        // Check if error is due to missing optional columns (e.g. headline / is_onboarded / website_url on older schema)
         const errMsg = (error.message || '').toLowerCase();
-        if (errMsg.includes('headline') || errMsg.includes('is_onboarded')) {
+        if (errMsg.includes('headline') || errMsg.includes('is_onboarded') || errMsg.includes('website_url')) {
           console.warn('Retrying profile upsert without optional schema columns:', error.message);
           const legacyPayload = { ...payload };
           delete legacyPayload.headline;
           delete legacyPayload.is_onboarded;
+          delete legacyPayload.website_url;
 
           const { data: legacyData, error: legacyErr } = await supabase
             .from('profiles')
@@ -777,6 +779,7 @@ export async function updateStudentProfile(
             dbResult = {
               ...(legacyData as Profile),
               headline: updates.headline || existingProfile?.headline || null,
+              website_url: updates.website_url || existingProfile?.website_url || null,
               is_onboarded: updates.is_onboarded ?? existingProfile?.is_onboarded ?? false,
             };
             dbError = null;
@@ -835,6 +838,7 @@ export async function updateStudentProfile(
         headline: updates.headline || null,
         avatar_url: updates.avatar_url || null,
         bio: updates.bio || null,
+        website_url: updates.website_url || null,
         program: updates.program || 'Software Development',
         year_level: updates.year_level || 'Getting Started',
         is_onboarded: updates.is_onboarded ?? false,

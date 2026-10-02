@@ -8,6 +8,7 @@ alter table public.profiles add column if not exists headline text;
 alter table public.profiles add column if not exists is_onboarded boolean default false;
 alter table public.profiles add column if not exists program text;
 alter table public.profiles add column if not exists year_level text;
+alter table public.profiles add column if not exists website_url text;
 
 -- 2. Ensure all columns exist on public.showcased_projects
 alter table public.showcased_projects add column if not exists repo_key text;

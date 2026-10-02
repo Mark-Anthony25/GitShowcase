@@ -192,14 +192,21 @@ async function runTests() {
 
   // Test 11: Idempotent upsert verification
   const upsertedAgain = await updateStudentProfile(testProfileId, {
-    headline: 'Chief Systems Architect',
+    website_url: 'https://markanthony.dev',
   });
-  if (upsertedAgain?.headline !== 'Chief Systems Architect' || upsertedAgain?.bio !== 'Updated bio 2026') {
+  if (upsertedAgain?.website_url !== 'https://markanthony.dev' || upsertedAgain?.bio !== 'Updated bio 2026') {
     throw new Error('Test 11 Failed: Successive upsert did not merge fields cleanly');
   }
   console.log('✓ Test 11: Successive updates cleanly merge fields without loss');
 
-  console.log('\nAll 11 Profile Update & Project Selection Tests Passed Perfectly!\n');
+  // Test 12: Public showcase retrieval includes website_url
+  const finalShowcase = await getStudentShowcaseByUsername('student-tester', null, true);
+  if (!finalShowcase || finalShowcase.profile.website_url !== 'https://markanthony.dev') {
+    throw new Error(`Test 12 Failed: Public showcase did not include website_url: ${finalShowcase?.profile.website_url}`);
+  }
+  console.log('✓ Test 12: Public showcase accurately exposes website_url to viewers');
+
+  console.log('\nAll 12 Profile Update & Project Selection Tests Passed Perfectly!\n');
 }
 
 runTests().catch(err => {

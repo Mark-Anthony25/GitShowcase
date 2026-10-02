@@ -13,6 +13,7 @@ create table if not exists public.profiles (
   bio text,
   program text,          -- e.g. "BS Computer Science", "BS Information Technology"
   year_level text,       -- e.g. "1st Year", "2nd Year", "3rd Year", "4th Year"
+  website_url text,
   is_onboarded boolean default false,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -23,6 +24,7 @@ alter table public.profiles add column if not exists headline text;
 alter table public.profiles add column if not exists is_onboarded boolean default false;
 alter table public.profiles add column if not exists program text;
 alter table public.profiles add column if not exists year_level text;
+alter table public.profiles add column if not exists website_url text;
 
 -- 2. Create Showcased Projects Table
 create table if not exists public.showcased_projects (

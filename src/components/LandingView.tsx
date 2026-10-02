@@ -289,7 +289,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               2. Set Up Your Profile
             </h4>
             <p className="text-xs sm:text-sm font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed">
-              Add your focus area, experience stage, and a brief bio.
+              Add your portfolio link, brief bio, and details.
             </p>
           </div>
 

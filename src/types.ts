@@ -5,6 +5,7 @@ export interface Profile {
   headline?: string | null;
   avatar_url: string | null;
   bio: string | null; // Max 50 characters for About Me
+  website_url?: string | null;
   program: string | null;
   year_level: string | null;
   is_onboarded?: boolean;

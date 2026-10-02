@@ -67,6 +67,7 @@ create table if not exists public.profiles (
   headline text,
   avatar_url text,
   bio text,
+  website_url text,
   program text,
   year_level text,
   is_onboarded boolean default false,
@@ -76,6 +77,7 @@ create table if not exists public.profiles (
 
 -- Schema migration helpers for existing installations
 alter table public.profiles add column if not exists headline text;
+alter table public.profiles add column if not exists website_url text;
 alter table public.profiles add column if not exists is_onboarded boolean default false;
 alter table public.profiles add column if not exists program text;
 alter table public.profiles add column if not exists year_level text;

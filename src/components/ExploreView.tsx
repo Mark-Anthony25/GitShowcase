@@ -289,7 +289,9 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                     {selectedModalItem.student.profile.full_name || selectedModalItem.student.profile.github_username}
                   </p>
                   <p className="text-[10px] text-stone-700 font-serif-body truncate">
-                    {selectedModalItem.student.profile.program || 'Focus area not specified'} {selectedModalItem.student.profile.year_level ? `• ${selectedModalItem.student.profile.year_level}` : ''}
+                    {selectedModalItem.student.profile.website_url 
+                      ? selectedModalItem.student.profile.website_url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
+                      : (selectedModalItem.student.profile.headline || selectedModalItem.student.profile.program || 'Software Developer')}
                   </p>
                 </div>
                 <button 

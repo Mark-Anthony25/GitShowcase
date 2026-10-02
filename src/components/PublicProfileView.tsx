@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Github, Star, ExternalLink, Share2, Check, ArrowLeft, ArrowRight,
   Code2, Globe, AlertCircle, RefreshCw, FolderGit2, Edit3, 
-  User, X, ArrowUpRight, Sparkles, GraduationCap, GitFork
+  User, X, ArrowUpRight, Sparkles, GitFork
 } from 'lucide-react';
 import { StudentShowcaseData, ShowcasedProject, Profile } from '../types';
 import { getStudentShowcaseByUsername, deduplicateProjectsList, ShowcaseLoadError } from '../lib/showcaseStore';
 import { CommitHeatmap } from './CommitHeatmap';
 import { useAuth } from '../context/AuthContext';
-import { DEGREE_PROGRAM_OPTIONS, getCanonicalProgram } from '../lib/programs';
 import { getStarCountLabel } from '../lib/projectStats';
 import { Skeleton } from './Skeleton';
 
@@ -29,13 +28,27 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   // Profile Edit Modal State for Owner
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [editFullName, setEditFullName] = useState('');
+  const [editWebsiteUrl, setEditWebsiteUrl] = useState('');
   const [editBio, setEditBio] = useState('');
-  const [editProgramOption, setEditProgramOption] = useState('BS Computer Science');
-  const [editCustomProgram, setEditCustomProgram] = useState('');
-  const [editYearLevel, setEditYearLevel] = useState('3rd Year');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+
+  // Compute Tech Stack from showcased projects
+  const rawProjects = data?.projects;
+  const techStack = useMemo(() => {
+    const list = rawProjects ? deduplicateProjectsList(rawProjects) : [];
+    const set = new Set<string>();
+    list.forEach(p => {
+      if (p.live_stats?.language) set.add(p.live_stats.language);
+      if (Array.isArray(p.live_stats?.topics)) {
+        p.live_stats.topics.forEach(t => {
+          if (t && t.length <= 20) set.add(t);
+        });
+      }
+    });
+    return Array.from(set).slice(0, 10);
+  }, [rawProjects]);
 
   useEffect(() => {
     loadShowcase(true);
@@ -60,11 +73,8 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
       if (res?.profile) {
         setEditFullName(res.profile.full_name || '');
+        setEditWebsiteUrl(res.profile.website_url || '');
         setEditBio(res.profile.bio || '');
-        const progInfo = getCanonicalProgram(res.profile.program);
-        setEditProgramOption(progInfo.selectedOptionValue);
-        setEditCustomProgram(progInfo.customProgramName);
-        setEditYearLevel(res.profile.year_level || '3rd Year');
       }
     } catch (err: any) {
       console.error('Error loading student showcase:', err);
@@ -94,11 +104,8 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
     setProfileSaved(false);
     if (data?.profile) {
       setEditFullName(data.profile.full_name || '');
+      setEditWebsiteUrl(data.profile.website_url || '');
       setEditBio(data.profile.bio || '');
-      const progInfo = getCanonicalProgram(data.profile.program);
-      setEditProgramOption(progInfo.selectedOptionValue);
-      setEditCustomProgram(progInfo.customProgramName);
-      setEditYearLevel(data.profile.year_level || '3rd Year');
     }
     setIsEditProfileOpen(true);
   };
@@ -109,16 +116,10 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
     setProfileSaving(true);
     setProfileError(null);
     try {
-      const effectiveProgram =
-        editProgramOption === 'Other Focus Area'
-          ? (editCustomProgram.trim() || 'Other Focus Area')
-          : editProgramOption;
-
       const updated = await updateProfileData({
         full_name: editFullName.trim() || null,
+        website_url: editWebsiteUrl.trim() || null,
         bio: editBio.trim().slice(0, 50) || null,
-        program: effectiveProgram,
-        year_level: editYearLevel.trim() || null,
         is_onboarded: true,
       });
 
@@ -307,7 +308,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                 </div>
               </div>
 
-              {/* Academic & Identity Info */}
+              {/* Bio, Portfolio Link & Tech Stacks */}
               <div className="space-y-2 pt-2.5 border-t border-dashed border-[#212121]">
                 {profile.bio && (
                   <p className="text-xs sm:text-sm font-serif-body text-stone-800 leading-relaxed italic">
@@ -315,18 +316,36 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                   </p>
                 )}
 
-                <div className="flex items-center space-x-1.5 text-xs font-serif-body text-stone-700 flex-wrap gap-y-1">
-                  {profile.program && (
-                    <span className="paper-badge font-bold bg-[#EFE9DB] text-[#212121]">
-                      {profile.program}
+                {profile.website_url && (
+                  <div className="pt-0.5">
+                    <a
+                      href={profile.website_url.startsWith('http://') || profile.website_url.startsWith('https://') ? profile.website_url : `https://${profile.website_url}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center space-x-1.5 text-xs font-mono font-bold text-[#0071DE] hover:underline break-all"
+                      title="Portfolio Website"
+                    >
+                      <Globe className="w-3.5 h-3.5 flex-shrink-0 text-stone-700" />
+                      <span>{profile.website_url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</span>
+                      <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 text-stone-500" />
+                    </a>
+                  </div>
+                )}
+
+                {techStack.length > 0 && (
+                  <div className="pt-1.5 space-y-1">
+                    <span className="text-[10px] font-sketch uppercase font-bold text-stone-600 block">
+                      Tech Stack
                     </span>
-                  )}
-                  {profile.year_level && (
-                    <span className="paper-badge bg-stone-200 font-mono font-bold text-stone-800">
-                      {profile.year_level}
-                    </span>
-                  )}
-                </div>
+                    <div className="flex items-center space-x-1.5 text-xs font-serif-body text-stone-700 flex-wrap gap-y-1">
+                      {techStack.map(tech => (
+                        <span key={tech} className="paper-badge font-mono text-[10px] font-bold bg-stone-200 text-stone-800">
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Public Portfolio Metrics Summary */}
@@ -472,56 +491,21 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
-                    Focus Area
-                  </label>
-                  <select
-                    value={editProgramOption}
-                    onChange={(e) => setEditProgramOption(e.target.value)}
-                    className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px] cursor-pointer"
-                  >
-                    {DEGREE_PROGRAM_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
-                    Experience Stage
-                  </label>
-                  <select
-                    value={editYearLevel}
-                    onChange={(e) => setEditYearLevel(e.target.value)}
-                    className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px]"
-                  >
-                    <option value="Getting Started">Getting Started</option>
-                    <option value="Building Experience">Building Experience</option>
-                    <option value="Independent Creator">Independent Creator</option>
-                    <option value="Experienced Contributor">Experienced Contributor</option>
-                    <option value="Professional">Professional</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold">
+                  Portfolio / Website Link
+                </label>
+                <input
+                  type="text"
+                  value={editWebsiteUrl}
+                  onChange={(e) => setEditWebsiteUrl(e.target.value)}
+                  placeholder="e.g. https://myportfolio.dev or yourname.dev"
+                  className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px]"
+                />
+                <p className="text-[10px] font-serif-body italic text-stone-600 mt-1">
+                  Link to your personal portfolio, blog, or resume site.
+                </p>
               </div>
-
-              {editProgramOption === 'Other Focus Area' && (
-                <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] space-y-1">
-                  <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
-                    Specify Focus Area
-                  </label>
-                  <input
-                    type="text"
-                    value={editCustomProgram}
-                    onChange={(e) => setEditCustomProgram(e.target.value)}
-                    placeholder="e.g. Community Organizing"
-                    className="w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px]"
-                  />
-                </div>
-              )}
 
               <div>
                 <div className="flex items-center justify-between mb-1">

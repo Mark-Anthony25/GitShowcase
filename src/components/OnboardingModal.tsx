@@ -43,6 +43,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [aboutMe, setAboutMe] = useState(
     (profile.bio || '').slice(0, 50)
   );
+  const [websiteUrl, setWebsiteUrl] = useState(profile.website_url || '');
   const [selectedProgramOption, setSelectedProgramOption] = useState(initialProg.selectedOptionValue);
   const [customProgramName, setCustomProgramName] = useState(initialProg.customProgramName);
   const [yearLevel, setYearLevel] = useState(profile.year_level || 'Getting Started');
@@ -76,6 +77,7 @@ interface SelectedRepoMeta {
         if (draft.fullName) setFullName(draft.fullName);
         if (draft.avatarUrl) setAvatarUrl(draft.avatarUrl);
         if (draft.aboutMe) setAboutMe(draft.aboutMe);
+        if (draft.websiteUrl) setWebsiteUrl(draft.websiteUrl);
         if (draft.selectedProgramOption) setSelectedProgramOption(draft.selectedProgramOption);
         if (draft.customProgramName) setCustomProgramName(draft.customProgramName);
         if (draft.yearLevel) setYearLevel(draft.yearLevel);
@@ -96,6 +98,7 @@ interface SelectedRepoMeta {
         fullName,
         avatarUrl,
         aboutMe,
+        websiteUrl,
         selectedProgramOption,
         customProgramName,
         yearLevel,
@@ -113,6 +116,7 @@ interface SelectedRepoMeta {
     fullName,
     avatarUrl,
     aboutMe,
+    websiteUrl,
     selectedProgramOption,
     customProgramName,
     yearLevel,
@@ -132,6 +136,9 @@ interface SelectedRepoMeta {
         if (gitUser.bio && (!aboutMe || !isInitial || aboutMe.length === 0)) {
           setAboutMe(gitUser.bio.slice(0, 50));
         }
+        if (gitUser.blog && (!websiteUrl || !isInitial)) {
+          setWebsiteUrl(gitUser.blog);
+        }
         setGithubSyncSuccess(true);
         setTimeout(() => setGithubSyncSuccess(false), 3000);
       }
@@ -140,7 +147,7 @@ interface SelectedRepoMeta {
     } finally {
       setIsSyncingGitHubUser(false);
     }
-  }, [githubToken, username, profile.github_username, fullName, aboutMe]);
+  }, [githubToken, username, profile.github_username, fullName, aboutMe, websiteUrl]);
 
   // On first open, auto-sync from GitHub if avatar or name looks default
   useEffect(() => {
@@ -268,10 +275,8 @@ interface SelectedRepoMeta {
         github_username: username.trim() || profile.github_username,
         full_name: fullName.trim() || profile.full_name || username.trim(),
         avatar_url: avatarUrl.trim() || profile.avatar_url,
-        headline: profile.headline || null,
         bio: aboutMe.trim().slice(0, 50) || profile.bio,
-        program: effectiveProgram,
-        year_level: yearLevel || profile.year_level,
+        website_url: websiteUrl.trim() || null,
         is_onboarded: true,
         updated_at: new Date().toISOString(),
       };
@@ -474,60 +479,22 @@ interface SelectedRepoMeta {
               </p>
             </div>
 
-            {/* Program & Year Level */}
-            <div className="space-y-2.5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
-                    Focus Area
-                  </label>
-                  <select
-                    id="onboarding-program-select"
-                    value={selectedProgramOption}
-                    onChange={(e) => setSelectedProgramOption(e.target.value)}
-                    className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px] cursor-pointer"
-                  >
-                    {DEGREE_PROGRAM_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
-                    Experience Stage
-                  </label>
-                  <select
-                    id="onboarding-year-select"
-                    value={yearLevel}
-                    onChange={(e) => setYearLevel(e.target.value)}
-                    className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px] cursor-pointer"
-                  >
-                    {YEAR_OPTIONS.map((yr) => (
-                      <option key={yr} value={yr}>{yr}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Conditional custom focus-area input */}
-              {selectedProgramOption === 'Other Focus Area' && (
-                <div className="p-2.5 bg-[#FAF6EC] paper-card border border-[#212121] space-y-1 animate-in fade-in duration-100">
-                  <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
-                    Specify Focus Area
-                  </label>
-                  <input
-                    id="onboarding-custom-program-input"
-                    type="text"
-                    value={customProgramName}
-                    onChange={(e) => setCustomProgramName(e.target.value)}
-                  placeholder="e.g. Community Organizing"
-                    className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px]"
-                  />
-                </div>
-              )}
+            {/* Portfolio / Personal Website Link */}
+            <div>
+              <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
+                Portfolio / Website Link <span className="text-stone-600 font-normal font-serif-body italic">(Optional)</span>
+              </label>
+              <input
+                id="onboarding-website-input"
+                type="url"
+                value={websiteUrl}
+                onChange={(e) => setWebsiteUrl(e.target.value)}
+                placeholder="e.g. https://myportfolio.dev or myportfolio.dev"
+                className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body text-[#212121] min-h-[34px]"
+              />
+              <p className="text-[10px] font-serif-body italic text-stone-600 mt-0.5">
+                Share your personal website, portfolio, or blog with other creators.
+              </p>
             </div>
 
             {/* Actions */}
@@ -774,16 +741,18 @@ interface SelectedRepoMeta {
                     {fullName || username}
                   </h3>
                   <p className="text-xs font-mono font-bold text-stone-800">
-                    @{username} • {yearLevel}
+                    @{username}
                   </p>
                 </div>
               </div>
 
               <div className="space-y-1 pt-2 border-t border-dashed border-[#212121] text-xs">
-                <div className="flex items-center space-x-2">
-                  <span className="font-sketch font-bold uppercase text-stone-600 text-[10px]">Focus Area:</span>
-                  <span className="font-serif-body font-bold text-[#212121]">{effectiveProgramDisplay}</span>
-                </div>
+                {websiteUrl.trim() && (
+                  <div className="flex items-center space-x-2">
+                    <span className="font-sketch font-bold uppercase text-stone-600 text-[10px]">Portfolio:</span>
+                    <span className="font-mono text-xs font-bold text-[#0071DE] truncate">{websiteUrl}</span>
+                  </div>
+                )}
                 <div className="flex items-start space-x-2 pt-0.5">
                   <span className="font-sketch font-bold uppercase text-stone-600 text-[10px] flex-shrink-0">About Me:</span>
                   <span className="font-serif-body text-stone-800 italic">"{aboutMe}"</span>
