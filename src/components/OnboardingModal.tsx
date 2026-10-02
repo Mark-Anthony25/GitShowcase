@@ -770,9 +770,6 @@ interface SelectedRepoMeta {
                   <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
                 </div>
                 <div className="space-y-0.5 min-w-0 flex-1">
-                  <span className="text-[9px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
-                    STUDENT IDENTITY PREVIEW
-                  </span>
                   <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
                     {fullName || username}
                   </h3>

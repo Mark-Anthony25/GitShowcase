@@ -298,9 +298,6 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                   />
                 </div>
                 <div className="space-y-0.5 min-w-0 flex-1">
-                  <span className="text-[9px] sm:text-[10px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
-                    {isOwner ? 'YOUR PUBLIC PROFILE' : 'CREATOR PROFILE'}
-                  </span>
                   <h1 className="text-lg sm:text-xl font-[900] uppercase font-newspaper-title text-[#212121] truncate leading-tight">
                     {profile.full_name || profile.github_username}
                   </h1>
@@ -441,9 +438,6 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
           <div className="bg-[#FEFCF6] paper-card paper-motion-panel max-w-lg w-full p-4 sm:p-5 space-y-4 max-h-[90dvh] overflow-y-auto">
             <div className="flex items-start justify-between border-b border-dashed border-[#212121] pb-2.5">
               <div>
-                <span className="text-[9px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
-                  IDENTITY SETTINGS
-                </span>
                 <h3 className="text-base sm:text-lg font-[900] uppercase font-newspaper-title text-[#212121]">
                   Edit Profile Information
                 </h3>

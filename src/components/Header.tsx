@@ -109,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
       navigate('/');
     } catch (error) {
       console.error('Account deletion failed:', error);
-      setDeleteError('We could not delete your account. Please try again.');
+      setDeleteError(error instanceof Error ? error.message : 'We could not delete your account. Please try again.');
     } finally {
       setIsDeleting(false);
     }

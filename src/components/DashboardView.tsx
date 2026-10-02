@@ -735,9 +735,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
           <div className="bg-[#FEFCF6] paper-card paper-motion-panel max-w-md w-full p-3.5 sm:p-5 space-y-3.5 max-h-[90dvh] overflow-y-auto">
             <div className="flex items-start justify-between border-b border-dashed border-[#212121] pb-2 gap-2">
               <div className="min-w-0 flex-1">
-                <span className="text-[9px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
-                  SHOWCASE PROJECT
-                </span>
                 <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
                   Publish
                 </h3>
@@ -816,9 +813,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
           <div className="bg-[#FEFCF6] paper-card paper-motion-panel max-w-md w-full p-3.5 sm:p-5 space-y-3.5 max-h-[90dvh] overflow-y-auto">
             <div className="flex items-start justify-between border-b border-dashed border-[#212121] pb-2 gap-2">
               <div className="min-w-0 flex-1">
-                <span className="text-[9px] font-sketch uppercase tracking-widest text-stone-700 block font-bold">
-                  EDIT PROJECT
-                </span>
                 <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
                   Edit Project Details
                 </h3>

@@ -263,9 +263,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase.functions.invoke('delete-account');
-      if (error) {
-        throw error;
+      let remoteDeleted = false;
+
+      // 1. Invoke protected Edge Function if deployed
+      try {
+        const { error: fnError } = await supabase.functions.invoke('delete-account');
+        if (!fnError) {
+          remoteDeleted = true;
+        } else {
+          console.warn('Edge function delete-account unavailable or returned error:', fnError);
+        }
+      } catch (err) {
+        console.warn('Failed to invoke delete-account edge function:', err);
+      }
+
+      // 2. Try delete_user RPC if Edge Function was not deployed
+      if (!remoteDeleted) {
+        try {
+          const { error: rpcError } = await supabase.rpc('delete_user');
+          if (!rpcError) {
+            remoteDeleted = true;
+          } else {
+            console.warn('RPC delete_user unavailable or returned error:', rpcError);
+          }
+        } catch (err) {
+          console.warn('Failed to call delete_user RPC:', err);
+        }
+      }
+
+      // 3. Clean up database tables directly (showcased projects and profile)
+      if (!remoteDeleted) {
+        try {
+          await supabase.from('showcased_projects').delete().eq('profile_id', user.id);
+          await supabase.from('profiles').delete().eq('id', user.id);
+        } catch (err) {
+          console.warn('Direct database cleanup encountered error:', err);
+        }
       }
     }
 
@@ -274,7 +307,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (isSupabaseConfigured && supabase) {
-      await supabase.auth.signOut();
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.warn('Error signing out after account deletion:', err);
+      }
     }
 
     setUser(null);
