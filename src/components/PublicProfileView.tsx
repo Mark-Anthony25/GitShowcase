@@ -322,11 +322,11 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                       href={profile.website_url.startsWith('http://') || profile.website_url.startsWith('https://') ? profile.website_url : `https://${profile.website_url}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center space-x-1.5 text-xs font-mono font-bold text-[#0071DE] hover:underline break-all"
-                      title="Portfolio Website"
+                      className="inline-flex items-center space-x-1.5 text-xs font-mono font-bold text-[#0071DE] hover:underline"
+                      title={profile.website_url}
                     >
                       <Globe className="w-3.5 h-3.5 flex-shrink-0 text-stone-700" />
-                      <span>{profile.website_url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</span>
+                      <span>Portfolio</span>
                       <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 text-stone-500" />
                     </a>
                   </div>

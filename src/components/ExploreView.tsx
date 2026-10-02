@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Github, ArrowRight, Star, Globe, X, User, GitFork } from 'lucide-react';
 import { StudentShowcaseData, ShowcasedProject } from '../types';
 import { getPublicDirectoryPage } from '../lib/showcaseStore';
-import { DEGREE_PROGRAM_OPTIONS, matchesProgramFilter, getProgramBadgeLabel } from '../lib/programs';
 import { getStarCountLabel } from '../lib/projectStats';
 import { useAuth } from '../context/AuthContext';
 import { Skeleton } from './Skeleton';
@@ -17,7 +16,8 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterProgram, setFilterProgram] = useState('all');
+  const [filterLanguage, setFilterLanguage] = useState('all');
+  const [sortBy, setSortBy] = useState<'recent' | 'stars' | 'forks' | 'name'>('recent');
   const [selectedModalItem, setSelectedModalItem] = useState<{
     project: ShowcasedProject;
     student: StudentShowcaseData;
@@ -26,12 +26,12 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
   useEffect(() => {
     const timeout = window.setTimeout(() => loadAllStudents(false, 0), 250);
     return () => window.clearTimeout(timeout);
-  }, [searchQuery, filterProgram]);
+  }, [searchQuery]);
 
   const loadAllStudents = async (force = false, offset = 0) => {
     setLoading(true);
     try {
-      const page = await getPublicDirectoryPage({ query: searchQuery, program: filterProgram, offset, limit: 24 });
+      const page = await getPublicDirectoryPage({ query: searchQuery, offset, limit: 24 });
       setStudents(previous => offset ? [...previous, ...page.items] : page.items);
       setHasMore(page.hasMore);
     } catch (err) {
@@ -41,19 +41,61 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
     }
   };
 
-  const allProjects = students.flatMap(s => 
-    s.projects.map(p => ({ project: p, student: s }))
-  );
+  const allProjects = useMemo(() => {
+    return students.flatMap(s => 
+      s.projects.map(p => ({ project: p, student: s }))
+    );
+  }, [students]);
 
-  const filteredProjects = allProjects;
+  const availableLanguages = useMemo(() => {
+    const counts = new Map<string, number>();
+    allProjects.forEach(({ project }) => {
+      const lang = project.live_stats?.language;
+      if (lang) {
+        counts.set(lang, (counts.get(lang) || 0) + 1);
+      }
+    });
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  }, [allProjects]);
+
+  const filteredProjects = useMemo(() => {
+    let result = allProjects;
+
+    if (filterLanguage !== 'all') {
+      result = result.filter(({ project }) => 
+        project.live_stats?.language?.toLowerCase() === filterLanguage.toLowerCase()
+      );
+    }
+
+    return [...result].sort((a, b) => {
+      if (sortBy === 'stars') {
+        const diff = (b.project.live_stats?.stars ?? 0) - (a.project.live_stats?.stars ?? 0);
+        if (diff !== 0) return diff;
+      }
+      if (sortBy === 'forks') {
+        const diff = (b.project.live_stats?.forks ?? 0) - (a.project.live_stats?.forks ?? 0);
+        if (diff !== 0) return diff;
+      }
+      if (sortBy === 'name') {
+        const nameA = (a.project.custom_title || a.project.repo_full_name).toLowerCase();
+        const nameB = (b.project.custom_title || b.project.repo_full_name).toLowerCase();
+        return nameA.localeCompare(nameB);
+      }
+      // 'recent' default
+      const dateA = a.project.added_at ? new Date(a.project.added_at).getTime() : 0;
+      const dateB = b.project.added_at ? new Date(b.project.added_at).getTime() : 0;
+      return dateB - dateA;
+    });
+  }, [allProjects, filterLanguage, sortBy]);
 
   const resultCount = filteredProjects.length;
-  const hasActiveFilters = searchQuery.trim().length > 0 || filterProgram !== 'all';
+  const hasActiveFilters = searchQuery.trim().length > 0 || filterLanguage !== 'all' || sortBy !== 'recent';
   const clearSearch = () => setSearchQuery('');
-  const clearProgram = () => setFilterProgram('all');
+  const clearLanguage = () => setFilterLanguage('all');
   const clearAllFilters = () => {
     clearSearch();
-    clearProgram();
+    clearLanguage();
+    setSortBy('recent');
   };
 
   const emptyStateCopy = () => {
@@ -66,10 +108,10 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
     }
 
     const queryLabel = searchQuery.trim() ? ` for “${searchQuery.trim()}”` : '';
-    const programLabel = filterProgram !== 'all' ? ` in ${filterProgram}` : '';
+    const langLabel = filterLanguage !== 'all' ? ` in ${filterLanguage}` : '';
     return {
-      title: `No ${noun} found${queryLabel}${programLabel}`,
-      description: 'Try removing a search term or program filter.',
+      title: `No ${noun} found${queryLabel}${langLabel}`,
+      description: 'Try adjusting your search query or language filter.',
     };
   };
 
@@ -100,19 +142,33 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             />
           </div>
 
-          <select
-            id="explore-program-filter"
-            value={filterProgram}
-            onChange={(e) => setFilterProgram(e.target.value)}
-            className="w-full sm:w-auto px-3 py-1.5 paper-input paper-select text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold min-h-[36px]"
-          >
-            <option value="all">All Focus Areas</option>
-            {DEGREE_PROGRAM_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <select
+              id="explore-language-filter"
+              value={filterLanguage}
+              onChange={(e) => setFilterLanguage(e.target.value)}
+              className="flex-1 sm:flex-none sm:w-auto px-3 py-1.5 paper-input paper-select text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold min-h-[36px]"
+            >
+              <option value="all">All Languages</option>
+              {availableLanguages.map(([lang, count]) => (
+                <option key={lang} value={lang}>
+                  {lang} ({count})
+                </option>
+              ))}
+            </select>
+
+            <select
+              id="explore-sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="flex-1 sm:flex-none sm:w-auto px-3 py-1.5 paper-input paper-select text-xs font-headline uppercase tracking-wider text-[#212121] cursor-pointer font-bold min-h-[36px]"
+            >
+              <option value="recent">Recently Added</option>
+              <option value="stars">Most Stars</option>
+              <option value="forks">Most Forks</option>
+              <option value="name">Alphabetical (A–Z)</option>
+            </select>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-sketch uppercase tracking-wider text-stone-700">
@@ -126,12 +182,17 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                   Search: {searchQuery.trim()} ×
                 </button>
               )}
-              {filterProgram !== 'all' && (
-                <button onClick={clearProgram} className="paper-badge cursor-pointer hover:bg-[#FAF6EC]">
-                  Focus Area: {filterProgram} ×
+              {filterLanguage !== 'all' && (
+                <button onClick={clearLanguage} className="paper-badge cursor-pointer hover:bg-[#FAF6EC]">
+                  Language: {filterLanguage} ×
                 </button>
               )}
-              <button onClick={clearAllFilters} className="underline font-bold">
+              {sortBy !== 'recent' && (
+                <button onClick={() => setSortBy('recent')} className="paper-badge cursor-pointer hover:bg-[#FAF6EC]">
+                  Sort: {sortBy === 'stars' ? 'Most Stars' : sortBy === 'forks' ? 'Most Forks' : 'A–Z'} ×
+                </button>
+              )}
+              <button onClick={clearAllFilters} className="underline font-bold cursor-pointer">
                 Clear all
               </button>
             </div>
@@ -289,9 +350,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                     {selectedModalItem.student.profile.full_name || selectedModalItem.student.profile.github_username}
                   </p>
                   <p className="text-[10px] text-stone-700 font-serif-body truncate">
-                    {selectedModalItem.student.profile.website_url 
-                      ? selectedModalItem.student.profile.website_url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
-                      : (selectedModalItem.student.profile.headline || selectedModalItem.student.profile.program || 'Software Developer')}
+                    {selectedModalItem.student.profile.headline || selectedModalItem.student.profile.program || 'Software Developer'}
                   </p>
                 </div>
                 <button 

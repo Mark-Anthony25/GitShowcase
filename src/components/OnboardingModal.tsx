@@ -750,7 +750,16 @@ interface SelectedRepoMeta {
                 {websiteUrl.trim() && (
                   <div className="flex items-center space-x-2">
                     <span className="font-sketch font-bold uppercase text-stone-600 text-[10px]">Portfolio:</span>
-                    <span className="font-mono text-xs font-bold text-[#0071DE] truncate">{websiteUrl}</span>
+                    <a
+                      href={websiteUrl.startsWith('http://') || websiteUrl.startsWith('https://') ? websiteUrl : `https://${websiteUrl}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center space-x-1 font-mono text-xs font-bold text-[#0071DE] hover:underline"
+                      title={websiteUrl}
+                    >
+                      <span>Portfolio</span>
+                      <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 text-stone-500" />
+                    </a>
                   </div>
                 )}
                 <div className="flex items-start space-x-2 pt-0.5">

@@ -19,4 +19,16 @@ if (!exploreView.includes("navigate(`/u/${student.profile.github_username}`)")) 
   throw new Error('Project cards must retain navigation to the project author profile.');
 }
 
+if (!exploreView.includes("id=\"explore-language-filter\"")) {
+  throw new Error('Explore must include a language filter dropdown.');
+}
+
+if (!exploreView.includes("id=\"explore-sort-select\"")) {
+  throw new Error('Explore must include a sort dropdown.');
+}
+
+if (exploreView.includes("DEGREE_PROGRAM_OPTIONS")) {
+  throw new Error('Explore must not retain legacy degree program options.');
+}
+
 console.log('Explore projects-only test passed');
