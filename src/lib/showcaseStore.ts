@@ -1,6 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabase';
-import { Profile, ShowcasedProject, StudentShowcaseData } from '../types';
-import { fetchLiveRepoStats, fetchGitHubUserData, fetchUserRepos } from './github';
+import { Profile, ShowcasedProject, StudentShowcaseData, PublicDirectoryPage, RepoLiveStats } from '../types';
 import { getCachedOrFetch, invalidateCache, CACHE_TTL } from './cache';
 import { getDemoShowcaseByUsername, getDemoStudentsShowcase } from './demoData';
 
@@ -68,6 +67,40 @@ export function deduplicateProjectsList(projects: ShowcasedProject[]): Showcased
     }
   }
   return deduped;
+}
+
+export function normalizeRepoKey(repoFullName: string): string {
+  return repoFullName.trim().toLowerCase();
+}
+
+function cachedStats(row: any): RepoLiveStats | undefined {
+  const cache = row?.repo_stats_cache;
+  if (!cache) return undefined;
+  return { stars: cache.stars || 0, forks: cache.forks || 0, language: cache.language || null, topics: cache.topics || [], last_commit_at: cache.last_commit_at, description: cache.description || null, homepage: cache.homepage || null };
+}
+
+function publicItem(row: any): StudentShowcaseData {
+  const p = row.profiles;
+  return { profile: { id: p.id, github_username: p.github_username, full_name: p.full_name, headline: p.headline || null, avatar_url: p.avatar_url, bio: p.bio, program: p.program, year_level: p.year_level, is_onboarded: Boolean(p.is_onboarded), created_at: p.created_at, updated_at: p.updated_at }, projects: [{ id: row.id, profile_id: row.profile_id, repo_full_name: row.repo_full_name, repo_key: row.repo_key, repo_url: row.repo_url, custom_title: row.custom_title, custom_description: row.custom_description, display_order: row.display_order, added_at: row.added_at, live_stats: cachedStats(row) }] };
+}
+
+export async function getPublicDirectoryPage({ query = '', program = 'all', offset = 0, limit = 24 }: { query?: string; program?: string; offset?: number; limit?: number }): Promise<PublicDirectoryPage> {
+  const take = Math.min(Math.max(limit, 1), 24);
+  if (!isSupabaseConfigured || !supabase) {
+    const projects = getDemoStudentsShowcase().flatMap(s => s.projects.map(project => ({ profile: s.profile, projects: [project] })));
+    return { items: projects.slice(offset, offset + take), hasMore: projects.length > offset + take };
+  }
+  let request: any = supabase.from('showcased_projects').select('id,profile_id,repo_full_name,repo_key,repo_url,custom_title,custom_description,display_order,added_at,profiles!inner(id,github_username,full_name,headline,avatar_url,bio,program,year_level,is_onboarded,created_at,updated_at)').order('added_at', { ascending: false }).order('id', { ascending: false }).range(offset, offset + take);
+  if (program !== 'all') request = request.eq('profiles.program', program);
+  if (query.trim()) request = request.or(`repo_full_name.ilike.%${query.trim()}%,custom_title.ilike.%${query.trim()}%,custom_description.ilike.%${query.trim()}%`);
+  const { data, error } = await request;
+  if (error) { isSchemaError(error); throw new ShowcaseLoadError('Unable to load projects. Please try again.'); }
+  const rows = (data || []) as any[];
+  const keys = rows.map(row => normalizeRepoKey(row.repo_key || row.repo_full_name));
+  const { data: statsRows } = keys.length ? await supabase.from('repo_stats_cache').select('repo_full_name,stars,forks,language,topics,last_commit_at,description,homepage').in('repo_full_name', keys) : { data: [] };
+  const stats = new Map((statsRows || []).map((row: any) => [normalizeRepoKey(row.repo_full_name), row]));
+  rows.forEach(row => { row.repo_stats_cache = stats.get(normalizeRepoKey(row.repo_key || row.repo_full_name)); });
+  return { items: rows.slice(0, take).map(publicItem), hasMore: rows.length > take };
 }
 
 // In-memory fallback for environments where localStorage is not available (Node.js test runners, SSR)
@@ -171,30 +204,7 @@ export async function enrichProjectsWithLiveStats(
 ): Promise<ShowcasedProject[]> {
   if (!projects || projects.length === 0) return [];
   const { projects: localProjects } = getLocalData();
-  return await Promise.all(
-    projects.map(async (p) => {
-      try {
-        const stats = await fetchLiveRepoStats(p.repo_full_name, token, forceRefresh);
-        const localMatch = localProjects.find(
-          lp => lp.repo_full_name.trim().toLowerCase() === p.repo_full_name.trim().toLowerCase()
-        );
-        const resolvedStats = stats || p.live_stats || localMatch?.live_stats || undefined;
-        return {
-          ...p,
-          live_stats: resolvedStats,
-        };
-      } catch (err) {
-        console.warn(`Error enriching live stats for ${p.repo_full_name}:`, err);
-        const localMatch = localProjects.find(
-          lp => lp.repo_full_name.trim().toLowerCase() === p.repo_full_name.trim().toLowerCase()
-        );
-        return {
-          ...p,
-          live_stats: p.live_stats || localMatch?.live_stats || undefined,
-        };
-      }
-    })
-  );
+  return projects.map(p => ({ ...p, live_stats: p.live_stats || localProjects.find(lp => normalizeRepoKey(lp.repo_full_name) === normalizeRepoKey(p.repo_full_name))?.live_stats }));
 }
 
 /**
@@ -279,11 +289,9 @@ export async function getStudentShowcaseByUsername(
             const rawProjects = (projectsData || []) as ShowcasedProject[];
 
             // 3. Enrich projects with live GitHub stats
-            const enrichedProjects = await enrichProjectsWithLiveStats(rawProjects, token, forceRefresh);
-
             return {
               profile: profileData as Profile,
-              projects: enrichedProjects,
+              projects: rawProjects,
             };
           }
 
@@ -315,62 +323,7 @@ export async function getStudentShowcaseByUsername(
         return demoShowcase;
       }
 
-      // 3. Fallback: Fetch directly from GitHub for any real GitHub username
-      try {
-        const ghUser = await fetchGitHubUserData(token, normalizedUsername, forceRefresh);
-        if (!ghUser || !ghUser.login) {
-          return null;
-        }
-
-        const fallbackProfile: Profile = {
-          id: `gh_${ghUser.login.toLowerCase()}`,
-          github_username: ghUser.login,
-          full_name: ghUser.name || ghUser.login,
-          headline: ghUser.company 
-            ? `${ghUser.company}${ghUser.location ? ' • ' + ghUser.location : ''}`
-            : ghUser.location || (ghUser.bio ? ghUser.bio.slice(0, 45) : 'Creator / Developer'),
-          avatar_url: ghUser.avatar_url,
-          bio: ghUser.bio ? ghUser.bio.slice(0, 50) : 'Developer on GitHub',
-          program: 'Software Development',
-          year_level: 'Getting Started',
-          is_onboarded: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        const ghRepos = await fetchUserRepos(token, ghUser.login, forceRefresh);
-        const nonForkRepos = ghRepos.filter(r => !r.fork).slice(0, 12);
-        
-        const convertedProjects: ShowcasedProject[] = nonForkRepos.map((repo, idx) => ({
-          id: `gh_repo_${repo.id || repo.name}`,
-          profile_id: fallbackProfile.id,
-          repo_full_name: repo.full_name,
-          custom_title: repo.name,
-          custom_description: repo.description || '',
-          display_order: idx,
-          added_at: repo.updated_at || new Date().toISOString(),
-          repo_url: repo.html_url,
-          live_stats: {
-            stars: typeof repo.stargazers_count === 'number' ? repo.stargazers_count : 0,
-            forks: typeof repo.forks_count === 'number' ? repo.forks_count : 0,
-            language: repo.language ?? null,
-            topics: Array.isArray(repo.topics) ? repo.topics : [],
-            last_commit_at: repo.pushed_at || repo.updated_at,
-            description: repo.description || null,
-            homepage: repo.homepage || null,
-            open_issues: typeof repo.open_issues_count === 'number' ? repo.open_issues_count : 0,
-            license: repo.license?.spdx_id || repo.license?.name || null,
-          },
-        }));
-
-        return {
-          profile: fallbackProfile,
-          projects: convertedProjects,
-        };
-      } catch (err) {
-        console.warn(`Could not resolve public GitHub profile for ${normalizedUsername}:`, err);
-        throw new ShowcaseLoadError();
-      }
+      return null;
     },
     { ttlMs: CACHE_TTL.PUBLIC_DATA, skipCache: forceRefresh, persistLocal: false }
   );
@@ -388,47 +341,7 @@ export async function getAllStudentsShowcase(
   return getCachedOrFetch(
     cacheKey,
     async () => {
-      if (isSupabaseConfigured && supabase) {
-        try {
-          const { data: profiles, error } = await supabase
-            .from('profiles')
-            .select('*, showcased_projects(*)')
-            .order('created_at', { ascending: false });
-
-          if (!error && profiles && profiles.length > 0) {
-            return await Promise.all(
-              profiles.map(async (p: any) => {
-                const rawProjects = (p.showcased_projects || []) as ShowcasedProject[];
-                const enrichedProjects = await enrichProjectsWithLiveStats(rawProjects, token, forceRefresh);
-                return {
-                  profile: {
-                    id: p.id,
-                    github_username: p.github_username,
-                    full_name: p.full_name,
-                    headline: p.headline || null,
-                    avatar_url: p.avatar_url,
-                    bio: p.bio,
-                    program: p.program || 'Software Development',
-                    year_level: p.year_level || 'Getting Started',
-                    is_onboarded: Boolean(p.is_onboarded),
-                    created_at: p.created_at,
-                    updated_at: p.updated_at,
-                  },
-                  projects: enrichedProjects,
-                };
-              })
-            );
-          }
-
-          if (error) {
-            isSchemaError(error);
-            console.warn('Error fetching all showcases from Supabase:', error.message);
-          }
-        } catch (err) {
-          isSchemaError(err);
-          console.warn('Exception fetching showcases from Supabase:', err);
-        }
-      }
+      if (isSupabaseConfigured && supabase) return (await getPublicDirectoryPage({ limit: 24 })).items;
 
       // Fallback local store
       const { profiles, projects } = getLocalData();
@@ -519,6 +432,21 @@ export async function addProjectToShowcase(params: {
 }): Promise<ShowcasedProject | null> {
   let createdProject: ShowcasedProject | null = null;
   const normalizedRepoName = params.repoFullName.trim();
+
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase.rpc('save_showcased_project', {
+      p_repo_full_name: normalizedRepoName,
+      p_repo_url: params.repoUrl,
+      p_custom_title: params.customTitle ?? null,
+      p_custom_description: params.customDescription ?? null,
+    });
+    if (error || !data) throw new Error(error?.message || 'Unable to save project. Please retry.');
+    createdProject = data as ShowcasedProject;
+    const { data: stats } = await supabase.functions.invoke('refresh-repo-stats', { body: { repoFullName: normalizedRepoName } });
+    if (stats) createdProject.live_stats = cachedStats({ repo_stats_cache: stats });
+    invalidateShowcaseCaches(params.profileId);
+    return createdProject;
+  }
 
   // --- Limit enforcement: max 3 projects per user ---
   // Count existing BEFORE writing. Allow if this repo is already showcased (it's an update).
@@ -639,11 +567,9 @@ export async function addProjectToShowcase(params: {
 
   saveLocalData(profiles, projects);
 
-  if (createdProject) {
-    // Fetch live stats immediately for the newly added/updated repo
-    const stats = await fetchLiveRepoStats(createdProject.repo_full_name, params.token ?? null, true);
-    createdProject.live_stats = stats || undefined;
-    saveLocalData(profiles, projects);
+  if (createdProject && isSupabaseConfigured && supabase) {
+    const { data } = await supabase.functions.invoke('refresh-repo-stats', { body: { repoFullName: createdProject.repo_full_name } });
+    if (data) createdProject.live_stats = cachedStats({ repo_stats_cache: data });
   }
 
   // Invalidate affected caches immediately so changes reflect everywhere

@@ -8,7 +8,7 @@ import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
 import { getStarCountLabel } from '../lib/projectStats';
 import { GitHubRepoItem, ShowcasedProject } from '../types';
-import { fetchUserRepos, getValidToken, setActiveGitHubToken } from '../lib/github';
+import { fetchUserRepos, getValidToken } from '../lib/github';
 import { 
   getStudentShowcasedProjects, 
   addProjectToShowcase, 
@@ -116,29 +116,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   };
 
   const handlePromptAddToken = () => {
-    const current = getValidToken(githubToken) || '';
-    const input = window.prompt(
-      'Enter your GitHub Personal Access Token (classic or fine-grained with repo access) to bypass rate limits:',
-      current
-    );
-    if (input !== null) {
-      const clean = input.trim();
-      if (clean.length >= 10) {
-        try {
-          localStorage.setItem('gitshowcase_gh_token', clean);
-          sessionStorage.setItem('gitshowcase_gh_token', clean);
-          if (user?.id) {
-            localStorage.setItem(`gh_token_${user.id}`, clean);
-            sessionStorage.setItem(`gh_token_${user.id}`, clean);
-          }
-          setActiveGitHubToken(clean);
-          loadGitHubRepos(true);
-          loadShowcasedProjects(true);
-        } catch (e) {
-          console.error('Failed to save GitHub token:', e);
-        }
-      }
-    }
+    setRepoError('Personal GitHub tokens are not stored in the browser. Reconnect your GitHub account and retry.');
   };
 
   const handleOpenAddModal = (repo: GitHubRepoItem) => {

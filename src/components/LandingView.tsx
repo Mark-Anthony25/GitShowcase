@@ -6,7 +6,7 @@ import {
   User, FolderGit2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getAllStudentsShowcase } from '../lib/showcaseStore';
+import { getPublicDirectoryPage } from '../lib/showcaseStore';
 import { Skeleton } from './Skeleton';
 
 interface LandingViewProps {
@@ -44,7 +44,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
     let isMounted = true;
 
     const loadProjects = (force = false) => {
-      getAllStudentsShowcase(undefined, force).then((students) => {
+      getPublicDirectoryPage({ limit: 6 }).then(({ items: students }) => {
         if (!isMounted) return;
         if (!students || students.length === 0) {
           setPreviewProjects([]);

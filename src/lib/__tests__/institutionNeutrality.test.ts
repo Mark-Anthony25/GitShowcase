@@ -12,6 +12,8 @@ const forbidden = [
 
 const trackedFiles = execFileSync('git', ['ls-files'], { encoding: 'utf8' }).trim().split(/\r?\n/);
 const matches = trackedFiles.filter((file) => {
+  // Agent skill assets are tooling, not shipped application copy.
+  if (file.startsWith('.agents/')) return false;
   if (statSync(file).isDirectory()) return false;
   const content = readFileSync(file, 'utf8');
   return forbidden.some((pattern) => pattern.test(content));

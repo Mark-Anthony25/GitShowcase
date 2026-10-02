@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { LandingView } from './components/LandingView';
-import { DashboardView } from './components/DashboardView';
-import { PublicProfileView } from './components/PublicProfileView';
-import { ExploreView } from './components/ExploreView';
 import { AuthGateView } from './components/AuthGateView';
 import { AuthCallbackView } from './components/AuthCallbackView';
 import { SupabaseGuideModal } from './components/SupabaseGuideModal';
-import { OnboardingModal } from './components/OnboardingModal';
 import { Profile } from './types';
+
+const DashboardView = lazy(() => import('./components/DashboardView').then(module => ({ default: module.DashboardView })));
+const PublicProfileView = lazy(() => import('./components/PublicProfileView').then(module => ({ default: module.PublicProfileView })));
+const ExploreView = lazy(() => import('./components/ExploreView').then(module => ({ default: module.ExploreView })));
+const OnboardingModal = lazy(() => import('./components/OnboardingModal').then(module => ({ default: module.OnboardingModal })));
 
 function AppContent() {
   const [currentPath, setCurrentPath] = useState<string>('/');
@@ -124,18 +125,12 @@ function AppContent() {
 
         {/* Main Content Article Body */}
         <main className="flex-1 w-full max-w-full">
-          {renderCurrentView()}
+          <Suspense fallback={<div className="min-h-32" aria-label="Loading page" />}>{renderCurrentView()}</Suspense>
         </main>
 
         {/* Onboarding Setup Modal */}
         {profile && (
-          <OnboardingModal
-            isOpen={showOnboarding}
-            profile={profile}
-            githubToken={githubToken}
-            onComplete={handleOnboardingComplete}
-            onCancel={handleOnboardingCancel}
-          />
+          <Suspense fallback={null}><OnboardingModal isOpen={showOnboarding} profile={profile} githubToken={githubToken} onComplete={handleOnboardingComplete} onCancel={handleOnboardingCancel} /></Suspense>
         )}
 
         {/* Setup Assistant Modal */}

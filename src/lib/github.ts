@@ -1,5 +1,6 @@
 import { GitHubRepoItem, RepoLiveStats, ContributionCalendar, ContributionDay, GitHubUserData } from '../types';
 import { getCachedOrFetch, getFromCache, invalidateCache, CACHE_TTL } from './cache';
+import { supabase, isSupabaseConfigured } from './supabase';
 
 let globalGitHubToken: string | null = null;
 
@@ -12,32 +13,6 @@ export function getValidToken(token?: string | null): string | null {
   // 2. Global in-memory token
   if (globalGitHubToken && globalGitHubToken.length >= 10) {
     return globalGitHubToken;
-  }
-
-  // 3. Browser storage fallback (sessionStorage & localStorage)
-  if (typeof window !== 'undefined') {
-    try {
-      const direct = 
-        sessionStorage.getItem('gitshowcase_gh_token') || 
-        localStorage.getItem('gitshowcase_gh_token');
-      if (direct && direct !== 'null' && direct !== 'undefined' && direct.trim().length >= 10) {
-        globalGitHubToken = direct.trim();
-        return globalGitHubToken;
-      }
-
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith('gh_token_')) {
-          const val = localStorage.getItem(k);
-          if (val && val !== 'null' && val !== 'undefined' && val.trim().length >= 10) {
-            globalGitHubToken = val.trim();
-            return globalGitHubToken;
-          }
-        }
-      }
-    } catch {
-      // Storage access may be restricted
-    }
   }
 
   return null;
@@ -297,6 +272,11 @@ export async function fetchUserRepos(
   username?: string | null,
   forceRefresh = false
 ): Promise<GitHubRepoItem[]> {
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase.functions.invoke('github-repos');
+    if (error) throw new Error(error.message);
+    return Array.isArray(data) ? data : [];
+  }
   const effectiveToken = getValidToken(githubToken);
   const targetKey = username ? `user_${username.toLowerCase()}` : `auth_user_${effectiveToken ? 'authed' : 'anon'}`;
   const cacheKey = `github_repos_${targetKey}`;

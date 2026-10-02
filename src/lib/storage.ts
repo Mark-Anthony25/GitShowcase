@@ -10,7 +10,7 @@ export interface ImageTransformOptions {
 
 const DEFAULT_AVATAR_BUCKET = 'avatars';
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 /**
  * Build an optimized Supabase Storage CDN URL with image transformation params
@@ -71,9 +71,19 @@ export async function uploadAvatar(
     return { url: null, error: 'Unsupported image format. Please use JPEG, PNG, or WebP.' };
   }
 
+  const dimensions = await new Promise<{ width: number; height: number } | null>((resolve) => {
+    const image = new Image();
+    image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
+    image.onerror = () => resolve(null);
+    image.src = URL.createObjectURL(file);
+  });
+  if (!dimensions || dimensions.width > 4096 || dimensions.height > 4096) {
+    return { url: null, error: 'Image dimensions must be at most 4096×4096.' };
+  }
+
   try {
-    const fileExt = file.name.split('.').pop() || 'jpg';
-    const filePath = `${userId}/avatar-${Date.now()}.${fileExt}`;
+    const fileExt = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+    const filePath = `${userId}/avatar.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from(bucket)

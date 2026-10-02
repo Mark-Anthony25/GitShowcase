@@ -455,3 +455,6 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more details
 Made with ☕ and passion for creators sharing their work.
 
 </div>
+# Free-tier deployment notes
+
+Apply `supabase/migrations/20261002000000_free_tier_directory.sql`, then deploy `refresh-repo-stats` and `github-repos`. Set `GITHUB_TOKEN` and `SUPABASE_SERVICE_ROLE_KEY` as Supabase Edge Function secrets only; never put either in Vercel or `VITE_*` variables. Configure GitHub and Supabase OAuth to return to `/auth/callback` on the deployed domain.

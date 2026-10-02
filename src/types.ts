@@ -50,6 +50,7 @@ export interface ShowcasedProject {
   id: string;
   profile_id: string;
   repo_full_name: string;
+  repo_key?: string;
   repo_url: string;
   custom_title: string | null;
   custom_description: string | null;
@@ -58,6 +59,11 @@ export interface ShowcasedProject {
   added_at?: string;
   // Enriched live metadata from GitHub
   live_stats?: RepoLiveStats;
+}
+
+export interface PublicDirectoryPage {
+  items: StudentShowcaseData[];
+  hasMore: boolean;
 }
 
 export interface RepoLiveStats {

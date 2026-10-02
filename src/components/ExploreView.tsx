@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Github, ArrowRight, Star, Globe, X, User, GitFork } from 'lucide-react';
 import { StudentShowcaseData, ShowcasedProject } from '../types';
-import { getAllStudentsShowcase } from '../lib/showcaseStore';
+import { getPublicDirectoryPage } from '../lib/showcaseStore';
 import { DEGREE_PROGRAM_OPTIONS, matchesProgramFilter, getProgramBadgeLabel } from '../lib/programs';
 import { getStarCountLabel } from '../lib/projectStats';
 import { useAuth } from '../context/AuthContext';
@@ -14,6 +14,7 @@ interface ExploreViewProps {
 export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
   const { githubToken } = useAuth();
   const [students, setStudents] = useState<StudentShowcaseData[]>([]);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterProgram, setFilterProgram] = useState('all');
@@ -23,14 +24,16 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
   } | null>(null);
 
   useEffect(() => {
-    loadAllStudents(false);
-  }, [githubToken]);
+    const timeout = window.setTimeout(() => loadAllStudents(false, 0), 250);
+    return () => window.clearTimeout(timeout);
+  }, [searchQuery, filterProgram]);
 
-  const loadAllStudents = async (force = false) => {
+  const loadAllStudents = async (force = false, offset = 0) => {
     setLoading(true);
     try {
-      const data = await getAllStudentsShowcase(githubToken, force);
-      setStudents(data);
+      const page = await getPublicDirectoryPage({ query: searchQuery, program: filterProgram, offset, limit: 24 });
+      setStudents(previous => offset ? [...previous, ...page.items] : page.items);
+      setHasMore(page.hasMore);
     } catch (err) {
       console.error('Error loading students:', err);
     } finally {
@@ -42,19 +45,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
     s.projects.map(p => ({ project: p, student: s }))
   );
 
-  const filteredProjects = allProjects.filter(({ project: p, student: s }) => {
-    const q = searchQuery.toLowerCase();
-    const matchesQuery =
-      s.profile.github_username.toLowerCase().includes(q) ||
-      (s.profile.full_name && s.profile.full_name.toLowerCase().includes(q)) ||
-      p.repo_full_name.toLowerCase().includes(q) ||
-      (p.custom_title && p.custom_title.toLowerCase().includes(q)) ||
-      (p.custom_description && p.custom_description.toLowerCase().includes(q));
-
-    const matchesProgram = matchesProgramFilter(s.profile.program, filterProgram);
-
-    return matchesQuery && matchesProgram;
-  });
+  const filteredProjects = allProjects;
 
   const resultCount = filteredProjects.length;
   const hasActiveFilters = searchQuery.trim().length > 0 || filterProgram !== 'all';
@@ -239,6 +230,9 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
               })}
             </div>
           )
+        )}
+        {!loading && hasMore && (
+          <div className="pt-4 text-center"><button className="paper-button text-xs py-2 px-4 font-bold" onClick={() => loadAllStudents(false, students.length)}>Load more projects</button></div>
         )}
       </div>
 
