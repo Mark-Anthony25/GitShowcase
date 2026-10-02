@@ -11,8 +11,12 @@ if (!/>\s*Projects\s*</.test(exploreView)) {
   throw new Error('Explore must present the single browse destination as Projects.');
 }
 
-if (!exploreView.includes('filteredProjects.map')) {
+if (!exploreView.includes('paginatedProjects.map') && !exploreView.includes('filteredProjects.map')) {
   throw new Error('Explore must keep project cards as the sole result surface.');
+}
+
+if (!exploreView.includes("id=\"explore-prev-page\"") || !exploreView.includes("id=\"explore-next-page\"")) {
+  throw new Error('Explore must include pagination controls.');
 }
 
 if (!exploreView.includes("navigate(`/u/${student.profile.github_username}`)")) {

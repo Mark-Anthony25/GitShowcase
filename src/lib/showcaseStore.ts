@@ -2,6 +2,7 @@ import { supabase, isSupabaseConfigured } from './supabase';
 import { Profile, ShowcasedProject, StudentShowcaseData, PublicDirectoryPage, RepoLiveStats } from '../types';
 import { getCachedOrFetch, invalidateCache, CACHE_TTL } from './cache';
 import { getDemoShowcaseByUsername, getDemoStudentsShowcase } from './demoData';
+import { fetchLiveRepoStats } from './github';
 
 const LOCAL_STORAGE_KEY_PROFILES = 'gitshowcase_profiles';
 const LOCAL_STORAGE_KEY_PROJECTS = 'gitshowcase_projects';
@@ -102,7 +103,14 @@ export async function getPublicDirectoryPage({ query = '', program = 'all', offs
   const { data: statsRows } = keys.length ? await supabase.from('repo_stats_cache').select('repo_full_name,stars,forks,language,topics,last_commit_at,description,homepage').in('repo_full_name', keys) : { data: [] };
   const stats = new Map((statsRows || []).map((row: any) => [normalizeRepoKey(row.repo_full_name), row]));
   rows.forEach(row => { row.repo_stats_cache = stats.get(normalizeRepoKey(row.repo_key || row.repo_full_name)); });
-  return { items: rows.slice(0, take).map(publicItem), hasMore: rows.length > take };
+  const items = rows.slice(0, take).map(publicItem);
+  const enrichedItems = await Promise.all(
+    items.map(async (item) => {
+      const enrichedProjects = await enrichProjectsWithLiveStats(item.projects);
+      return { ...item, projects: enrichedProjects };
+    })
+  );
+  return { items: enrichedItems, hasMore: rows.length > take };
 }
 
 // In-memory fallback for environments where localStorage is not available (Node.js test runners, SSR)
@@ -206,7 +214,44 @@ export async function enrichProjectsWithLiveStats(
 ): Promise<ShowcasedProject[]> {
   if (!projects || projects.length === 0) return [];
   const { projects: localProjects } = getLocalData();
-  return projects.map(p => ({ ...p, live_stats: p.live_stats || localProjects.find(lp => normalizeRepoKey(lp.repo_full_name) === normalizeRepoKey(p.repo_full_name))?.live_stats }));
+
+  return await Promise.all(
+    projects.map(async (p) => {
+      if (p.live_stats && (p.live_stats.language || p.live_stats.stars > 0)) {
+        return p;
+      }
+      const local = localProjects.find(
+        lp => normalizeRepoKey(lp.repo_full_name) === normalizeRepoKey(p.repo_full_name)
+      );
+      if (local?.live_stats && (local.live_stats.language || local.live_stats.stars > 0)) {
+        return { ...p, live_stats: local.live_stats };
+      }
+      try {
+        const live = await fetchLiveRepoStats(p.repo_full_name, token, forceRefresh);
+        if (live) {
+          if (isSupabaseConfigured && supabase) {
+            supabase
+              .from('repo_stats_cache')
+              .upsert({
+                repo_full_name: normalizeRepoKey(p.repo_full_name),
+                stars: live.stars,
+                forks: live.forks,
+                language: live.language,
+                topics: live.topics,
+                last_commit_at: live.last_commit_at,
+                description: live.description,
+                homepage: live.homepage,
+              })
+              .then(() => {}, () => {});
+          }
+          return { ...p, live_stats: live };
+        }
+      } catch (err) {
+        console.warn(`Failed to fetch live stats for ${p.repo_full_name}:`, err);
+      }
+      return p;
+    })
+  );
 }
 
 /**
@@ -291,9 +336,10 @@ export async function getStudentShowcaseByUsername(
             const rawProjects = (projectsData || []) as ShowcasedProject[];
 
             // 3. Enrich projects with live GitHub stats
+            const enriched = await enrichProjectsWithLiveStats(rawProjects, token, forceRefresh);
             return {
               profile: profileData as Profile,
-              projects: rawProjects,
+              projects: enriched,
             };
           }
 

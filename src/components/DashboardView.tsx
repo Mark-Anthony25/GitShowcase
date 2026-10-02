@@ -448,6 +448,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                       </div>
                     </div>
 
+                    {/* Repository Preview Banner */}
+                    <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative mb-1.5 flex items-center justify-center">
+                      <img
+                        src={`https://opengraph.githubassets.com/1/${proj.repo_full_name}`}
+                        alt={proj.custom_title || proj.repo_full_name}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                        onError={(e) => {
+                          (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+
                     {/* Title */}
                     <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] leading-snug">
                       {proj.custom_title || proj.repo_full_name.split('/')[1]}
@@ -972,6 +986,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             </div>
 
             <div className="space-y-3">
+              {/* Repository Preview Banner */}
+              <div className="w-full aspect-[2/1] sm:aspect-[16/7] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
+                <img
+                  src={`https://opengraph.githubassets.com/1/${previewProject.repo_full_name}`}
+                  alt={previewProject.custom_title || previewProject.repo_full_name}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                  }}
+                />
+              </div>
+
               {/* Live GitHub Telemetry */}
               <div className="flex items-center space-x-3 text-xs font-mono text-stone-800 font-bold py-1 border-b border-dashed border-[#212121]/50 pb-2">
                 <span className="flex items-center space-x-1" title="Actual GitHub Stars">

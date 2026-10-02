@@ -593,6 +593,20 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             </div>
             
             <div className="p-4 sm:p-6 space-y-4">
+              {/* Repository Preview Banner */}
+              <div className="w-full aspect-[2/1] sm:aspect-[16/7] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
+                <img
+                  src={`https://opengraph.githubassets.com/1/${selectedProject.repo_full_name}`}
+                  alt={selectedProject.custom_title || selectedProject.repo_full_name}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                  }}
+                />
+              </div>
+
               {/* Live GitHub Telemetry Bar */}
               <div className="flex items-center space-x-3 text-xs font-mono text-stone-800 font-bold py-1 border-b border-dashed border-[#212121]/50 pb-2">
                 <span className="flex items-center space-x-1" title="Actual GitHub Stars">
@@ -699,6 +713,20 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
       className="w-full text-left p-3.5 sm:p-4 paper-card bg-[#FEFCF6] transition-all flex flex-col justify-between space-y-3 cursor-pointer hover:-translate-y-0.5"
     >
       <div className="space-y-2 w-full">
+        {/* Repository Preview Banner */}
+        <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative mb-1.5 flex items-center justify-center">
+          <img
+            src={`https://opengraph.githubassets.com/1/${project.repo_full_name}`}
+            alt={project.custom_title || project.repo_full_name}
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            onError={(e) => {
+              (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+            }}
+          />
+        </div>
+
         {/* Header Badge */}
         <div className="flex items-start justify-between gap-2 border-b border-dashed border-[#212121] pb-2">
           <div className="space-y-0.5 w-full min-w-0">

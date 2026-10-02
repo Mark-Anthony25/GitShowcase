@@ -18,10 +18,16 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterLanguage, setFilterLanguage] = useState('all');
   const [sortBy, setSortBy] = useState<'recent' | 'stars' | 'forks' | 'name'>('recent');
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 8;
   const [selectedModalItem, setSelectedModalItem] = useState<{
     project: ShowcasedProject;
     student: StudentShowcaseData;
   } | null>(null);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterLanguage, sortBy]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => loadAllStudents(false, 0), 250);
@@ -89,6 +95,12 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
   }, [allProjects, filterLanguage, sortBy]);
 
   const resultCount = filteredProjects.length;
+  const totalPages = Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE));
+  const paginatedProjects = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredProjects.slice(start, start + PAGE_SIZE);
+  }, [filteredProjects, currentPage]);
+
   const hasActiveFilters = searchQuery.trim().length > 0 || filterLanguage !== 'all' || sortBy !== 'recent';
   const clearSearch = () => setSearchQuery('');
   const clearLanguage = () => setFilterLanguage('all');
@@ -223,72 +235,142 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
               )}
             </div>
           ) : (
-            <div className="content-fade-in grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
-              {filteredProjects.map(({ project, student }) => {
-                return (
-                  <div
-                    key={project.id}
-                    onClick={() => setSelectedModalItem({ project, student })}
-                    className="paper-card bg-[#FEFCF6] p-3.5 sm:p-4 flex flex-col justify-between space-y-2 cursor-pointer hover:bg-[#FAF6EC] hover:-translate-y-0.5 transition-all"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-start">
-                        <h3 className="text-sm sm:text-base font-[900] font-newspaper-title text-[#212121] uppercase">
-                          {project.custom_title || project.repo_full_name.split('/')[1]}
-                        </h3>
-                      </div>
-                      
-                      <p className="text-xs font-serif-body text-stone-700 leading-relaxed">
-                        {project.custom_description || project.live_stats?.description || 'No description provided.'}
-                      </p>
-
-                      {/* Live GitHub Telemetry (Stars, Forks, Language) */}
-                      <div className="flex items-center space-x-2 font-mono text-[10px] text-stone-700 font-bold pt-0.5">
-                        {project.live_stats?.language && (
-                          <span className="paper-badge text-[9px] bg-stone-200">
-                            {project.live_stats.language}
-                          </span>
-                        )}
-                        <span className="flex items-center space-x-0.5" title="Actual GitHub Stars">
-                          <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-700" />
-                          <span>{getStarCountLabel(project.live_stats)}</span>
-                        </span>
-                        {project.live_stats && (
-                          <span className="flex items-center space-x-0.5" title="GitHub Forks">
-                            <GitFork className="w-2.5 h-2.5 text-stone-600" />
-                            <span>{project.live_stats.forks}</span>
-                          </span>
-                        )}
-                      </div>
-
-                      {project.live_stats?.topics && project.live_stats.topics.length > 0 && (
-                        <div className="flex flex-wrap gap-1 pt-0.5">
-                          {project.live_stats.topics.slice(0, 3).map((topic, i) => (
-                            <span key={i} className="paper-badge text-[9px] font-mono">
-                              #{topic}
-                            </span>
-                          ))}
+            <div className="space-y-4">
+              <div className="content-fade-in grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                {paginatedProjects.map(({ project, student }) => {
+                  return (
+                    <div
+                      key={project.id}
+                      onClick={() => setSelectedModalItem({ project, student })}
+                      className="paper-card bg-[#FEFCF6] p-3 sm:p-3.5 flex flex-col justify-between space-y-2 cursor-pointer hover:bg-[#FAF6EC] hover:-translate-y-0.5 transition-all group"
+                    >
+                      <div className="space-y-2">
+                        {/* Repository Preview Banner */}
+                        <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
+                          <img
+                            src={`https://opengraph.githubassets.com/1/${project.repo_full_name}`}
+                            alt={project.custom_title || project.repo_full_name}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            onError={(e) => {
+                              (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                            }}
+                          />
                         </div>
-                      )}
+
+                        <div className="flex justify-between items-start">
+                          <h3 className="text-sm sm:text-base font-[900] font-newspaper-title text-[#212121] uppercase">
+                            {project.custom_title || project.repo_full_name.split('/')[1]}
+                          </h3>
+                        </div>
+                        
+                        <p className="text-xs font-serif-body text-stone-700 leading-relaxed line-clamp-2">
+                          {project.custom_description || project.live_stats?.description || 'No description provided.'}
+                        </p>
+
+                        {/* Live GitHub Telemetry (Stars, Forks, Language) */}
+                        <div className="flex items-center space-x-2 font-mono text-[10px] text-stone-700 font-bold pt-0.5">
+                          {project.live_stats?.language && (
+                            <span className="paper-badge text-[9px] bg-stone-200">
+                              {project.live_stats.language}
+                            </span>
+                          )}
+                          <span className="flex items-center space-x-0.5" title="Actual GitHub Stars">
+                            <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-700" />
+                            <span>{getStarCountLabel(project.live_stats)}</span>
+                          </span>
+                          {project.live_stats && (
+                            <span className="flex items-center space-x-0.5" title="GitHub Forks">
+                              <GitFork className="w-2.5 h-2.5 text-stone-600" />
+                              <span>{project.live_stats.forks}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {project.live_stats?.topics && project.live_stats.topics.length > 0 && (
+                          <div className="flex flex-wrap gap-1 pt-0.5">
+                            {project.live_stats.topics.slice(0, 3).map((topic, i) => (
+                              <span key={i} className="paper-badge text-[9px] font-mono">
+                                #{topic}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="pt-2 mt-2 border-t border-dashed border-[#212121] flex items-center justify-between">
+                        <span 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/u/${student.profile.github_username}`);
+                          }}
+                          className="text-[10px] font-sketch tracking-wider text-stone-700 font-bold hover:underline truncate max-w-[130px]"
+                        >
+                          By {student.profile.full_name || student.profile.github_username}
+                        </span>
+                        <span className="text-[10px] font-headline uppercase font-bold text-stone-600 hover:text-[#0071DE] flex-shrink-0">
+                          Details &rarr;
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Structured Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-5 border-t border-dashed border-[#212121]">
+                  <span className="text-xs font-mono font-bold text-stone-700">
+                    Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredProjects.length)} of {filteredProjects.length} projects
+                  </span>
+
+                  <div className="flex items-center space-x-1 font-mono text-xs">
+                    <button
+                      id="explore-prev-page"
+                      onClick={() => {
+                        setCurrentPage(prev => Math.max(1, prev - 1));
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      disabled={currentPage === 1}
+                      className="paper-button text-xs py-1 px-2.5 font-bold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      &larr; Prev
+                    </button>
+
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                        <button
+                          key={pageNum}
+                          onClick={() => {
+                            setCurrentPage(pageNum);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className={`min-w-[30px] h-[30px] font-bold text-xs rounded-xs flex items-center justify-center transition-colors cursor-pointer ${
+                            currentPage === pageNum
+                              ? 'paper-button paper-button-dark'
+                              : 'paper-button hover:bg-stone-200'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
                     </div>
 
-                    <div className="pt-2.5 mt-2 border-t border-dashed border-[#212121] flex items-center justify-between">
-                      <span 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/u/${student.profile.github_username}`);
-                        }}
-                        className="text-[10px] font-sketch tracking-wider text-stone-700 font-bold hover:underline truncate max-w-[130px]"
-                      >
-                        By {student.profile.full_name || student.profile.github_username}
-                      </span>
-                      <span className="text-[10px] font-headline uppercase font-bold text-stone-600 hover:text-[#0071DE] flex-shrink-0">
-                        Details &rarr;
-                      </span>
-                    </div>
+                    <button
+                      id="explore-next-page"
+                      onClick={() => {
+                        setCurrentPage(prev => Math.min(totalPages, prev + 1));
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      disabled={currentPage === totalPages}
+                      className="paper-button text-xs py-1 px-2.5 font-bold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      Next &rarr;
+                    </button>
                   </div>
-                );
-              })}
+                </div>
+              )}
             </div>
           )
         )}
@@ -328,6 +410,20 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             
             {/* Modal Body */}
             <div className="p-4 sm:p-6 space-y-4">
+              {/* Repository Preview Banner */}
+              <div className="w-full aspect-[2/1] sm:aspect-[16/7] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
+                <img
+                  src={`https://opengraph.githubassets.com/1/${selectedModalItem.project.repo_full_name}`}
+                  alt={selectedModalItem.project.custom_title || selectedModalItem.project.repo_full_name}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                  }}
+                />
+              </div>
+
               {/* Creator Card */}
               <div 
                 onClick={() => {
