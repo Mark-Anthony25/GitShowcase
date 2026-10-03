@@ -594,8 +594,8 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             
             <div className="p-4 sm:p-6 space-y-4">
               {/* Repository Preview Banner / Project UI Screenshot */}
-              <div className="w-full aspect-[2/1] sm:aspect-[16/7] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
-                <img width={1280} height={800}
+              <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
+                <img width={1280} height={720}
                   src={selectedProject.screenshot_url || `https://opengraph.githubassets.com/1/${selectedProject.repo_full_name}`}
                   alt={selectedProject.custom_title || selectedProject.repo_full_name}
                   loading="lazy"
@@ -718,8 +718,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
     >
       <div className="space-y-2 w-full">
         {/* Repository Preview Banner / Project UI Screenshot */}
-        <div className="w-full aspect-[16/10] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative mb-1.5 flex items-center justify-center">
-          <img width={1280} height={800}
+        <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative mb-1.5 flex items-center justify-center">
+          <img width={1280} height={720}
             src={project.screenshot_url || `https://opengraph.githubassets.com/1/${project.repo_full_name}`}
             alt={project.custom_title || project.repo_full_name}
             loading="lazy"

@@ -246,8 +246,8 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                     >
                       <div className="space-y-2">
                         {/* Repository Preview Banner / Project UI Screenshot */}
-                        <div className="w-full aspect-[16/10] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
-                          <img width={1280} height={800}
+                        <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
+                          <img width={1280} height={720}
                             src={project.screenshot_url || `https://opengraph.githubassets.com/1/${project.repo_full_name}`}
                             alt={project.custom_title || project.repo_full_name}
                             loading="lazy"
@@ -415,8 +415,8 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             {/* Modal Body */}
             <div className="p-4 sm:p-6 space-y-4">
               {/* Repository Preview Banner / Project UI Screenshot */}
-              <div className="w-full aspect-[2/1] sm:aspect-[16/7] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
-                <img width={1280} height={800}
+              <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
+                <img width={1280} height={720}
                   src={selectedModalItem.project.screenshot_url || `https://opengraph.githubassets.com/1/${selectedModalItem.project.repo_full_name}`}
                   alt={selectedModalItem.project.custom_title || selectedModalItem.project.repo_full_name}
                   loading="lazy"

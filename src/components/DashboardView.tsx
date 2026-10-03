@@ -546,9 +546,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                     </div>
 
                     {/* Repository Preview Banner / Project UI Screenshot */}
-                    <div className="w-full aspect-[16/10] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative mb-1.5 flex items-center justify-center">
+                    <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative mb-1.5 flex items-center justify-center">
                       <img
-                        width={1280} height={800} loading="lazy" decoding="async"
+                        width={1280} height={720} loading="lazy" decoding="async"
                         src={proj.screenshot_url || `https://opengraph.githubassets.com/1/${proj.repo_full_name}`}
                         alt={proj.custom_title || proj.repo_full_name}
                         className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
@@ -885,9 +885,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
                 {screenshotPreview ? (
                   <div className="space-y-1.5">
-                    <div className="w-full aspect-[16/10] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
+                    <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
                       <img
-                        width={1280} height={800} loading="lazy" decoding="async"
+                        width={1280} height={720} loading="lazy" decoding="async"
                         src={screenshotPreview}
                         onError={() => handleLocalPreviewError(false)}
                         alt="Screenshot preview"
@@ -1018,9 +1018,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
                 {(editScreenshotPreview || editingProject.screenshot_url) ? (
                   <div className="space-y-1.5">
-                    <div className="w-full aspect-[16/10] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
+                    <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
                       <img
-                        width={1280} height={800} loading="lazy" decoding="async"
+                        width={1280} height={720} loading="lazy" decoding="async"
                         src={editScreenshotPreview || editingProject.screenshot_url || ''}
                         onError={(event) => {
                           if (editScreenshotPreview) handleLocalPreviewError(true);
@@ -1213,9 +1213,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
             <div className="space-y-3">
               {/* Repository Preview Banner / Project UI Screenshot */}
-              <div className="w-full aspect-[2/1] sm:aspect-[16/7] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
+              <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
                 <img
-                        width={1280} height={800} loading="lazy" decoding="async"
+                        width={1280} height={720} loading="lazy" decoding="async"
                   src={previewProject.screenshot_url || `https://opengraph.githubassets.com/1/${previewProject.repo_full_name}`}
                   alt={previewProject.custom_title || previewProject.repo_full_name}
                   className="w-full h-full object-cover"
