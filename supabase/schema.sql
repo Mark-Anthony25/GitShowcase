@@ -43,6 +43,7 @@ create table if not exists public.showcased_projects (
 
 alter table public.showcased_projects add column if not exists repo_key text;
 update public.showcased_projects set repo_key = lower(trim(repo_full_name)) where repo_key is null;
+alter table public.showcased_projects add column if not exists screenshot_url text;
 
 -- 3. Create Repo Stats Cache Table (Shared caching across all users)
 create table if not exists public.repo_stats_cache (
@@ -205,7 +206,8 @@ create or replace function public.save_showcased_project(
   p_repo_full_name text,
   p_repo_url text,
   p_custom_title text default null,
-  p_custom_description text default null
+  p_custom_description text default null,
+  p_screenshot_url text default null
 ) returns public.showcased_projects
 language plpgsql security definer set search_path = public as $$
 declare
@@ -220,16 +222,35 @@ begin
      and (select count(*) from public.showcased_projects where profile_id = auth.uid()) >= 3 then
     raise exception 'PROJECT_LIMIT_REACHED';
   end if;
-  insert into public.showcased_projects (profile_id, repo_full_name, repo_key, repo_url, custom_title, custom_description)
-  values (auth.uid(), trim(p_repo_full_name), canonical_key, p_repo_url, p_custom_title, p_custom_description)
+  insert into public.showcased_projects (profile_id, repo_full_name, repo_key, repo_url, custom_title, custom_description, screenshot_url)
+  values (auth.uid(), trim(p_repo_full_name), canonical_key, p_repo_url, p_custom_title, p_custom_description, p_screenshot_url)
   on conflict (profile_id, repo_key) do update set
     repo_full_name = excluded.repo_full_name,
     repo_url = excluded.repo_url,
     custom_title = excluded.custom_title,
-    custom_description = excluded.custom_description
+    custom_description = excluded.custom_description,
+    screenshot_url = coalesce(excluded.screenshot_url, public.showcased_projects.screenshot_url)
   returning * into saved;
   return saved;
 end $$;
 
-revoke all on function public.save_showcased_project(text, text, text, text) from public;
-grant execute on function public.save_showcased_project(text, text, text, text) to authenticated;
+revoke all on function public.save_showcased_project(text, text, text, text, text) from public;
+grant execute on function public.save_showcased_project(text, text, text, text, text) to authenticated;
+
+-- 11. Storage Bucket for Project Screenshots
+insert into storage.buckets (id, name, public)
+values ('project-screenshots', 'project-screenshots', true)
+on conflict (id) do nothing;
+
+create policy "Public screenshots are viewable by everyone"
+  on storage.objects for select
+  using (bucket_id = 'project-screenshots');
+
+create policy "Users can upload their own project screenshots"
+  on storage.objects for insert
+  with check (bucket_id = 'project-screenshots' and auth.role() = 'authenticated');
+
+create policy "Users can update their own project screenshots"
+  on storage.objects for update
+  using (bucket_id = 'project-screenshots' and auth.role() = 'authenticated');
+

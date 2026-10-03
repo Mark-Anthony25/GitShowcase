@@ -213,7 +213,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
 
         {/* Main Content Area */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5" aria-label="Loading projects">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4" aria-label="Loading projects">
             {[0, 1, 2, 3].map((index) => (
               <div key={index} className="paper-card bg-[#FEFCF6] p-3.5 sm:p-4 space-y-3">
                 <Skeleton className="h-4 w-3/4" />
@@ -236,7 +236,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="content-fade-in grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+              <div className="content-fade-in grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
                 {paginatedProjects.map(({ project, student }) => {
                   return (
                     <div
@@ -245,16 +245,20 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                       className="paper-card bg-[#FEFCF6] p-3 sm:p-3.5 flex flex-col justify-between space-y-2 cursor-pointer hover:bg-[#FAF6EC] hover:-translate-y-0.5 transition-all group"
                     >
                       <div className="space-y-2">
-                        {/* Repository Preview Banner */}
-                        <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
+                        {/* Repository Preview Banner / Project UI Screenshot */}
+                        <div className="w-full aspect-[16/10] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
                           <img
-                            src={`https://opengraph.githubassets.com/1/${project.repo_full_name}`}
+                            src={project.screenshot_url || `https://opengraph.githubassets.com/1/${project.repo_full_name}`}
                             alt={project.custom_title || project.repo_full_name}
                             loading="lazy"
                             decoding="async"
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                             onError={(e) => {
-                              (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                              if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${project.repo_full_name}`) {
+                                e.currentTarget.src = `https://opengraph.githubassets.com/1/${project.repo_full_name}`;
+                              } else {
+                                (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                              }
                             }}
                           />
                         </div>
@@ -410,16 +414,20 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             
             {/* Modal Body */}
             <div className="p-4 sm:p-6 space-y-4">
-              {/* Repository Preview Banner */}
+              {/* Repository Preview Banner / Project UI Screenshot */}
               <div className="w-full aspect-[2/1] sm:aspect-[16/7] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
                 <img
-                  src={`https://opengraph.githubassets.com/1/${selectedModalItem.project.repo_full_name}`}
+                  src={selectedModalItem.project.screenshot_url || `https://opengraph.githubassets.com/1/${selectedModalItem.project.repo_full_name}`}
                   alt={selectedModalItem.project.custom_title || selectedModalItem.project.repo_full_name}
                   loading="lazy"
                   decoding="async"
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                    if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${selectedModalItem.project.repo_full_name}`) {
+                      e.currentTarget.src = `https://opengraph.githubassets.com/1/${selectedModalItem.project.repo_full_name}`;
+                    } else {
+                      (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                    }
                   }}
                 />
               </div>

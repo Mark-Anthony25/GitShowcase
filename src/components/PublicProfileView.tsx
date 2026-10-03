@@ -435,7 +435,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
               ) : (
                 <div className="space-y-4">
                   {/* Spotlight Project Cards Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
                     {projects.map(project => (
                       <ProjectCard 
                         key={project.id} 
@@ -593,16 +593,20 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             </div>
             
             <div className="p-4 sm:p-6 space-y-4">
-              {/* Repository Preview Banner */}
+              {/* Repository Preview Banner / Project UI Screenshot */}
               <div className="w-full aspect-[2/1] sm:aspect-[16/7] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
                 <img
-                  src={`https://opengraph.githubassets.com/1/${selectedProject.repo_full_name}`}
+                  src={selectedProject.screenshot_url || `https://opengraph.githubassets.com/1/${selectedProject.repo_full_name}`}
                   alt={selectedProject.custom_title || selectedProject.repo_full_name}
                   loading="lazy"
                   decoding="async"
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                    if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${selectedProject.repo_full_name}`) {
+                      e.currentTarget.src = `https://opengraph.githubassets.com/1/${selectedProject.repo_full_name}`;
+                    } else {
+                      (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                    }
                   }}
                 />
               </div>
@@ -713,16 +717,20 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
       className="w-full text-left p-3.5 sm:p-4 paper-card bg-[#FEFCF6] transition-all flex flex-col justify-between space-y-3 cursor-pointer hover:-translate-y-0.5"
     >
       <div className="space-y-2 w-full">
-        {/* Repository Preview Banner */}
-        <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative mb-1.5 flex items-center justify-center">
+        {/* Repository Preview Banner / Project UI Screenshot */}
+        <div className="w-full aspect-[16/10] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative mb-1.5 flex items-center justify-center">
           <img
-            src={`https://opengraph.githubassets.com/1/${project.repo_full_name}`}
+            src={project.screenshot_url || `https://opengraph.githubassets.com/1/${project.repo_full_name}`}
             alt={project.custom_title || project.repo_full_name}
             loading="lazy"
             decoding="async"
             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
             onError={(e) => {
-              (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+              if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${project.repo_full_name}`) {
+                e.currentTarget.src = `https://opengraph.githubassets.com/1/${project.repo_full_name}`;
+              } else {
+                (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+              }
             }}
           />
         </div>

@@ -23,6 +23,7 @@ interface ProjectPreviewItem {
   desc: string;
   stars: number;
   url: string;
+  screenshot_url?: string | null;
 }
 
 export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide }) => {
@@ -63,6 +64,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               desc: p.custom_description || p.live_stats?.description || 'No description provided.',
               stars: p.live_stats?.stars ?? 0,
               url: p.repo_url,
+              screenshot_url: p.screenshot_url,
             });
           }
         }
@@ -182,8 +184,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
         </div>
 
         {loadingProjects ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4" aria-label="Loading projects">
-            {[0, 1, 2, 3].map((index) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4" aria-label="Loading projects">
+            {[0, 1, 2].map((index) => (
               <div key={index} className="p-3 sm:p-3.5 paper-card bg-[#FAF6EC] space-y-2">
                 <Skeleton className="h-3 w-3/5" />
                 <Skeleton className="h-4 w-4/5" />
@@ -204,26 +206,46 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
             </p>
           </div>
         ) : (
-          <div className="content-fade-in grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">
-            {previewProjects.slice(0, 4).map((proj) => (
+          <div className="content-fade-in grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+            {previewProjects.slice(0, 6).map((proj) => (
               <div
                 key={proj.id}
-                className="p-3 sm:p-3.5 paper-card bg-[#FAF6EC] flex flex-col justify-between space-y-2 hover:bg-[#FAF8F2] transition-colors"
+                className="p-3 sm:p-3.5 paper-card bg-[#FAF6EC] flex flex-col justify-between space-y-2.5 hover:bg-[#FAF8F2] transition-colors"
               >
-                <div className="space-y-1">
-                  <div className="flex items-center justify-end gap-1 text-[9px]">
-                    <div className="flex items-center space-x-1 text-stone-800 font-mono text-[10px] font-bold flex-shrink-0 ml-auto">
-                      <Star className="w-3 h-3 text-[#212121] stroke-[2]" />
-                      <span>{proj.stars}</span>
-                    </div>
+                <div className="space-y-2">
+                  {/* Repository Preview Banner / Project UI Screenshot */}
+                  <div className="w-full aspect-[16/10] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
+                    <img
+                      src={proj.screenshot_url || `https://opengraph.githubassets.com/1/${proj.repo}`}
+                      alt={proj.title}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                      onError={(e) => {
+                        if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${proj.repo}`) {
+                          e.currentTarget.src = `https://opengraph.githubassets.com/1/${proj.repo}`;
+                        } else {
+                          (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                        }
+                      }}
+                    />
                   </div>
 
-                  <h4 className="text-xs sm:text-sm font-[900] uppercase font-newspaper-title text-[#212121] leading-snug">
-                    {proj.title}
-                  </h4>
-                  <p className="text-[11.5px] sm:text-xs font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed">
-                    {proj.desc}
-                  </p>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-end gap-1 text-[9px]">
+                      <div className="flex items-center space-x-1 text-stone-800 font-mono text-[10px] font-bold flex-shrink-0 ml-auto">
+                        <Star className="w-3 h-3 text-[#212121] stroke-[2]" />
+                        <span>{proj.stars}</span>
+                      </div>
+                    </div>
+
+                    <h4 className="text-xs sm:text-sm font-[900] uppercase font-newspaper-title text-[#212121] leading-snug">
+                      {proj.title}
+                    </h4>
+                    <p className="text-[11.5px] sm:text-xs font-serif-body text-[#212121] font-semibold sm:font-medium leading-relaxed line-clamp-2">
+                      {proj.desc}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="pt-1.5 border-t border-dashed border-[#212121]/50 flex items-center justify-between text-[11px]">

@@ -55,6 +55,7 @@ export interface ShowcasedProject {
   repo_url: string;
   custom_title: string | null;
   custom_description: string | null;
+  screenshot_url?: string | null;
   is_featured?: boolean;
   display_order: number;
   added_at?: string;

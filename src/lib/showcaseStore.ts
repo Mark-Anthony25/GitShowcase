@@ -84,7 +84,7 @@ function cachedStats(row: any): RepoLiveStats | undefined {
 
 function publicItem(row: any): StudentShowcaseData {
   const p = row.profiles;
-  return { profile: { id: p.id, github_username: p.github_username, full_name: p.full_name, headline: p.headline || null, avatar_url: p.avatar_url, bio: p.bio, website_url: p.website_url || null, program: p.program, year_level: p.year_level, is_onboarded: Boolean(p.is_onboarded), created_at: p.created_at, updated_at: p.updated_at }, projects: [{ id: row.id, profile_id: row.profile_id, repo_full_name: row.repo_full_name, repo_key: row.repo_key, repo_url: row.repo_url, custom_title: row.custom_title, custom_description: row.custom_description, display_order: row.display_order, added_at: row.added_at, live_stats: cachedStats(row) }] };
+  return { profile: { id: p.id, github_username: p.github_username, full_name: p.full_name, headline: p.headline || null, avatar_url: p.avatar_url, bio: p.bio, website_url: p.website_url || null, program: p.program, year_level: p.year_level, is_onboarded: Boolean(p.is_onboarded), created_at: p.created_at, updated_at: p.updated_at }, projects: [{ id: row.id, profile_id: row.profile_id, repo_full_name: row.repo_full_name, repo_key: row.repo_key, repo_url: row.repo_url, custom_title: row.custom_title, custom_description: row.custom_description, screenshot_url: row.screenshot_url || null, display_order: row.display_order, added_at: row.added_at, live_stats: cachedStats(row) }] };
 }
 
 export async function getPublicDirectoryPage({ query = '', program = 'all', offset = 0, limit = 24 }: { query?: string; program?: string; offset?: number; limit?: number }): Promise<PublicDirectoryPage> {
@@ -93,7 +93,7 @@ export async function getPublicDirectoryPage({ query = '', program = 'all', offs
     const projects = getDemoStudentsShowcase().flatMap(s => s.projects.map(project => ({ profile: s.profile, projects: [project] })));
     return { items: projects.slice(offset, offset + take), hasMore: projects.length > offset + take };
   }
-  let request: any = supabase.from('showcased_projects').select('id,profile_id,repo_full_name,repo_key,repo_url,custom_title,custom_description,display_order,added_at,profiles!inner(*)').order('added_at', { ascending: false }).order('id', { ascending: false }).range(offset, offset + take);
+  let request: any = supabase.from('showcased_projects').select('id,profile_id,repo_full_name,repo_key,repo_url,custom_title,custom_description,screenshot_url,display_order,added_at,profiles!inner(*)').order('added_at', { ascending: false }).order('id', { ascending: false }).range(offset, offset + take);
   if (program !== 'all') request = request.eq('profiles.program', program);
   if (query.trim()) request = request.or(`repo_full_name.ilike.%${query.trim()}%,custom_title.ilike.%${query.trim()}%,custom_description.ilike.%${query.trim()}%`);
   const { data, error } = await request;
@@ -476,6 +476,7 @@ export async function addProjectToShowcase(params: {
   repoUrl: string;
   customTitle?: string | null;
   customDescription?: string | null;
+  screenshotUrl?: string | null;
   token?: string | null;
 }): Promise<ShowcasedProject | null> {
   let createdProject: ShowcasedProject | null = null;
@@ -488,6 +489,7 @@ export async function addProjectToShowcase(params: {
         p_repo_url: params.repoUrl,
         p_custom_title: params.customTitle ?? null,
         p_custom_description: params.customDescription ?? null,
+        p_screenshot_url: params.screenshotUrl ?? null,
       });
       if (!error && data) {
         createdProject = data as ShowcasedProject;
@@ -539,6 +541,7 @@ export async function addProjectToShowcase(params: {
           repo_url: params.repoUrl,
           custom_title: params.customTitle !== undefined ? (params.customTitle || null) : primaryRow.custom_title,
           custom_description: params.customDescription !== undefined ? (params.customDescription || null) : primaryRow.custom_description,
+          screenshot_url: params.screenshotUrl !== undefined ? (params.screenshotUrl || null) : primaryRow.screenshot_url,
         };
 
         const { data: updated, error: updateErr } = await supabase
@@ -558,6 +561,7 @@ export async function addProjectToShowcase(params: {
           repo_url: params.repoUrl,
           custom_title: params.customTitle || null,
           custom_description: params.customDescription || null,
+          screenshot_url: params.screenshotUrl || null,
           display_order: 0,
         };
 
@@ -603,6 +607,7 @@ export async function addProjectToShowcase(params: {
       repo_url: params.repoUrl,
       custom_title: params.customTitle !== undefined ? (params.customTitle || null) : projects[existingIdx].custom_title,
       custom_description: params.customDescription !== undefined ? (params.customDescription || null) : projects[existingIdx].custom_description,
+      screenshot_url: params.screenshotUrl !== undefined ? (params.screenshotUrl || null) : projects[existingIdx].screenshot_url,
     };
     if (!createdProject) {
       createdProject = projects[existingIdx];
@@ -615,6 +620,7 @@ export async function addProjectToShowcase(params: {
       repo_url: params.repoUrl,
       custom_title: params.customTitle || null,
       custom_description: params.customDescription || null,
+      screenshot_url: params.screenshotUrl || null,
       display_order: projects.filter(p => p.profile_id === params.profileId).length + 1,
       added_at: new Date().toISOString(),
     };
