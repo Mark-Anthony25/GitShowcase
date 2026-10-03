@@ -35,7 +35,7 @@ for (const [name,mimeType,buffer,message] of [
 const png=Buffer.from(await page.evaluate(async()=>{const c=document.createElement('canvas');c.width=256;c.height=128;c.getContext('2d').fillRect(0,0,256,128);return c.toDataURL('image/png').split(',')[1];}),'base64');
 await page.locator('input[type=file]').setInputFiles({name:'valid.png',mimeType:'image/png',buffer:png});
 await page.getByAltText('Screenshot preview').waitFor();
-await page.getByText(/saved\)/).waitFor();
+await page.waitForFunction(()=>!document.querySelector("form button[type=submit]")?.disabled);
 await page.locator('form').getByRole('button',{name:'Publish',exact:true}).click();
 await page.getByText('Preview Proof',{exact:true}).waitFor();
 const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('gitshowcase_projects')));
@@ -46,7 +46,7 @@ checks.push('publish releases image preview URLs');
 await page.getByRole('button',{name:'Edit project details'}).click();
 await page.locator('form input[type=text]').fill('Quota proof');
 await page.locator('input[type=file]').setInputFiles({name:'valid.png',mimeType:'image/png',buffer:png});
-await page.getByText(/saved\)/).waitFor();
+await page.waitForFunction(()=>!document.querySelector("form button[type=submit]")?.disabled);
 await page.evaluate(()=>{window.__nativeSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='gitshowcase_projects')throw new DOMException('Full','QuotaExceededError');return window.__nativeSetItem.call(this,key,value);};});
 await page.getByRole('button',{name:'Save Changes',exact:true}).click();
 await page.getByRole('alert').filter({hasText:'Failed to save project. Please retry.'}).waitFor();

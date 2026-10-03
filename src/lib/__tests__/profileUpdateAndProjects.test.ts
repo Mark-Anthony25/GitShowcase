@@ -211,10 +211,10 @@ async function runTests() {
   const limitedProfile = await updateStudentProfile(testProfileId, {bio:longText});
   if (limitedProfile?.bio?.length !== 299) throw new Error('About Me must be capped at 299 characters when saved');
   const limitedProject = await addProjectToShowcase({profileId:testProfileId,repoFullName:'student-tester/project-alpha',repoUrl:'https://github.com/student-tester/project-alpha',customDescription:longText});
-  if (limitedProject?.custom_description?.length !== 299) throw new Error('New project description must be capped at 299 characters');
+  if (limitedProject?.custom_description?.length !== 99) throw new Error('New project description must be capped at 99 characters');
   const limitedEdit = await updateShowcaseProject(limitedProject!.id,{custom_description:longText},testProfileId);
-  if (limitedEdit?.custom_description?.length !== 299) throw new Error('Edited project description must be capped at 299 characters');
-  console.log('Profile and project descriptions enforce the 299-character limit');
+  if (limitedEdit?.custom_description?.length !== 99) throw new Error('Edited project description must be capped at 99 characters');
+  console.log('About Me uses 299 characters; project descriptions use 99');
   console.log('\nAll Profile Update & Project Selection Tests Passed!\n');
 }
 

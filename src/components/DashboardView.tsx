@@ -21,7 +21,7 @@ import {
 import { 
   compressScreenshot, 
   uploadProjectScreenshot, 
-  formatFileSize, ImageProcessingError, inspectImage, deleteLegacyProjectScreenshot
+  ImageProcessingError, inspectImage, deleteLegacyProjectScreenshot
 } from '../lib/imageCompression';
 import { Skeleton } from './Skeleton';
 
@@ -52,7 +52,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   const [addError, setAddError] = useState<string | null>(null);
   const [screenshotFile, setScreenshotFile] = useState<Blob | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
-  const [compressionStats, setCompressionStats] = useState<{ original: number; compressed: number } | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
 
   const [editError, setEditError] = useState<string | null>(null);
@@ -69,13 +68,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   const [editingProject, setEditingProject] = useState<ShowcasedProject | null>(null);
   const [editScreenshotFile, setEditScreenshotFile] = useState<Blob | null>(null);
   const [editScreenshotPreview, setEditScreenshotPreview] = useState<string | null>(null);
-  const [editCompressionStats, setEditCompressionStats] = useState<{ original: number; compressed: number } | null>(null);
   const [isEditCompressing, setIsEditCompressing] = useState(false);
   useEffect(() => () => { if (editScreenshotPreview?.startsWith('blob:')) URL.revokeObjectURL(editScreenshotPreview); }, [editScreenshotPreview]);
 
   useEffect(() => {
     selection.current.edit++; setIsEditCompressing(false); setEditError(null);
-    setEditScreenshotFile(null); setEditScreenshotPreview(null); setEditCompressionStats(null);
+    setEditScreenshotFile(null); setEditScreenshotPreview(null);
   }, [editingProject?.id]);
 
   // Previewing project detail
@@ -153,11 +151,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   const handleOpenAddModal = (repo: GitHubRepoItem) => {
     setSelectedRepoToAdd(repo);
     setCustomTitle(repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
-    setCustomDescription((repo.description || '').slice(0,299));
+    setCustomDescription((repo.description || '').slice(0,99));
     setAddError(null); setUploadProgress(null);
     setScreenshotFile(null);
     setScreenshotPreview(null);
-    setCompressionStats(null);
   };
 
   const handleLocalPreviewError = (isEdit: boolean) => {
@@ -175,9 +172,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     const setBusy = isEdit ? setIsEditCompressing : setIsCompressing;
     const setFile = isEdit ? setEditScreenshotFile : setScreenshotFile;
     const setPreview = isEdit ? setEditScreenshotPreview : setScreenshotPreview;
-    const setStats = isEdit ? setEditCompressionStats : setCompressionStats;
     const setError = isEdit ? setEditError : setAddError;
-    setBusy(true); setError(null); setFile(null); setStats(null); setPreview(null);
+    setBusy(true); setError(null); setFile(null); setPreview(null);
     try {
       await inspectImage(file);
       if (selection.current[key] !== request) return;
@@ -185,7 +181,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
       const result = await compressScreenshot(file);
       if (selection.current[key] !== request) return;
       setFile(result.blob); setPreview(URL.createObjectURL(result.blob));
-      setStats({original: result.originalSize, compressed: result.compressedSize});
     } catch (error) {
       if (selection.current[key] !== request) return;
       console.error('Project preview failed', {type:file.type,size:file.size,error,step:(error as ImageProcessingError).step,details:(error as ImageProcessingError).details});
@@ -226,7 +221,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
         setSelectedRepoToAdd(null);
         setScreenshotFile(null);
         setScreenshotPreview(null);
-        setCompressionStats(null);
         setActiveTab('showcase');
         try {
           confetti({ particleCount: 40, spread: 45, origin: { y: 0.8 } });
@@ -288,7 +282,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
         setEditingProject(null);
         setEditScreenshotFile(null);
         setEditScreenshotPreview(null);
-        setEditCompressionStats(null);
       }
     } catch (err) {
       console.error('Failed to update showcase project:', err);
@@ -528,7 +521,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                         <button
                           title="Edit project details"
                           aria-label="Edit project details"
-                          onClick={() => setEditingProject({...proj,custom_description:proj.custom_description?.slice(0,299) || null})}
+                          onClick={() => setEditingProject({...proj,custom_description:proj.custom_description?.slice(0,99) || null})}
                           className="paper-button-icon min-w-[28px] min-h-[28px] p-1 text-stone-800 cursor-pointer"
                         >
                           <Edit3 className="w-3 h-3" />
@@ -895,18 +888,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                       />
                     </div>
                     <div className="flex items-center justify-between gap-2 text-xs font-mono">
-                      {compressionStats && (
-                        <span className="paper-badge text-[9px] bg-green-100 text-green-900 border border-green-800">
-                          {formatFileSize(compressionStats.original)} → {formatFileSize(compressionStats.compressed)} (
-                          {Math.round((1 - compressionStats.compressed / compressionStats.original) * 100)}% saved)
-                        </span>
-                      )}
                       <button
                         type="button"
                         onClick={() => {
                           selection.current.add++; setIsCompressing(false); setScreenshotFile(null);
                           setScreenshotPreview(null);
-                          setCompressionStats(null);
                         }}
                         className="text-stone-700 underline text-xs font-bold"
                       >
@@ -954,12 +940,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                 <textarea
                   rows={3}
                   value={customDescription}
-                  maxLength={299}
+                  maxLength={99}
                   onChange={(e) => setCustomDescription(e.target.value)}
                   placeholder="Summarize what this project does, key features, or technologies used..."
                   className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body leading-relaxed"
                 />
-                <p className="text-[11px] font-mono text-stone-600">{customDescription.length} / 299 characters</p>
+                <p className="text-[11px] font-mono text-stone-600">{customDescription.length} / 99 characters</p>
               </div>
 
               <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-dashed border-[#212121]">
@@ -1037,12 +1023,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                       />
                     </div>
                     <div className="flex items-center justify-between gap-2 text-xs font-mono">
-                      {editCompressionStats && (
-                        <span className="paper-badge text-[9px] bg-green-100 text-green-900 border border-green-800">
-                          {formatFileSize(editCompressionStats.original)} → {formatFileSize(editCompressionStats.compressed)} (
-                          {Math.round((1 - editCompressionStats.compressed / editCompressionStats.original) * 100)}% saved)
-                        </span>
-                      )}
                       <label className="text-stone-700 underline text-xs font-bold cursor-pointer">
                         <input
                           type="file"
@@ -1092,13 +1072,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                 <textarea
                   rows={3}
                   value={editingProject.custom_description || ''}
-                  maxLength={299}
+                  maxLength={99}
                   onChange={(e) =>
                     setEditingProject({ ...editingProject, custom_description: e.target.value })
                   }
                   className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body leading-relaxed"
                 />
-                <p className="text-[11px] font-mono text-stone-600">{(editingProject.custom_description || '').length} / 299 characters</p>
+                <p className="text-[11px] font-mono text-stone-600">{(editingProject.custom_description || '').length} / 99 characters</p>
               </div>
 
               <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-dashed border-[#212121]">

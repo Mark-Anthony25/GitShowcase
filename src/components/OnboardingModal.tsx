@@ -173,14 +173,14 @@ interface SelectedRepoMeta {
           existing.slice(0, MAX_SHOWCASE_PROJECTS).forEach(p => {
             preSelected[p.repo_full_name] = {
               customTitle: p.custom_title || '',
-              customDescription: (p.custom_description || '').slice(0,299),
+              customDescription: (p.custom_description || '').slice(0,99),
             };
           });
         } else if (fetched.length > 0) {
           fetched.slice(0, MAX_SHOWCASE_PROJECTS).forEach((r) => {
             preSelected[r.full_name] = {
               customTitle: r.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-              customDescription: (r.description || '').slice(0,299),
+              customDescription: (r.description || '').slice(0,99),
             };
           });
         }
@@ -229,7 +229,7 @@ interface SelectedRepoMeta {
       if (Object.keys(updated).length >= MAX_SHOWCASE_PROJECTS) return;
       updated[repo.full_name] = {
         customTitle: repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        customDescription: (repo.description || '').slice(0,299),
+        customDescription: (repo.description || '').slice(0,99),
       };
     }
     setSelectedRepoMap(updated);
@@ -662,7 +662,7 @@ interface SelectedRepoMeta {
                           <input
                             type="text"
                             value={meta?.customDescription || ''}
-                            maxLength={299}
+                            maxLength={99}
                             onChange={(e) => {
                               setSelectedRepoMap({
                                 ...selectedRepoMap,

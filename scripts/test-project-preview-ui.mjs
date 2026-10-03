@@ -62,7 +62,7 @@ for (const [name,mimeType,buffer,message] of [
 const png=Buffer.from(await page.evaluate(async()=>{const c=document.createElement('canvas');c.width=256;c.height=128;c.getContext('2d').fillRect(0,0,256,128);return c.toDataURL('image/png').split(',')[1];}),'base64');
 await page.locator('input[type=file]').setInputFiles({name:'valid.png',mimeType:'image/png',buffer:png});
 await page.getByAltText('Screenshot preview').waitFor();
-await page.getByText(/saved\)/).waitFor();
+await page.waitForFunction(()=>!document.querySelector("form button[type=submit]")?.disabled);
 assert.equal(await page.getByAltText('Screenshot preview').evaluate(async image=>{await image.decode();return image.naturalWidth;}),256);
 checks.push('local preview decodes under production Content-Security-Policy');
 await page.route('https://opengraph.githubassets.com/**',route=>route.fulfill({contentType:'image/png',body:png}));
@@ -79,7 +79,7 @@ assert.equal(stored.length,1);assert.match(stored[0].screenshot_url,/\/cover\?v=
 checks.push('retry reuses one project, saves content-versioned URL');
 await page.getByRole('button',{name:'Edit project details'}).click();
 await page.locator('input[type=file]').setInputFiles({name:'replace.png',mimeType:'image/png',buffer:png});
-await page.getByText(/saved\)/).waitFor();
+await page.waitForFunction(()=>!document.querySelector("form button[type=submit]")?.disabled);
 await page.getByRole('button',{name:'Save Changes',exact:true}).click();
 await page.getByText('Edit Project Details',{exact:true}).waitFor({state:'hidden'});
 assert.equal(attempts,3);assert.equal((await page.evaluate(()=>window.__previewServer.rows)).length,1);
@@ -94,7 +94,7 @@ await page.evaluate(()=>{window.__previewServer.failWrites=true;});
 await page.getByRole('button',{name:/^Add from GitHub/}).click();
 await page.getByRole('button',{name:'Publish',exact:true}).click();
 await page.locator('input[type=file]').setInputFiles({name:'valid.png',mimeType:'image/png',buffer:png});
-await page.getByText(/saved\)/).waitFor();
+await page.waitForFunction(()=>!document.querySelector("form button[type=submit]")?.disabled);
 await page.locator('form').getByRole('button',{name:'Publish',exact:true}).click();
 await page.getByText('Could not save project to Supabase. Ask the site owner to check database setup, then retry.',{exact:true}).waitFor();
 assert.equal(attempts,3,'failed database save must never upload an offline project ID');
