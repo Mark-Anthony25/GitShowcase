@@ -47,20 +47,12 @@ const modalSources = [
   'SupabaseGuideModal.tsx',
 ].map((file) => readFileSync(join(sourceRoot, 'components', file), 'utf8'));
 
-if (!sharedStyles.includes('.paper-button.paper-button-dark:hover') || !sharedStyles.includes('.paper-button.paper-button-primary:hover')) {
-  throw new Error('Primary PaperCSS button hover selectors must override the generic paper-button hover state.');
-}
-
 if (sharedStyles.includes('outline: none !important;')) {
   throw new Error('PaperCSS input focus must retain a visible focus outline.');
 }
 
 if (setupGuide.includes('text-emerald-400')) {
   throw new Error('The flat paper SQL panel must use readable dark ink text.');
-}
-
-if (!sharedStyles.includes('background-color: var(--paper-panel) !important;')) {
-  throw new Error('PaperCSS card hover tint must override utility background colors.');
 }
 
 const vintagePalette = ['#D8C6A2', '#F6EBD5', '#EBD9B8', '#342018', '#7A2E25', '#B7863F'];

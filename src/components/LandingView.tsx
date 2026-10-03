@@ -102,7 +102,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
             </div>
             <button
               onClick={clearAuthError}
-              className="paper-button-icon min-w-[32px] min-h-[32px] p-1 text-rose-800 hover:text-[#0071DE] cursor-pointer flex-shrink-0"
+              className="paper-button-icon min-w-[32px] min-h-[32px] p-1 text-rose-800 cursor-pointer flex-shrink-0"
               aria-label="Dismiss error"
             >
               <X className="w-4 h-4 stroke-[2]" />
@@ -176,7 +176,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
           {previewProjects.length > 0 && (
             <button
               onClick={() => navigate('/explore')}
-              className="text-[11px] sm:text-xs lg:text-sm font-headline uppercase tracking-wider text-stone-800 hover:text-[#0071DE] underline cursor-pointer font-bold flex-shrink-0 ml-2"
+              className="text-[11px] sm:text-xs lg:text-sm font-headline uppercase tracking-wider text-stone-800 underline cursor-pointer font-bold flex-shrink-0 ml-2"
             >
               Browse All Projects ({previewProjects.length}) &rarr;
             </button>
@@ -210,7 +210,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
             {previewProjects.slice(0, 6).map((proj) => (
               <div
                 key={proj.id}
-                className="p-3 sm:p-3.5 paper-card bg-[#FAF6EC] flex flex-col justify-between space-y-2.5 hover:bg-[#FAF8F2] transition-colors"
+                className="p-3 sm:p-3.5 paper-card bg-[#FAF6EC] flex flex-col justify-between space-y-2.5 transition-colors"
               >
                 <div className="space-y-2">
                   {/* Repository Preview Banner / Project UI Screenshot */}
@@ -220,7 +220,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                       alt={proj.title}
                       loading="lazy"
                       decoding="async"
-                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                      className="w-full h-full object-cover"
                       onError={(e) => {
                         if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${proj.repo}`) {
                           e.currentTarget.src = `https://opengraph.githubassets.com/1/${proj.repo}`;
@@ -251,7 +251,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                 <div className="pt-1.5 border-t border-dashed border-[#212121]/50 flex items-center justify-between text-[11px]">
                   <button
                     onClick={() => navigate(`/u/${proj.author}`)}
-                    className="text-stone-800 hover:text-[#0071DE] font-headline tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold truncate max-w-[150px]"
+                    className="text-stone-800 font-headline tracking-wider underline cursor-pointer flex items-center space-x-1 font-bold truncate max-w-[150px]"
                   >
                     <span>@{proj.author}</span>
                   </button>
@@ -259,7 +259,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                     href={proj.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-stone-700 hover:text-[#0071DE] flex items-center space-x-0.5 font-mono text-[10px] font-bold cursor-pointer"
+                    className="text-stone-700 flex items-center space-x-0.5 font-mono text-[10px] font-bold cursor-pointer"
                     title="View GitHub Repository"
                   >
                     <span>Repo</span>

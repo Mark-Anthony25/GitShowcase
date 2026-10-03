@@ -132,11 +132,11 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
           onClick={() => navigate('/')}
           className="text-left group cursor-pointer flex items-center space-x-2 sm:space-x-3 shrink-0 focus:outline-none"
         >
-          <div className="w-8 h-8 sm:w-9 sm:h-9 border-2 border-black bg-[#FEFCF6] text-[#212121] flex items-center justify-center flex-shrink-0 rounded-[255px_15px_225px_15px/15px_225px_15px_255px] group-hover:bg-[#FAF6EC] transition-colors">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 border-2 border-black bg-[#FEFCF6] text-[#212121] flex items-center justify-center flex-shrink-0 rounded-[255px_15px_225px_15px/15px_225px_15px_255px] transition-colors">
             <Github className="w-4 h-4 sm:w-5 sm:h-5 text-[#212121] stroke-[2]" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-base sm:text-xl font-[900] tracking-tight uppercase font-newspaper-title text-[#212121] leading-none group-hover:opacity-80 transition-opacity truncate">
+            <h1 className="text-base sm:text-xl font-[900] tracking-tight uppercase font-newspaper-title text-[#212121] leading-none transition-opacity truncate">
               GITSHOWCASE
             </h1>
             <p className="text-[9px] sm:text-[11px] font-sketch text-stone-700 font-semibold truncate">
@@ -207,7 +207,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                       <button
                         role="menuitem"
                         onClick={() => { setDropdownOpen(false); navigate('/dashboard'); }}
-                        className="w-full text-left px-2.5 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] focus:bg-[#EAE4D4] focus:outline-none flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[32px] rounded-xs transition-colors"
+                        className="w-full text-left px-2.5 py-1.5 text-xs font-headline focus:bg-[#EAE4D4] focus:outline-none flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[32px] rounded-xs transition-colors"
                       >
                         <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" /><span>My Projects</span>
                       </button>
@@ -215,7 +215,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                         <button
                           role="menuitem"
                           onClick={() => { setDropdownOpen(false); navigate(`/u/${myUsername}`); }}
-                          className="w-full text-left px-2.5 py-1.5 text-xs font-headline hover:bg-[#EAE4D4] focus:bg-[#EAE4D4] focus:outline-none flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[32px] rounded-xs transition-colors"
+                          className="w-full text-left px-2.5 py-1.5 text-xs font-headline focus:bg-[#EAE4D4] focus:outline-none flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[32px] rounded-xs transition-colors"
                         >
                           <User className="w-3.5 h-3.5 flex-shrink-0" /><span>My Profile</span>
                         </button>
@@ -226,7 +226,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                       id="delete-account-btn"
                       role="menuitem"
                       onClick={openDeleteDialog}
-                      className="w-full text-left px-2.5 py-1.5 text-xs font-headline text-red-700 hover:bg-red-50 focus:bg-red-50 focus:outline-none hover:text-red-800 flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[32px] rounded-xs transition-colors"
+                      className="w-full text-left px-2.5 py-1.5 text-xs font-headline text-red-700 focus:bg-red-50 focus:outline-none flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[32px] rounded-xs transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5 flex-shrink-0" /><span>Delete Account</span>
                     </button>
@@ -238,7 +238,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
                         signOut();
                         navigate('/');
                       }}
-                      className="w-full text-left px-2.5 py-1.5 text-xs font-headline text-red-700 hover:bg-red-50 focus:bg-red-50 focus:outline-none hover:text-red-800 flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[32px] rounded-xs transition-colors"
+                      className="w-full text-left px-2.5 py-1.5 text-xs font-headline text-red-700 focus:bg-red-50 focus:outline-none flex items-center space-x-2 uppercase cursor-pointer font-bold min-h-[32px] rounded-xs transition-colors"
                     >
                       <LogOut className="w-3.5 h-3.5 flex-shrink-0" /><span>Sign Out</span>
                     </button>

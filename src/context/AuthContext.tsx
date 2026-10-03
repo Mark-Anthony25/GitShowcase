@@ -105,7 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (liveGitUser.login) canonicalGithubUsername = liveGitUser.login;
             if (liveGitUser.avatar_url) initialAvatar = liveGitUser.avatar_url;
             if (liveGitUser.name) initialName = liveGitUser.name;
-            if (liveGitUser.bio) initialBio = liveGitUser.bio.slice(0, 50);
+            if (liveGitUser.bio) initialBio = liveGitUser.bio.slice(0, 299);
           }
         } catch (e) {
           console.warn('Could not enrich new user from GitHub:', e);
@@ -117,7 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           full_name: initialName,
           headline: 'Creator • Developer',
           avatar_url: initialAvatar,
-          bio: initialBio.slice(0, 50) || null,
+          bio: initialBio.slice(0, 299) || null,
           program: 'Software Development',
           year_level: 'Getting Started',
           is_onboarded: false,

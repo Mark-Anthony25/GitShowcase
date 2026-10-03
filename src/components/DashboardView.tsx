@@ -153,7 +153,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   const handleOpenAddModal = (repo: GitHubRepoItem) => {
     setSelectedRepoToAdd(repo);
     setCustomTitle(repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
-    setCustomDescription(repo.description || '');
+    setCustomDescription((repo.description || '').slice(0,299));
     setAddError(null); setUploadProgress(null);
     setScreenshotFile(null);
     setScreenshotPreview(null);
@@ -528,8 +528,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                         <button
                           title="Edit project details"
                           aria-label="Edit project details"
-                          onClick={() => setEditingProject(proj)}
-                          className="paper-button-icon min-w-[28px] min-h-[28px] p-1 text-stone-800 cursor-pointer hover:bg-stone-200"
+                          onClick={() => setEditingProject({...proj,custom_description:proj.custom_description?.slice(0,299) || null})}
+                          className="paper-button-icon min-w-[28px] min-h-[28px] p-1 text-stone-800 cursor-pointer"
                         >
                           <Edit3 className="w-3 h-3" />
                         </button>
@@ -538,7 +538,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                           title="Unpublish from showcase"
                           aria-label="Unpublish project"
                           onClick={() => setProjectPendingUnpublish(proj)}
-                          className="paper-button-icon min-w-[28px] min-h-[28px] p-1 text-rose-800 hover:bg-rose-100 cursor-pointer"
+                          className="paper-button-icon min-w-[28px] min-h-[28px] p-1 text-rose-800 cursor-pointer"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -551,7 +551,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                         width={1280} height={720} loading="lazy" decoding="async"
                         src={proj.screenshot_url || `https://opengraph.githubassets.com/1/${proj.repo_full_name}`}
                         alt={proj.custom_title || proj.repo_full_name}
-                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                        className="w-full h-full object-cover"
                         onError={(e) => {
                           if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${proj.repo_full_name}`) {
                             e.currentTarget.src = `https://opengraph.githubassets.com/1/${proj.repo_full_name}`;
@@ -607,7 +607,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                   <div className="pt-2 border-t border-dashed border-[#212121] flex items-center justify-between text-xs font-mono">
                     <button
                       onClick={() => setPreviewProject(proj)}
-                      className="text-stone-800 hover:text-[#0071DE] font-bold flex items-center space-x-1 py-0.5 underline cursor-pointer"
+                      className="text-stone-800 font-bold flex items-center space-x-1 py-0.5 underline cursor-pointer"
                     >
                       <Eye className="w-3 h-3" />
                       <span>Preview</span>
@@ -619,8 +619,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                           href={proj.live_stats.homepage}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-stone-800 hover:text-[#0071DE] underline flex items-center space-x-0.5 font-bold"
-                          title="Visit live project URL"
+                          className="text-stone-800 underline flex items-center space-x-0.5 font-bold"
+                          title="Visit site"
                         >
                           <Globe className="w-3 h-3" />
                           <span>Live</span>
@@ -630,7 +630,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                         href={proj.repo_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-stone-900 hover:text-[#0071DE] underline flex items-center space-x-0.5 font-bold"
+                        className="text-stone-900 underline flex items-center space-x-0.5 font-bold"
                         title="Open on GitHub"
                       >
                         <Github className="w-3.5 h-3.5" />
@@ -810,7 +810,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                         href={repo.html_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-stone-800 hover:text-[#0071DE] underline font-mono text-[11px] flex items-center space-x-0.5 font-bold"
+                        className="text-stone-800 underline font-mono text-[11px] flex items-center space-x-0.5 font-bold"
                       >
                         <span>GitHub</span>
                         <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
@@ -908,14 +908,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                           setScreenshotPreview(null);
                           setCompressionStats(null);
                         }}
-                        className="text-stone-700 hover:text-red-700 underline text-xs font-bold"
+                        className="text-stone-700 underline text-xs font-bold"
                       >
                         Change Image
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <label className="border-2 border-dashed border-[#212121] bg-[#FAF6EC] p-4 rounded-xs flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:bg-stone-100 transition-colors text-center block">
+                  <label className="border-2 border-dashed border-[#212121] bg-[#FAF6EC] p-4 rounded-xs flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors text-center block">
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
@@ -949,15 +949,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
               <div>
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
-                  Short Description &amp; Highlights
+                  Description
                 </label>
                 <textarea
                   rows={3}
                   value={customDescription}
+                  maxLength={299}
                   onChange={(e) => setCustomDescription(e.target.value)}
                   placeholder="Summarize what this project does, key features, or technologies used..."
                   className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body leading-relaxed"
                 />
+                <p className="text-[11px] font-mono text-stone-600">{customDescription.length} / 299 characters</p>
               </div>
 
               <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-dashed border-[#212121]">
@@ -1041,7 +1043,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                           {Math.round((1 - editCompressionStats.compressed / editCompressionStats.original) * 100)}% saved)
                         </span>
                       )}
-                      <label className="text-stone-700 hover:text-[#0071DE] underline text-xs font-bold cursor-pointer">
+                      <label className="text-stone-700 underline text-xs font-bold cursor-pointer">
                         <input
                           type="file"
                           accept="image/jpeg,image/png,image/webp"
@@ -1053,7 +1055,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                     </div>
                   </div>
                 ) : (
-                  <label className="border-2 border-dashed border-[#212121] bg-[#FAF6EC] p-3 rounded-xs flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-stone-100 transition-colors text-center block">
+                  <label className="border-2 border-dashed border-[#212121] bg-[#FAF6EC] p-3 rounded-xs flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors text-center block">
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
@@ -1085,16 +1087,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
               <div>
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
-                  Short Description &amp; Highlights
+                  Description
                 </label>
                 <textarea
                   rows={3}
                   value={editingProject.custom_description || ''}
+                  maxLength={299}
                   onChange={(e) =>
                     setEditingProject({ ...editingProject, custom_description: e.target.value })
                   }
                   className="w-full px-2.5 py-1.5 paper-input text-xs font-serif-body leading-relaxed"
                 />
+                <p className="text-[11px] font-mono text-stone-600">{(editingProject.custom_description || '').length} / 299 characters</p>
               </div>
 
               <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-dashed border-[#212121]">
@@ -1267,7 +1271,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                     className="paper-button text-xs py-2 px-3 font-bold inline-flex items-center space-x-1"
                   >
                     <Globe className="w-3.5 h-3.5" />
-                    <span>Visit Live Site</span>
+                    <span>Visit site</span>
                   </a>
                 )}
                 <a

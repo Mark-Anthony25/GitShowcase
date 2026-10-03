@@ -41,7 +41,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'
   );
   const [aboutMe, setAboutMe] = useState(
-    (profile.bio || '').slice(0, 50)
+    (profile.bio || '').slice(0, 299)
   );
   const [websiteUrl, setWebsiteUrl] = useState(profile.website_url || '');
   const [selectedProgramOption, setSelectedProgramOption] = useState(initialProg.selectedOptionValue);
@@ -76,7 +76,7 @@ interface SelectedRepoMeta {
         if (draft.username) setUsername(draft.username);
         if (draft.fullName) setFullName(draft.fullName);
         if (draft.avatarUrl) setAvatarUrl(draft.avatarUrl);
-        if (draft.aboutMe) setAboutMe(draft.aboutMe);
+        if (draft.aboutMe) setAboutMe(draft.aboutMe.slice(0,299));
         if (draft.websiteUrl) setWebsiteUrl(draft.websiteUrl);
         if (draft.selectedProgramOption) setSelectedProgramOption(draft.selectedProgramOption);
         if (draft.customProgramName) setCustomProgramName(draft.customProgramName);
@@ -134,7 +134,7 @@ interface SelectedRepoMeta {
         if (gitUser.name && (!fullName || !isInitial)) setFullName(gitUser.name);
         if (gitUser.avatar_url) setAvatarUrl(gitUser.avatar_url);
         if (gitUser.bio && (!aboutMe || !isInitial || aboutMe.length === 0)) {
-          setAboutMe(gitUser.bio.slice(0, 50));
+          setAboutMe(gitUser.bio.slice(0, 299));
         }
         if (gitUser.blog && (!websiteUrl || !isInitial)) {
           setWebsiteUrl(gitUser.blog);
@@ -173,14 +173,14 @@ interface SelectedRepoMeta {
           existing.slice(0, MAX_SHOWCASE_PROJECTS).forEach(p => {
             preSelected[p.repo_full_name] = {
               customTitle: p.custom_title || '',
-              customDescription: p.custom_description || '',
+              customDescription: (p.custom_description || '').slice(0,299),
             };
           });
         } else if (fetched.length > 0) {
           fetched.slice(0, MAX_SHOWCASE_PROJECTS).forEach((r) => {
             preSelected[r.full_name] = {
               customTitle: r.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-              customDescription: r.description || '',
+              customDescription: (r.description || '').slice(0,299),
             };
           });
         }
@@ -211,8 +211,8 @@ interface SelectedRepoMeta {
       return;
     }
 
-    if (aboutMe.length > 50) {
-      setStep1Error(`About Me exceeds the 50-character maximum (${aboutMe.length}/50).`);
+    if (aboutMe.length > 299) {
+      setStep1Error(`About Me exceeds the 299-character maximum (${aboutMe.length}/299).`);
       return;
     }
 
@@ -229,7 +229,7 @@ interface SelectedRepoMeta {
       if (Object.keys(updated).length >= MAX_SHOWCASE_PROJECTS) return;
       updated[repo.full_name] = {
         customTitle: repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        customDescription: repo.description || '',
+        customDescription: (repo.description || '').slice(0,299),
       };
     }
     setSelectedRepoMap(updated);
@@ -275,7 +275,7 @@ interface SelectedRepoMeta {
         github_username: username.trim() || profile.github_username,
         full_name: fullName.trim() || profile.full_name || username.trim(),
         avatar_url: avatarUrl.trim() || profile.avatar_url,
-        bio: aboutMe.trim().slice(0, 50) || profile.bio,
+        bio: aboutMe.trim().slice(0, 299) || profile.bio,
         website_url: websiteUrl.trim() || null,
         is_onboarded: true,
         updated_at: new Date().toISOString(),
@@ -450,28 +450,28 @@ interface SelectedRepoMeta {
               </div>
             </div>
 
-            {/* About Me (Bio) - STRICT 50 Characters MAX */}
+            {/* About Me (Bio) - STRICT 299 Characters MAX */}
             <div>
               <div className="flex items-center justify-between mb-0.5">
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
-                  About Me <span className="text-stone-600 font-normal">(Strict Max 50 Characters)</span>
+                  About Me <span className="text-stone-600 font-normal">(Strict Max 299 Characters)</span>
                 </label>
                 <span
                   className={`text-[11px] font-mono font-bold ${
-                    aboutMe.length > 50 ? 'text-red-600' : aboutMe.length >= 45 ? 'text-amber-800' : 'text-stone-700'
+                    aboutMe.length > 299 ? 'text-red-600' : aboutMe.length >= 280 ? 'text-amber-800' : 'text-stone-700'
                   }`}
                 >
-                  {aboutMe.length} / 50 characters
+                  {aboutMe.length} / 299 characters
                 </span>
               </div>
-              <input
-                type="text"
-                maxLength={50}
+              <textarea
+                rows={3}
+                maxLength={299}
                 value={aboutMe}
-                onChange={(e) => setAboutMe(e.target.value.slice(0, 50))}
-                placeholder="Crisp 50-character summary of your tech passion..."
+                onChange={(e) => setAboutMe(e.target.value.slice(0, 299))}
+                placeholder="Tell people about yourself and your work..."
                 className={`w-full px-2.5 py-1.5 paper-input text-xs font-serif-body min-h-[34px] ${
-                  aboutMe.length >= 50 ? 'border-amber-600 outline outline-1 outline-amber-600' : ''
+                  aboutMe.length >= 299 ? 'border-amber-600 outline outline-1 outline-amber-600' : ''
                 }`}
               />
               <p className="text-[10px] font-serif-body italic text-stone-600 mt-0.5">
@@ -608,7 +608,7 @@ interface SelectedRepoMeta {
                     <div
                       key={repo.id}
                       className={`p-2.5 transition-colors ${
-                        isSelected ? 'bg-[#FAF6EC]' : 'hover:bg-stone-50'
+                        isSelected ? 'bg-[#FAF6EC]' : ''
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2.5">
@@ -662,6 +662,7 @@ interface SelectedRepoMeta {
                           <input
                             type="text"
                             value={meta?.customDescription || ''}
+                            maxLength={299}
                             onChange={(e) => {
                               setSelectedRepoMap({
                                 ...selectedRepoMap,
@@ -776,7 +777,7 @@ interface SelectedRepoMeta {
                   </span>
                   <button
                     onClick={() => setCurrentStep(2)}
-                    className="text-stone-700 hover:text-[#0071DE] text-[11px] underline font-mono font-bold"
+                    className="text-stone-700 text-[11px] underline font-mono font-bold"
                   >
                     Change selection
                   </button>

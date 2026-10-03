@@ -74,7 +74,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
       if (res?.profile) {
         setEditFullName(res.profile.full_name || '');
         setEditWebsiteUrl(res.profile.website_url || '');
-        setEditBio(res.profile.bio || '');
+        setEditBio((res.profile.bio || '').slice(0,299));
       }
     } catch (err: any) {
       console.error('Error loading student showcase:', err);
@@ -105,7 +105,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
     if (data?.profile) {
       setEditFullName(data.profile.full_name || '');
       setEditWebsiteUrl(data.profile.website_url || '');
-      setEditBio(data.profile.bio || '');
+      setEditBio((data.profile.bio || '').slice(0,299));
     }
     setIsEditProfileOpen(true);
   };
@@ -119,7 +119,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
       const updated = await updateProfileData({
         full_name: editFullName.trim() || null,
         website_url: editWebsiteUrl.trim() || null,
-        bio: editBio.trim().slice(0, 50) || null,
+        bio: editBio.trim().slice(0, 299) || null,
         is_onboarded: true,
       });
 
@@ -312,7 +312,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
               <div className="space-y-2 pt-2.5 border-t border-dashed border-[#212121]">
                 {profile.bio && (
                   <p className="text-xs sm:text-sm font-serif-body text-stone-800 leading-relaxed italic">
-                    "{profile.bio}"
+                    {profile.bio}
                   </p>
                 )}
 
@@ -386,7 +386,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                   href={`https://github.com/${profile.github_username}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full paper-button text-xs py-2 px-3 font-bold justify-center min-h-[36px] flex items-center bg-[#FEFCF6] text-[#212121] hover:bg-[#FAF6EC]"
+                  className="w-full paper-button text-xs py-2 px-3 font-bold justify-center min-h-[36px] flex items-center bg-[#FEFCF6] text-[#212121]"
                 >
                   <Github className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
                   <span>View GitHub Profile</span>
@@ -510,24 +510,24 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] font-bold">
-                    About Me <span className="text-stone-600 font-normal">(Max 50 Characters)</span>
+                    About Me <span className="text-stone-600 font-normal">(Max 299 Characters)</span>
                   </label>
                   <span
                     className={`text-[11px] font-mono font-bold ${
-                      editBio.length > 50 ? 'text-red-600' : editBio.length >= 45 ? 'text-amber-800' : 'text-stone-700'
+                      editBio.length > 299 ? 'text-red-600' : editBio.length >= 280 ? 'text-amber-800' : 'text-stone-700'
                     }`}
                   >
-                    {editBio.length} / 50 characters
+                    {editBio.length} / 299 characters
                   </span>
                 </div>
-                <input
-                  type="text"
-                  maxLength={50}
+                <textarea
+                  rows={3}
+                  maxLength={299}
                   value={editBio}
-                  onChange={(e) => setEditBio(e.target.value.slice(0, 50))}
-                  placeholder="Crisp 50-character summary of your tech passion..."
+                  onChange={(e) => setEditBio(e.target.value.slice(0, 299))}
+                  placeholder="Tell people about yourself and your work..."
                   className={`w-full px-2.5 py-1.5 paper-input text-[#212121] text-xs font-serif-body min-h-[34px] ${
-                    editBio.length >= 50 ? 'border-amber-600 outline outline-1 outline-amber-600' : ''
+                    editBio.length >= 299 ? 'border-amber-600 outline outline-1 outline-amber-600' : ''
                   }`}
                 />
               </div>
@@ -654,7 +654,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                     className="paper-button text-xs py-2 px-4 font-bold inline-flex items-center space-x-1"
                   >
                     <Globe className="w-4 h-4 mr-1" />
-                    <span>Visit Live Site</span>
+                    <span>Visit site</span>
                   </a>
                 )}
                 <a
@@ -679,7 +679,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                       <button
                         key={p.id}
                         onClick={() => setSelectedProject(p)}
-                        className="w-full text-left p-3 paper-card bg-[#FAF6EC] hover:bg-[#FEFCF6] transition-colors flex justify-between items-center cursor-pointer"
+                        className="w-full text-left p-3 paper-card bg-[#FAF6EC] transition-colors flex justify-between items-center cursor-pointer"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="font-bold font-newspaper-title uppercase text-sm truncate">
@@ -714,7 +714,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left p-3.5 sm:p-4 paper-card bg-[#FEFCF6] transition-all flex flex-col justify-between space-y-3 cursor-pointer hover:-translate-y-0.5"
+      className="w-full text-left p-3.5 sm:p-4 paper-card bg-[#FEFCF6] transition-all flex flex-col justify-between space-y-3 cursor-pointer"
     >
       <div className="space-y-2 w-full">
         {/* Repository Preview Banner / Project UI Screenshot */}
@@ -724,7 +724,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
             alt={project.custom_title || project.repo_full_name}
             loading="lazy"
             decoding="async"
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            className="w-full h-full object-cover"
             onError={(e) => {
               if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${project.repo_full_name}`) {
                 e.currentTarget.src = `https://opengraph.githubassets.com/1/${project.repo_full_name}`;
@@ -795,7 +795,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
         <div className="flex items-center space-x-2">
           {stats?.homepage && (
             <span
-              className="text-stone-800 hover:text-[#0071DE] underline flex items-center space-x-0.5 font-bold min-h-[28px] py-0.5 px-1 text-xs"
+              className="text-stone-800 underline flex items-center space-x-0.5 font-bold min-h-[28px] py-0.5 px-1 text-xs"
               onClick={(e) => { e.stopPropagation(); window.open(stats.homepage, '_blank', 'noreferrer'); }}
             >
               <Globe className="w-3 h-3 mr-0.5 flex-shrink-0" />
@@ -803,7 +803,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
             </span>
           )}
           <span
-            className="inline-flex items-center space-x-0.5 text-stone-800 hover:text-[#0071DE] underline font-bold min-h-[28px] py-0.5 px-1 text-xs"
+            className="inline-flex items-center space-x-0.5 text-stone-800 underline font-bold min-h-[28px] py-0.5 px-1 text-xs"
             onClick={(e) => { e.stopPropagation(); window.open(project.repo_url, '_blank', 'noreferrer'); }}
           >
             <Github className="w-3.5 h-3.5 mr-0.5 flex-shrink-0" />

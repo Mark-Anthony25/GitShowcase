@@ -484,6 +484,7 @@ export async function addProjectToShowcase(params: {
   screenshotUrl?: string | null;
   token?: string | null;
 }): Promise<ShowcasedProject | null> {
+  if (typeof params.customDescription === 'string') params = {...params,customDescription:params.customDescription.slice(0,299)};
   let createdProject: ShowcasedProject | null = null;
   const normalizedRepoName = params.repoFullName.trim();
 
@@ -736,6 +737,7 @@ export async function updateShowcaseProject(
   updates: Partial<ShowcasedProject>,
   profileId?: string
 ): Promise<ShowcasedProject | null> {
+  if (typeof updates.custom_description === 'string') updates = {...updates,custom_description:updates.custom_description.slice(0,299)};
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase
@@ -775,6 +777,7 @@ export async function updateStudentProfile(
   profileId: string,
   updates: Partial<Profile>
 ): Promise<Profile | null> {
+  if (typeof updates.bio === 'string') updates = {...updates,bio:updates.bio.slice(0,299)};
   if (!profileId) {
     console.error('updateStudentProfile called without profileId');
     return null;

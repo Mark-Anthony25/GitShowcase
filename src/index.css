@@ -220,9 +220,10 @@
     }
   }
 
-  .paper-card:hover {
-    transform: translateY(-1.5px);
-    background-color: var(--paper-panel) !important;
+  @media (hover: hover) and (pointer: fine) {
+    .paper-card:hover {
+      transform: translateY(-1.5px);
+    }
   }
 
   .paper-input {
@@ -304,10 +305,10 @@
     }
   }
 
-  .paper-button:hover:not(:disabled) {
-    transform: translate(-1px, -1px);
-    background-color: var(--paper-panel);
-    border-color: var(--paper-primary);
+  @media (hover: hover) and (pointer: fine) {
+    .paper-button:hover:not(:disabled) {
+      transform: translate(-1px, -1px);
+    }
   }
 
   .paper-button:active:not(:disabled) {
@@ -360,10 +361,10 @@
     }
   }
 
-  .paper-button-icon:hover:not(:disabled) {
-    transform: translate(-1px, -1px);
-    background-color: var(--paper-panel);
-    border-color: var(--paper-primary);
+  @media (hover: hover) and (pointer: fine) {
+    .paper-button-icon:hover:not(:disabled) {
+      transform: translate(-1px, -1px);
+    }
   }
 
   .paper-button-icon:active:not(:disabled) {
@@ -386,18 +387,8 @@
     color: #FFFFFF;
   }
 
-  .paper-button.paper-button-dark:hover {
-    background-color: var(--paper-primary-hover);
-    color: #FFFFFF;
-  }
-
   .paper-button-primary {
     background-color: var(--paper-primary);
-    color: #FFFFFF;
-  }
-
-  .paper-button.paper-button-primary:hover {
-    background-color: var(--paper-primary-hover);
     color: #FFFFFF;
   }
 
@@ -529,8 +520,7 @@
 }
 
 [class*="bg-[#FAF6EC]"],
-[class*="bg-[#F3EDE0]"],
-[class*="hover:bg-[#FAF6EC]"]:hover {
+[class*="bg-[#F3EDE0]"] {
   background-color: var(--paper-surface-raised) !important;
 }
 
@@ -554,7 +544,6 @@
   background-color: var(--paper-primary) !important;
 }
 
-[class*="hover:text-[#0071DE]"]:hover,
 [class~="text-blue-800"] {
   color: var(--paper-primary) !important;
 }

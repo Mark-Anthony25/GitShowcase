@@ -190,17 +190,17 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
           {hasActiveFilters && (
             <div className="flex flex-wrap items-center gap-1.5">
               {searchQuery.trim() && (
-                <button onClick={clearSearch} className="paper-badge cursor-pointer hover:bg-[#FAF6EC]">
+                <button onClick={clearSearch} className="paper-badge cursor-pointer">
                   Search: {searchQuery.trim()} ×
                 </button>
               )}
               {filterLanguage !== 'all' && (
-                <button onClick={clearLanguage} className="paper-badge cursor-pointer hover:bg-[#FAF6EC]">
+                <button onClick={clearLanguage} className="paper-badge cursor-pointer">
                   Language: {filterLanguage} ×
                 </button>
               )}
               {sortBy !== 'recent' && (
-                <button onClick={() => setSortBy('recent')} className="paper-badge cursor-pointer hover:bg-[#FAF6EC]">
+                <button onClick={() => setSortBy('recent')} className="paper-badge cursor-pointer">
                   Sort: {sortBy === 'stars' ? 'Most Stars' : sortBy === 'forks' ? 'Most Forks' : 'A–Z'} ×
                 </button>
               )}
@@ -242,7 +242,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                     <div
                       key={project.id}
                       onClick={() => setSelectedModalItem({ project, student })}
-                      className="paper-card bg-[#FEFCF6] p-3 sm:p-3.5 flex flex-col justify-between space-y-2 cursor-pointer hover:bg-[#FAF6EC] hover:-translate-y-0.5 transition-all group"
+                      className="paper-card bg-[#FEFCF6] p-3 sm:p-3.5 flex flex-col justify-between space-y-2 cursor-pointer transition-all group"
                     >
                       <div className="space-y-2">
                         {/* Repository Preview Banner / Project UI Screenshot */}
@@ -252,7 +252,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                             alt={project.custom_title || project.repo_full_name}
                             loading="lazy"
                             decoding="async"
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            className="w-full h-full object-cover"
                             onError={(e) => {
                               if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${project.repo_full_name}`) {
                                 e.currentTarget.src = `https://opengraph.githubassets.com/1/${project.repo_full_name}`;
@@ -313,7 +313,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                         >
                           By {student.profile.full_name || student.profile.github_username}
                         </span>
-                        <span className="text-[10px] font-headline uppercase font-bold text-stone-600 hover:text-[#0071DE] flex-shrink-0">
+                        <span className="text-[10px] font-headline uppercase font-bold text-stone-600 flex-shrink-0">
                           Details &rarr;
                         </span>
                       </div>
@@ -353,7 +353,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                           className={`min-w-[30px] h-[30px] font-bold text-xs rounded-xs flex items-center justify-center transition-colors cursor-pointer ${
                             currentPage === pageNum
                               ? 'paper-button paper-button-dark'
-                              : 'paper-button hover:bg-stone-200'
+                              : 'paper-button '
                           }`}
                         >
                           {pageNum}
@@ -438,7 +438,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                   setSelectedModalItem(null);
                   navigate(`/u/${selectedModalItem.student.profile.github_username}`);
                 }}
-                className="flex items-center space-x-3 p-3 bg-[#FAF6EC] paper-card cursor-pointer hover:bg-[#F3EDE0] transition-colors"
+                className="flex items-center space-x-3 p-3 bg-[#FAF6EC] paper-card cursor-pointer transition-colors"
               >
                 <div className="w-10 h-10 paper-avatar">
                   <img
@@ -516,7 +516,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                     className="paper-button text-xs py-2 px-4 font-bold inline-flex items-center"
                   >
                     <Globe className="w-4 h-4 mr-1.5" />
-                    Visit Live Site
+                    Visit site
                   </a>
                 )}
                 <a
@@ -543,7 +543,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                         <button
                           key={p.id}
                           onClick={() => setSelectedModalItem({ project: p, student: selectedModalItem.student })}
-                          className="w-full text-left p-3 paper-card bg-[#FAF6EC] hover:bg-[#FEFCF6] transition-colors flex justify-between items-center cursor-pointer"
+                          className="w-full text-left p-3 paper-card bg-[#FAF6EC] transition-colors flex justify-between items-center cursor-pointer"
                         >
                           <div>
                             <div className="font-bold font-newspaper-title uppercase text-sm">
