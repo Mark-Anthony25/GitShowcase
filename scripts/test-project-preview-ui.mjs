@@ -1,5 +1,9 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+const vercel=JSON.parse(await readFile(new URL('../vercel.json',import.meta.url),'utf8'));
+// Keep production image/worker restrictions; only authorize the inline test bootstrap.
+const policy=vercel.headers.flatMap(rule=>rule.headers).find(header=>header.key==='Content-Security-Policy').value.replace("script-src 'self'","script-src 'self' 'nonce-preview-test'");
 const browser=await chromium.launch({headless:true});
 const baseURL=process.env.IMAGE_TEST_URL || 'http://localhost:3000';
 const checks=[];let activePage;let pageErrors=[];
@@ -28,7 +32,7 @@ export const supabase={auth:{getSession:async()=>({data:{session:{access_token:'
  storage:{from:()=>({getPublicUrl:path=>({data:{publicUrl:location.origin+'/storage/v1/object/public/project-screenshots/'+path}}),remove:async paths=>{state.removed.push(...paths);state.writes.push('storage-delete');return {data:paths,error:null};}})}
 };`}));
 await page.route('**/src/lib/github.ts*',r=>r.fulfill({contentType:'application/javascript',body:`export const getValidToken=()=>null;export async function fetchUserRepos(){return [{id:1,name:'preview-proof',full_name:'validation/preview-proof',html_url:'https://github.com/validation/preview-proof',description:'Validation fixture',stargazers_count:0,forks_count:0,language:'TypeScript'}];}export async function fetchLiveRepoStats(){return {stars:0,forks:0,language:'TypeScript',description:'Validation fixture',topics:[]};}`}));
-await page.route('**/__preview_validation',r=>r.fulfill({contentType:'text/html',body:`<html><body><div id="root"></div><script type="module">
+await page.route('**/__preview_validation',r=>r.fulfill({contentType:'text/html',headers:{'Content-Security-Policy':policy},body:`<html><body><div id="root"></div><script type="module" nonce="preview-test">
 import RefreshRuntime from '/@react-refresh';RefreshRuntime.injectIntoGlobalHook(window);window.$RefreshReg$=()=>{};window.$RefreshSig$=()=>(type)=>type;window.__vite_plugin_react_preamble_installed__=true;
 const rm=await import('/node_modules/.vite/deps/react.js');const React=rm.default??rm;const cm=await import('/node_modules/.vite/deps/react-dom_client.js');const createRoot=cm.createRoot??cm.default.createRoot;const {DashboardView}=await import('/src/components/DashboardView.tsx');createRoot(document.getElementById('root')).render(React.createElement(DashboardView,{navigate:()=>{}}));
 </script></body></html>`}));
@@ -57,6 +61,11 @@ const png=Buffer.from(await page.evaluate(async()=>{const c=document.createEleme
 await page.locator('input[type=file]').setInputFiles({name:'valid.png',mimeType:'image/png',buffer:png});
 await page.getByAltText('Screenshot preview').waitFor();
 await page.getByText(/saved\)/).waitFor();
+assert.equal(await page.getByAltText('Screenshot preview').evaluate(async image=>{await image.decode();return image.naturalWidth;}),256);
+checks.push('local preview decodes under production Content-Security-Policy');
+await page.route('https://opengraph.githubassets.com/**',route=>route.fulfill({contentType:'image/png',body:png}));
+assert.equal(await page.evaluate(async()=>{const image=new Image();image.src='https://opengraph.githubassets.com/1/validation/preview-proof';await image.decode();return image.naturalWidth;}),256);
+checks.push('GitHub OpenGraph fallback decodes under production Content-Security-Policy');
 await page.locator('form').getByRole('button',{name:'Publish',exact:true}).click();
 await page.getByText('Upload failed. Check your connection and sign-in, then retry.',{exact:true}).waitFor();
 assert.equal(await page.getByAltText('Screenshot preview').count(),1);
