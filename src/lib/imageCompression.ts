@@ -1,172 +1,92 @@
-import { supabase, isSupabaseConfigured } from './supabase';
-
-export const SCREENSHOT_BUCKET = 'project-screenshots';
-
-/**
- * Format bytes into human readable string (KB / MB)
- */
-export function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+import {supabase,isSupabaseConfigured,supabaseAnonKey} from './supabase';
+import {processImage,validateImageInput,inspectImage,ImageProcessingError,MAX_UPLOAD_BYTES,type CompressionResult} from './imageProcessing';
+export * from './imageProcessing';
+export const SCREENSHOT_BUCKET='project-screenshots';
+export function formatFileSize(bytes:number):string {
+  return bytes<1024?`${bytes} B`:bytes<1048576?`${(bytes/1024).toFixed(1)} KB`:`${(bytes/1048576).toFixed(2)} MB`;
 }
-
-/**
- * Convert Blob or File to Base64 Data URL
- */
-export async function blobToDataUrl(blob: Blob): Promise<string> {
-  if (typeof FileReader !== 'undefined') {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  }
-  // Fallback for Node.js / headless test environments
-  const buffer = Buffer.from(await blob.arrayBuffer());
-  return `data:${blob.type || 'image/webp'};base64,${buffer.toString('base64')}`;
-}
-
-export interface CompressionResult {
-  blob: Blob;
-  originalSize: number;
-  compressedSize: number;
-  dataUrl?: string;
-}
-
-/**
- * Native client-side image compression using HTML5 Canvas.
- * No external dependencies. Resizes to max width 800px and exports as WebP.
- */
-export async function compressScreenshot(
-  file: File | Blob,
-  maxWidth = 800,
-  quality = 0.75
-): Promise<CompressionResult> {
-  const originalSize = file.size;
-
-  // Fallback for non-browser / node environments
-  if (typeof window === 'undefined' || typeof document === 'undefined') {
-    return {
-      blob: file,
-      originalSize,
-      compressedSize: originalSize,
-    };
-  }
-
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const objectUrl = URL.createObjectURL(file);
-
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-
-      let width = img.naturalWidth || img.width;
-      let height = img.naturalHeight || img.height;
-
-      if (width > maxWidth) {
-        height = Math.round((height * maxWidth) / width);
-        width = maxWidth;
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        resolve({
-          blob: file,
-          originalSize,
-          compressedSize: originalSize,
-        });
-        return;
-      }
-
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, 0, 0, width, height);
-
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            resolve({
-              blob: file,
-              originalSize,
-              compressedSize: originalSize,
-            });
-            return;
-          }
-
-          resolve({
-            blob,
-            originalSize,
-            compressedSize: blob.size,
-          });
-        },
-        'image/webp',
-        quality
-      );
-    };
-
-    img.onerror = (err) => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error('Failed to load image for compression.'));
-    };
-
-    img.src = objectUrl;
+export async function blobToDataUrl(blob:Blob):Promise<string> {
+  if(typeof FileReader==='undefined') return `data:${blob.type};base64,${Buffer.from(await blob.arrayBuffer()).toString('base64')}`;
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));
+    reader.onerror=()=>reject(new ImageProcessingError('INVALID_IMAGE','Cannot read the preview. Select the file again.','read',{},reader.error));reader.onabort=()=>reject(new ImageProcessingError('INVALID_IMAGE','Preview reading was interrupted. Select the image again.','read'));reader.readAsDataURL(blob);
   });
 }
-
-/**
- * Uploads compressed screenshot directly to Supabase Storage.
- * Falls back to Base64 Data URL if Supabase is offline or bucket is not yet created.
- */
-export async function uploadProjectScreenshot(
-  file: File | Blob,
-  userId: string,
-  repoFullName: string
-): Promise<{ url: string; compressedSize: number; originalSize: number }> {
-  const compression = await compressScreenshot(file);
-  const cleanRepoName = repoFullName.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-  const filePath = `${userId}/${cleanRepoName}_${Date.now()}.webp`;
-
-  if (isSupabaseConfigured && supabase) {
-    try {
-      const { data, error } = await supabase.storage
-        .from(SCREENSHOT_BUCKET)
-        .upload(filePath, compression.blob, {
-          contentType: 'image/webp',
-          cacheControl: '31536000', // 1-year browser cache
-          upsert: true,
-        });
-
-      if (!error && data?.path) {
-        const { data: publicUrlData } = supabase.storage
-          .from(SCREENSHOT_BUCKET)
-          .getPublicUrl(data.path);
-
-        if (publicUrlData?.publicUrl) {
-          return {
-            url: publicUrlData.publicUrl,
-            compressedSize: compression.compressedSize,
-            originalSize: compression.originalSize,
-          };
-        }
-      } else if (error) {
-        console.warn('Supabase storage upload error, falling back to data URL:', error.message);
+export function logImageError(error:unknown,file?:Blob) {
+  const e=error as ImageProcessingError;
+  console.error('Project image failed',{code:e.code,step:e.step,type:file?.type,size:file?.size,...e.details,error,cause:e.cause});
+}
+export async function compressImage(file:Blob):Promise<CompressionResult> {
+  try {
+    validateImageInput(file);
+    if(typeof Worker!=='undefined' && typeof OffscreenCanvas!=='undefined' && typeof OffscreenCanvas.prototype.convertToBlob==='function') {
+      let worker:Worker|undefined;
+      try {worker=new Worker(new URL('./imageCompression.worker.ts',import.meta.url),{type:'module'});} catch { /* Main thread fallback. */ }
+      if(worker) {
+        try {
+          return await new Promise<CompressionResult>((resolve,reject)=>{
+            const timer=setTimeout(()=>reject(new Error('Image worker timed out')),30000);
+            worker!.onmessage=({data})=>{clearTimeout(timer);data.error?reject(new ImageProcessingError(data.error.code,data.error.message,data.error.step,data.error.details,data.error.cause)):resolve(data.result);};
+            worker!.onerror=e=>{clearTimeout(timer);reject(e);};worker!.postMessage(file);
+          });
+        } catch(error) {if(error instanceof ImageProcessingError && !['CANVAS_FAILED','DECODE_FAILED'].includes(error.code)) throw error;}
+        finally {worker.terminate();}
       }
-    } catch (err) {
-      console.warn('Supabase storage exception, falling back to data URL:', err);
     }
+    return await processImage(file);
+  } catch(error) {logImageError(error,file);throw error;}
+}
+export const compressScreenshot=compressImage;
+export async function uploadProjectScreenshot(file:Blob,userId:string,projectId:string,onProgress?:(percent:number)=>void):Promise<{url:string;compressedSize:number;originalSize:number}> {
+  const dimensions = await inspectImage(file);
+  if (Math.max(dimensions.width, dimensions.height) > 1280) throw new ImageProcessingError('OUTPUT_TOO_LARGE','Compress the image before uploading (max 1280px).','upload',dimensions);
+  if(file.size>MAX_UPLOAD_BYTES) throw new ImageProcessingError('OUTPUT_TOO_LARGE','Upload is too large (max 200KB).','upload');
+  onProgress?.(0);
+  if(!isSupabaseConfigured || !supabase) {
+    const url=await blobToDataUrl(file);onProgress?.(100);return {url,compressedSize:file.size,originalSize:file.size};
   }
+  const path=`${userId}/${projectId}/cover`;
+  try {
+    const {data:{session}}=await supabase.auth.getSession();if(!session) throw new Error('Session expired');
+    const endpoint=new URL(supabase.storage.from(SCREENSHOT_BUCKET).getPublicUrl(path).data.publicUrl);
+    endpoint.pathname=endpoint.pathname.replace('/object/public/','/object/');
+    await new Promise<void>((resolve,reject)=>{
+      const xhr=new XMLHttpRequest();xhr.open('POST',endpoint.href);
+      xhr.setRequestHeader('Authorization',`Bearer ${session.access_token}`);xhr.setRequestHeader('apikey',supabaseAnonKey);
+      xhr.setRequestHeader('x-upsert','true');xhr.setRequestHeader('Content-Type',file.type);xhr.setRequestHeader('Cache-Control','max-age=31536000, immutable');xhr.timeout=60000;
+      xhr.upload.onprogress=e=>{if(e.lengthComputable) onProgress?.(Math.min(99,Math.round(e.loaded/e.total*100)));};
+      xhr.onload=()=>xhr.status>=200 && xhr.status<300?resolve():reject(new Error(`Storage ${xhr.status}: ${xhr.responseText}`));
+      xhr.onerror=()=>reject(new Error('Network error'));xhr.ontimeout=()=>reject(new Error('Upload timed out'));xhr.send(file);
+    });
+    const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await file.arrayBuffer()))).map(b=>b.toString(16).padStart(2,'0')).join('');
+    onProgress?.(100);return {url:`${supabase.storage.from(SCREENSHOT_BUCKET).getPublicUrl(path).data.publicUrl}?v=${hash}`,compressedSize:file.size,originalSize:file.size};
+  } catch(cause) {
+    const error=new ImageProcessingError('UPLOAD_FAILED','Upload failed. Check your connection and sign-in, then retry.','upload',dimensions,cause);logImageError(error,file);throw error;
+  }
+}
+export async function deleteProjectScreenshot(userId:string,projectId:string,oldUrl?:string|null) {
+  if(!supabase || !isSupabaseConfigured) return;
+  const paths=[`${userId}/${projectId}/cover`];
+  if(oldUrl) {
+    try {
+      const url=new URL(oldUrl),base=new URL(supabase.storage.from(SCREENSHOT_BUCKET).getPublicUrl('').data.publicUrl),prefix=`/storage/v1/object/public/${SCREENSHOT_BUCKET}/`;
+      if(url.origin===base.origin && url.pathname.startsWith(prefix)) {
+        const oldPath=decodeURIComponent(url.pathname.slice(prefix.length));if(oldPath.startsWith(`${userId}/`) && !paths.includes(oldPath)) paths.push(oldPath);
+      }
+    } catch { /* Local/GitHub images have no stored object. */ }
+  }
+  const {error}=await supabase.storage.from(SCREENSHOT_BUCKET).remove(paths);
+  if(error) throw new ImageProcessingError('UPLOAD_FAILED','Could not delete the old preview. Please retry.','upload',{},error);
+}
 
-  // Offline / fallback storage: Base64 data URL
-  const dataUrl = await blobToDataUrl(compression.blob);
-  return {
-    url: dataUrl,
-    compressedSize: compression.compressedSize,
-    originalSize: compression.originalSize,
-  };
+export async function deleteLegacyProjectScreenshot(userId: string, projectId: string, oldUrl?: string | null) {
+  if (!oldUrl || !supabase || !isSupabaseConfigured) return;
+  const base = new URL(supabase.storage.from(SCREENSHOT_BUCKET).getPublicUrl('').data.publicUrl);
+  let url: URL; try { url = new URL(oldUrl); } catch { return; }
+  const prefix = `/storage/v1/object/public/${SCREENSHOT_BUCKET}/`;
+  if (url.origin !== base.origin || !url.pathname.startsWith(prefix)) return;
+  const path = decodeURIComponent(url.pathname.slice(prefix.length));
+  if (!path.startsWith(`${userId}/`) || path === `${userId}/${projectId}/cover`) return;
+  const {error} = await supabase.storage.from(SCREENSHOT_BUCKET).remove([path]);
+  if (error) throw new ImageProcessingError('UPLOAD_FAILED','Preview saved, but old image cleanup failed. Retry saving.','upload',{},error);
 }

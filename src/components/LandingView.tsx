@@ -215,7 +215,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                 <div className="space-y-2">
                   {/* Repository Preview Banner / Project UI Screenshot */}
                   <div className="w-full aspect-[16/10] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
-                    <img
+                    <img width={1280} height={800}
                       src={proj.screenshot_url || `https://opengraph.githubassets.com/1/${proj.repo}`}
                       alt={proj.title}
                       loading="lazy"

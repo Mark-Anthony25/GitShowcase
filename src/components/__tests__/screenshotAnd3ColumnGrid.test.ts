@@ -17,10 +17,10 @@ console.log('✓ Test 1: Database schema & storage bucket policies validated');
 const dashboardSrc = fs.readFileSync(path.join(root, 'src/components/DashboardView.tsx'), 'utf-8');
 assert.ok(dashboardSrc.includes('lg:grid-cols-3'), 'DashboardView has 3-column layout');
 assert.ok(!dashboardSrc.includes('xl:grid-cols-4'), 'DashboardView removed 4-column layout');
-assert.ok(dashboardSrc.includes('A sample project screenshot or UI image is required before publishing.'), 'DashboardView enforces screenshot before publishing');
-assert.ok(dashboardSrc.includes('disabled={addingInProgress || !screenshotFile}'), 'Publish button disabled when screenshot missing');
+assert.ok(dashboardSrc.includes('Screenshot (optional)'), 'DashboardView permits live GitHub preview without an upload');
+assert.ok(dashboardSrc.includes('disabled={addingInProgress || isCompressing}'), 'Publish button disabled while processing');
 assert.ok(dashboardSrc.includes('proj.screenshot_url'), 'DashboardView displays screenshot_url');
-console.log('✓ Test 2: DashboardView 3-column grid and mandatory screenshot upload validated');
+console.log('✓ Test 2: DashboardView 3-column grid and optional screenshot upload validated');
 
 // 3. Verify ExploreView.tsx 3-column grid & screenshot rendering
 const exploreSrc = fs.readFileSync(path.join(root, 'src/components/ExploreView.tsx'), 'utf-8');

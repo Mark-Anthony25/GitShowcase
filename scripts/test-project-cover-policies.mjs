@@ -1,0 +1,49 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {PGlite} from '@electric-sql/pglite';
+const db=new PGlite();
+try {
+await db.exec(`
+create role authenticated;create role anon;create schema auth;create schema storage;
+create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+create table public.showcased_projects(id uuid primary key default gen_random_uuid(),profile_id uuid not null,repo_key text,repo_full_name text not null,screenshot_url text);
+create unique index on public.showcased_projects(profile_id,repo_key);
+create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text,metadata jsonb,unique(bucket_id,name));
+alter table public.showcased_projects enable row level security;
+create policy project_select on public.showcased_projects for select using(true);
+create policy project_update on public.showcased_projects for update using(profile_id=auth.uid()) with check(profile_id=auth.uid());
+create policy project_insert on public.showcased_projects for insert with check(profile_id=auth.uid());
+create policy project_delete on public.showcased_projects for delete using(profile_id=auth.uid());
+alter table storage.objects enable row level security;
+create policy storage_select on storage.objects for select using(bucket_id='project-screenshots');
+grant usage on schema public,auth,storage to authenticated,anon;
+grant all on public.showcased_projects,storage.objects to authenticated;
+grant select on storage.objects,public.showcased_projects to anon;
+`);
+await db.exec(readFileSync('supabase/migrations/20261003000000_project_cover_limits.sql','utf8'));
+await db.exec(readFileSync('supabase/migrations/20261003000001_fix_cover_upload_preflight.sql','utf8'));
+const user='11111111-1111-4111-8111-111111111111',project='22222222-2222-4222-8222-222222222222';
+await db.exec(`insert into public.showcased_projects(id,profile_id,repo_full_name) values('${project}','${user}','validation/repo');set role authenticated;set request.jwt.claim.sub='${user}';`);
+const path=`${user}/${project}/cover`;
+const permitted=async (name,metadata)=>(await db.query('select public.valid_project_cover($1,$2::jsonb) as allowed',[name,JSON.stringify(metadata)])).rows[0].allowed;
+// Supabase preflights binary uploads with contentLength, not the persisted size field.
+assert.equal(await permitted(path,{mimetype:'image/webp',contentLength:2048}),true,'valid binary upload preflight must pass');
+assert.equal(await permitted(path,{mimetype:'image/webp',size:2048}),true);
+assert.equal(await permitted(path,null),true,'metadata-free preflight relies on authoritative bucket restrictions');
+for(const metadata of [{mimetype:'text/plain',contentLength:20},{mimetype:'image/webp',contentLength:204801},{mimetype:'image/jpeg',size:204801},{mimetype:'image/png',size:0}]) assert.equal(await permitted(path,metadata),false);
+for(const name of [path+'/extra',path.replace('cover','second'),path.replace(user,project),`${user}/33333333-3333-4333-8333-333333333333/cover`]) assert.equal(await permitted(name,{mimetype:'image/png',size:20}),false);
+await db.query(`insert into storage.objects(bucket_id,name,metadata) values('project-screenshots',$1,$2::jsonb)`,[path,JSON.stringify({mimetype:'image/webp',contentLength:2048})]);
+await db.query(`insert into storage.objects(bucket_id,name,metadata) values('project-screenshots',$1,$2::jsonb) on conflict(bucket_id,name) do update set metadata=excluded.metadata`,[path,JSON.stringify({mimetype:'image/png',contentLength:4096})]);
+assert.equal((await db.query('select count(*)::int as n from storage.objects')).rows[0].n,1,'replacement retains one object');
+await assert.rejects(()=>db.query('delete from public.showcased_projects where id=$1',[project]),/Delete the project preview/);
+await db.query('delete from storage.objects where name=$1',[path]);
+await db.query('delete from public.showcased_projects where id=$1',[project]);
+for(let i=1;i<=3;i++) await db.query(`insert into public.showcased_projects(profile_id,repo_full_name) values($1,$2)`,[user,`validation/repo-${i}`]);
+await assert.rejects(()=>db.query(`insert into public.showcased_projects(profile_id,repo_full_name) values($1,'validation/fourth')`,[user]),/PROJECT_LIMIT_REACHED/);
+await db.query(`insert into public.showcased_projects(profile_id,repo_full_name,repo_key) values($1,'validation/repo-1','validation/repo-1') on conflict(profile_id,repo_key) do update set repo_full_name=excluded.repo_full_name`,[user]);
+await db.exec('reset role');
+const cap=await db.query(`select file_size_limit,allowed_mime_types from storage.buckets where id='project-screenshots'`);
+assert.equal(Number(cap.rows[0].file_size_limit),204800);assert.deepEqual(cap.rows[0].allowed_mime_types,['image/jpeg','image/png','image/webp']);
+console.log('PostgreSQL cover policies: preflight, ownership, MIME/size, replacement, deletion and three-project cap passed');
+} finally {await db.close();}

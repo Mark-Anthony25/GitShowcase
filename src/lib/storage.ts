@@ -29,24 +29,6 @@ export function getOptimizedImageUrl(
     return publicUrl;
   }
 
-  // If Supabase Storage URL
-  if (isSupabaseConfigured && publicUrl.includes('/storage/v1/object/public/')) {
-    if (!options) return publicUrl;
-
-    const params = new URLSearchParams();
-    if (options.width) params.set('width', String(options.width));
-    if (options.height) params.set('height', String(options.height));
-    if (options.quality) params.set('quality', String(options.quality));
-    if (options.format) params.set('format', options.format);
-    if (options.resize) params.set('resize', options.resize);
-
-    const qs = params.toString();
-    if (!qs) return publicUrl;
-
-    // Convert `/object/public/` to `/render/image/public/` for Supabase Image Transformation if supported
-    const transformedUrl = publicUrl.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
-    return `${transformedUrl}?${qs}`;
-  }
 
   return publicUrl;
 }

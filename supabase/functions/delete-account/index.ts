@@ -49,6 +49,25 @@ Deno.serve(async (request) => {
   }
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
+  async function removeFolder(prefix: string): Promise<void> {
+    // Always delete the first page, so deletions cannot make offset pagination skip files.
+    for (;;) {
+      const {data, error} = await adminClient.storage.from('project-screenshots').list(prefix, {limit:100});
+      if (error) throw error;
+      if (!data?.length) return;
+      const files: string[] = [];
+      for (const item of data) {
+        const path = `${prefix}/${item.name}`;
+        if (item.id) files.push(path); else await removeFolder(path);
+      }
+      if (files.length) {
+        const {error} = await adminClient.storage.from('project-screenshots').remove(files);
+        if (error) throw error;
+      }
+    }
+  }
+  try { await removeFolder(caller.id); }
+  catch { return response(500, {error:'Unable to delete stored previews. Please retry account deletion.'}); }
   const { error: deletionError } = await adminClient.auth.admin.deleteUser(caller.id);
 
   if (deletionError) {

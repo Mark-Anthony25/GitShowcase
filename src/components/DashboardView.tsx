@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Github, Plus, Trash2, Edit3, Star, GitFork, ExternalLink, 
   RefreshCw, Eye, Search, CheckCircle2, FolderGit2, 
@@ -20,7 +20,7 @@ import {
 import { 
   compressScreenshot, 
   uploadProjectScreenshot, 
-  formatFileSize 
+  formatFileSize, ImageProcessingError, inspectImage, deleteLegacyProjectScreenshot
 } from '../lib/imageCompression';
 import { Skeleton } from './Skeleton';
 
@@ -49,21 +49,38 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   const [customDescription, setCustomDescription] = useState('');
   const [addingInProgress, setAddingInProgress] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
-  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [screenshotFile, setScreenshotFile] = useState<Blob | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [compressionStats, setCompressionStats] = useState<{ original: number; compressed: number } | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
 
+  const [editError, setEditError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const selection = useRef({add: 0, edit: 0});
+  useEffect(() => () => { if (screenshotPreview?.startsWith('blob:')) URL.revokeObjectURL(screenshotPreview); }, [screenshotPreview]);
+  useEffect(() => {
+    selection.current.add++; setIsCompressing(false);
+    if (!selectedRepoToAdd) { setScreenshotFile(null); setScreenshotPreview(null); }
+  }, [selectedRepoToAdd]);
+
   // Editing existing showcase project
   const [editingProject, setEditingProject] = useState<ShowcasedProject | null>(null);
-  const [editScreenshotFile, setEditScreenshotFile] = useState<File | null>(null);
+  const [editScreenshotFile, setEditScreenshotFile] = useState<Blob | null>(null);
   const [editScreenshotPreview, setEditScreenshotPreview] = useState<string | null>(null);
   const [editCompressionStats, setEditCompressionStats] = useState<{ original: number; compressed: number } | null>(null);
   const [isEditCompressing, setIsEditCompressing] = useState(false);
+  useEffect(() => () => { if (editScreenshotPreview?.startsWith('blob:')) URL.revokeObjectURL(editScreenshotPreview); }, [editScreenshotPreview]);
+
+  useEffect(() => {
+    selection.current.edit++; setIsEditCompressing(false); setEditError(null);
+    setEditScreenshotFile(null); setEditScreenshotPreview(null); setEditCompressionStats(null);
+  }, [editingProject?.id]);
 
   // Previewing project detail
   const [previewProject, setPreviewProject] = useState<ShowcasedProject | null>(null);
 
+  const [removeError, setRemoveError] = useState<string | null>(null);
   // Project awaiting an explicit PaperCSS-styled unpublish confirmation
   const [projectPendingUnpublish, setProjectPendingUnpublish] = useState<ShowcasedProject | null>(null);
 
@@ -136,79 +153,67 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     setSelectedRepoToAdd(repo);
     setCustomTitle(repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
     setCustomDescription(repo.description || '');
-    setAddError(null);
+    setAddError(null); setUploadProgress(null);
     setScreenshotFile(null);
     setScreenshotPreview(null);
     setCompressionStats(null);
   };
 
+  const handleLocalPreviewError = (isEdit: boolean) => {
+    selection.current[isEdit ? 'edit' : 'add']++;
+    (isEdit ? setIsEditCompressing : setIsCompressing)(false);
+    (isEdit ? setEditScreenshotFile : setScreenshotFile)(null);
+    (isEdit ? setEditScreenshotPreview : setScreenshotPreview)(null);
+    (isEdit ? setEditError : setAddError)('Cannot display this preview. Select the image again or use the GitHub preview.');
+  };
+
   const handleScreenshotSelect = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0]; e.target.value = '';
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      if (!isEdit) {
-        setAddError('Please select a valid image file (PNG, JPG, WebP).');
-      }
-      return;
-    }
-
-    if (isEdit) {
-      setIsEditCompressing(true);
-      try {
-        const result = await compressScreenshot(file);
-        setEditScreenshotFile(file);
-        setEditScreenshotPreview(URL.createObjectURL(result.blob));
-        setEditCompressionStats({ original: result.originalSize, compressed: result.compressedSize });
-      } catch (err) {
-        console.error('Compression error:', err);
-      } finally {
-        setIsEditCompressing(false);
-      }
-    } else {
-      setIsCompressing(true);
-      setAddError(null);
-      try {
-        const result = await compressScreenshot(file);
-        setScreenshotFile(file);
-        setScreenshotPreview(URL.createObjectURL(result.blob));
-        setCompressionStats({ original: result.originalSize, compressed: result.compressedSize });
-      } catch (err) {
-        console.error('Compression error:', err);
-        setAddError('Failed to process image preview.');
-      } finally {
-        setIsCompressing(false);
-      }
-    }
+    const key = isEdit ? 'edit' : 'add', request = ++selection.current[key];
+    const setBusy = isEdit ? setIsEditCompressing : setIsCompressing;
+    const setFile = isEdit ? setEditScreenshotFile : setScreenshotFile;
+    const setPreview = isEdit ? setEditScreenshotPreview : setScreenshotPreview;
+    const setStats = isEdit ? setEditCompressionStats : setCompressionStats;
+    const setError = isEdit ? setEditError : setAddError;
+    setBusy(true); setError(null); setFile(null); setStats(null); setPreview(null);
+    try {
+      await inspectImage(file);
+      if (selection.current[key] !== request) return;
+      setPreview(URL.createObjectURL(file));
+      const result = await compressScreenshot(file);
+      if (selection.current[key] !== request) return;
+      setFile(result.blob); setPreview(URL.createObjectURL(result.blob));
+      setStats({original: result.originalSize, compressed: result.compressedSize});
+    } catch (error) {
+      if (selection.current[key] !== request) return;
+      console.error('Project preview failed', {type:file.type,size:file.size,error,step:(error as ImageProcessingError).step,details:(error as ImageProcessingError).details});
+      setPreview(null);
+      setError(error instanceof ImageProcessingError ? error.message : 'Could not read the image. Select it again.');
+    } finally { if (selection.current[key] === request) setBusy(false); }
   };
 
   const handleConfirmAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !selectedRepoToAdd || addingInProgress) return;
+    if (!user || !selectedRepoToAdd || addingInProgress || isCompressing) return;
 
-    if (!screenshotFile) {
-      setAddError('A sample project screenshot or UI image is required before publishing.');
-      return;
-    }
 
     setAddingInProgress(true);
     setAddError(null);
     try {
-      const { url: screenshotUrl } = await uploadProjectScreenshot(
-        screenshotFile,
-        user.id,
-        selectedRepoToAdd.full_name
-      );
-
-      const newProj = await addProjectToShowcase({
-        profileId: user.id,
-        repoFullName: selectedRepoToAdd.full_name,
-        repoUrl: selectedRepoToAdd.html_url,
-        customTitle: customTitle.trim() || null,
-        customDescription: customDescription.trim() || null,
-        screenshotUrl,
-        token: githubToken,
+      let newProj = await addProjectToShowcase({
+        profileId: user.id, repoFullName: selectedRepoToAdd.full_name,
+        repoUrl: selectedRepoToAdd.html_url, customTitle: customTitle.trim() || null,
+        customDescription: customDescription.trim() || null, token: githubToken,
       });
+      if (!newProj) throw new Error('Could not save project.');
+      // Create the owned project first, so uploads cannot be unattached objects.
+      if (screenshotFile) {
+        const {url} = await uploadProjectScreenshot(screenshotFile, user.id, newProj.id, setUploadProgress);
+        const updated = await updateShowcaseProject(newProj.id, {screenshot_url:url}, user.id);
+        if (!updated) throw new Error('Could not save the preview. Retry publishing.');
+        newProj = updated;
+      }
 
       if (newProj) {
         setShowcased(prev => {
@@ -233,10 +238,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
         setAddError(`Showcase limit reached. You can publish at most ${MAX_SHOWCASE_PROJECTS} projects. Remove one to add another.`);
       } else {
         console.error('Failed to add project to showcase:', err);
-        setAddError('Failed to publish project. Please try again.');
+        setAddError(err instanceof ImageProcessingError ? err.message : 'Failed to publish project. Please retry.');
       }
     } finally {
-      setAddingInProgress(false);
+      setAddingInProgress(false); setUploadProgress(null);
     }
   };
 
@@ -244,25 +249,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     if (!projectPendingUnpublish) return;
     const projectId = projectPendingUnpublish.id;
     try {
-      await removeProjectFromShowcase(projectId, user?.id);
+      const removed = await removeProjectFromShowcase(projectId, user?.id);
+      if (!removed) throw new Error("Could not remove the project. Please retry.");
       setShowcased(prev => prev.filter(p => p.id !== projectId));
       setProjectPendingUnpublish(null);
     } catch (err) {
       console.error('Failed to remove project:', err);
+      setRemoveError(err instanceof Error ? err.message : 'Could not remove project. Please retry.');
     }
   };
 
   const handleSaveProjectEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingProject) return;
-
+    if (!editingProject || savingEdit || isEditCompressing) return;
+    setSavingEdit(true); setEditError(null);
     try {
       let finalScreenshotUrl = editingProject.screenshot_url;
       if (editScreenshotFile && user) {
+        await deleteLegacyProjectScreenshot(user.id, editingProject.id, editingProject.screenshot_url);
         const { url } = await uploadProjectScreenshot(
           editScreenshotFile,
           user.id,
-          editingProject.repo_full_name
+          editingProject.id,
+          setUploadProgress
         );
         finalScreenshotUrl = url;
       }
@@ -272,6 +281,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
         custom_description: editingProject.custom_description,
         screenshot_url: finalScreenshotUrl,
       }, user?.id);
+      if (!updated) throw new Error("Could not save the project. Retry saving.");
       if (updated) {
         setShowcased(prev => prev.map(p => (p.id === editingProject.id ? updated : p)));
         setEditingProject(null);
@@ -281,7 +291,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
       }
     } catch (err) {
       console.error('Failed to update showcase project:', err);
-    }
+      setEditError(err instanceof ImageProcessingError ? err.message : 'Failed to save project. Please retry.');
+    } finally { setSavingEdit(false); setUploadProgress(null); }
   };
 
   const showcasedRepoNames = new Set(showcased.map(p => p.repo_full_name.trim().toLowerCase()));
@@ -536,10 +547,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                     {/* Repository Preview Banner / Project UI Screenshot */}
                     <div className="w-full aspect-[16/10] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative mb-1.5 flex items-center justify-center">
                       <img
+                        width={1280} height={800} loading="lazy" decoding="async"
                         src={proj.screenshot_url || `https://opengraph.githubassets.com/1/${proj.repo_full_name}`}
                         alt={proj.custom_title || proj.repo_full_name}
-                        loading="lazy"
-                        decoding="async"
                         className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                         onError={(e) => {
                           if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${proj.repo_full_name}`) {
@@ -848,6 +858,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               <button
                 id="close-add-modal-btn"
                 aria-label="Close dialog"
+                disabled={addingInProgress}
                 onClick={() => setSelectedRepoToAdd(null)}
                 className="paper-button-icon min-w-[32px] min-h-[32px] p-1 flex items-center justify-center text-stone-800 cursor-pointer flex-shrink-0"
               >
@@ -856,6 +867,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             </div>
 
             <form onSubmit={handleConfirmAdd} className="space-y-3">
+              {isCompressing && <p role="status">Preparing preview...</p>}
+              {uploadProgress !== null && <div role="status">Uploading {uploadProgress}%<progress max={100} value={uploadProgress} /></div>}
+              {addError && screenshotFile && <button type="submit" disabled={addingInProgress || isCompressing}>Retry upload</button>}
               {addError && (
                 <div className="p-2.5 bg-red-50 border border-red-500 text-red-950 text-xs font-mono flex items-start space-x-1.5 rounded-xs">
                   <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-red-600" />
@@ -864,15 +878,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               )}
               <div>
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold flex items-center justify-between">
-                  <span>Sample UI / Screenshot <span className="text-red-700">*</span></span>
-                  <span className="text-[10px] font-mono text-stone-600 font-normal">Auto-compressed WebP</span>
+                  <span>Sample UI / Screenshot (optional)</span>
+                  <span className="text-[10px] font-mono text-stone-600 font-normal">JPG, PNG, WebP · max 10MB</span>
                 </label>
 
                 {screenshotPreview ? (
                   <div className="space-y-1.5">
                     <div className="w-full aspect-[16/10] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
                       <img
+                        width={1280} height={800} loading="lazy" decoding="async"
                         src={screenshotPreview}
+                        onError={() => handleLocalPreviewError(false)}
                         alt="Screenshot preview"
                         className="w-full h-full object-cover"
                       />
@@ -887,7 +903,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                       <button
                         type="button"
                         onClick={() => {
-                          setScreenshotFile(null);
+                          selection.current.add++; setIsCompressing(false); setScreenshotFile(null);
                           setScreenshotPreview(null);
                           setCompressionStats(null);
                         }}
@@ -901,17 +917,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                   <label className="border-2 border-dashed border-[#212121] bg-[#FAF6EC] p-4 rounded-xs flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:bg-stone-100 transition-colors text-center block">
                     <input
                       type="file"
-                      accept="image/*"
-                      required
+                      accept="image/jpeg,image/png,image/webp"
                       className="hidden"
                       onChange={(e) => handleScreenshotSelect(e, false)}
                     />
                     <Upload className="w-5 h-5 text-stone-700 stroke-[2]" />
                     <span className="text-xs font-headline uppercase font-bold text-[#212121]">
-                      {isCompressing ? 'Compressing Image...' : 'Upload Sample Screenshot (Required)'}
+                      {isCompressing ? 'Compressing Image...' : 'Upload Screenshot or Use GitHub Preview'}
                     </span>
                     <span className="text-[10px] font-serif-body text-stone-600">
-                      PNG, JPG, or WebP. Converted client-side to lightweight WebP for free tier.
+                      JPG, PNG, WebP. Max 10MB; minimum 64px per side. GitHub preview is used if no image is uploaded.
                     </span>
                   </label>
                 )}
@@ -947,14 +962,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-dashed border-[#212121]">
                 <button
                   type="button"
-                  onClick={() => setSelectedRepoToAdd(null)}
+                  disabled={addingInProgress}
+                onClick={() => setSelectedRepoToAdd(null)}
                   className="paper-button text-xs py-1.5 px-3 min-h-[34px] font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={addingInProgress || !screenshotFile}
+                  disabled={addingInProgress || isCompressing}
                   className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold disabled:opacity-50 min-h-[34px]"
                 >
                   {addingInProgress ? 'Publishing...' : 'Publish'}
@@ -981,6 +997,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               <button
                 id="close-edit-modal-btn"
                 aria-label="Close dialog"
+                disabled={savingEdit}
                 onClick={() => setEditingProject(null)}
                 className="paper-button-icon min-w-[32px] min-h-[32px] p-1 flex items-center justify-center text-stone-800 cursor-pointer flex-shrink-0"
               >
@@ -989,6 +1006,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             </div>
 
             <form onSubmit={handleSaveProjectEdit} className="space-y-3">
+              {isEditCompressing && <p role="status">Preparing preview...</p>}
+              {editError && <div role="alert">{editError} <button type="submit" disabled={savingEdit || isEditCompressing}>Retry save</button></div>}
+              {uploadProgress !== null && <div role="status">Uploading {uploadProgress}%<progress max={100} value={uploadProgress} /></div>}
               <div>
                 <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-1 font-bold flex items-center justify-between">
                   <span>Project Screenshot / UI Image</span>
@@ -999,7 +1019,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                   <div className="space-y-1.5">
                     <div className="w-full aspect-[16/10] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
                       <img
+                        width={1280} height={800} loading="lazy" decoding="async"
                         src={editScreenshotPreview || editingProject.screenshot_url || ''}
+                        onError={(event) => {
+                          if (editScreenshotPreview) handleLocalPreviewError(true);
+                          else {
+                            const fallback = `https://opengraph.githubassets.com/1/${editingProject.repo_full_name}`;
+                            if (event.currentTarget.src !== fallback) event.currentTarget.src = fallback;
+                            else event.currentTarget.style.display = 'none';
+                          }
+                        }}
                         alt="Screenshot preview"
                         className="w-full h-full object-cover"
                       />
@@ -1014,7 +1043,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                       <label className="text-stone-700 hover:text-[#0071DE] underline text-xs font-bold cursor-pointer">
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/jpeg,image/png,image/webp"
                           className="hidden"
                           onChange={(e) => handleScreenshotSelect(e, true)}
                         />
@@ -1026,7 +1055,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                   <label className="border-2 border-dashed border-[#212121] bg-[#FAF6EC] p-3 rounded-xs flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-stone-100 transition-colors text-center block">
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp"
                       className="hidden"
                       onChange={(e) => handleScreenshotSelect(e, true)}
                     />
@@ -1070,13 +1099,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-dashed border-[#212121]">
                 <button
                   type="button"
-                  onClick={() => setEditingProject(null)}
+                  disabled={savingEdit}
+                onClick={() => setEditingProject(null)}
                   className="paper-button text-xs py-1.5 px-3 min-h-[34px] font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
+                  disabled={savingEdit || isEditCompressing}
                   className="paper-button paper-button-dark text-xs py-1.5 px-4 font-bold min-h-[34px]"
                 >
                   Save Changes
@@ -1137,6 +1168,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               >
                 Keep Published
               </button>
+              {removeError && <p role="alert">{removeError}</p>}
               <button
                 type="button"
                 onClick={handleRemoveProject}
@@ -1182,10 +1214,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               {/* Repository Preview Banner / Project UI Screenshot */}
               <div className="w-full aspect-[2/1] sm:aspect-[16/7] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
                 <img
+                        width={1280} height={800} loading="lazy" decoding="async"
                   src={previewProject.screenshot_url || `https://opengraph.githubassets.com/1/${previewProject.repo_full_name}`}
                   alt={previewProject.custom_title || previewProject.repo_full_name}
-                  loading="lazy"
-                  decoding="async"
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${previewProject.repo_full_name}`) {

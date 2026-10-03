@@ -1,3 +1,4 @@
+import {deleteProjectScreenshot} from '../lib/imageCompression';
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase, isSupabaseConfigured, User, Session } from '../lib/supabase';
 import { Profile } from '../types';
@@ -280,6 +281,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 2. Try delete_user RPC if Edge Function was not deployed
       if (!remoteDeleted) {
         try {
+          const {data: projects, error: readError} = await supabase.from('showcased_projects').select('id,screenshot_url').eq('profile_id',user.id);
+          if (readError) throw readError;
+          for (const project of projects || []) await deleteProjectScreenshot(user.id,project.id,project.screenshot_url);
           const { error: rpcError } = await supabase.rpc('delete_user');
           if (!rpcError) {
             remoteDeleted = true;

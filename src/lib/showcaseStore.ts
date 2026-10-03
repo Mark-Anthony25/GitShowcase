@@ -1,3 +1,4 @@
+import { deleteProjectScreenshot } from './imageCompression';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { Profile, ShowcasedProject, StudentShowcaseData, PublicDirectoryPage, RepoLiveStats } from '../types';
 import { getCachedOrFetch, invalidateCache, CACHE_TTL } from './cache';
@@ -122,8 +123,13 @@ function getLocalData(): { profiles: Record<string, Profile>; projects: Showcase
     return { profiles: inMemoryProfiles, projects: inMemoryProjects };
   }
 
-  const rawProfiles = localStorage.getItem(LOCAL_STORAGE_KEY_PROFILES);
-  const rawProjects = localStorage.getItem(LOCAL_STORAGE_KEY_PROJECTS);
+  let rawProfiles: string | null, rawProjects: string | null;
+  try {
+    rawProfiles = localStorage.getItem(LOCAL_STORAGE_KEY_PROFILES);
+    rawProjects = localStorage.getItem(LOCAL_STORAGE_KEY_PROJECTS);
+  } catch {
+    return {profiles: inMemoryProfiles, projects: inMemoryProjects};
+  }
 
   let profiles: Record<string, Profile> = {};
   let projects: ShowcasedProject[] = [];
@@ -630,7 +636,7 @@ export async function addProjectToShowcase(params: {
     }
   }
 
-  saveLocalData(profiles, projects);
+  if (!saveLocalData(profiles, projects) && !isSupabaseConfigured) throw new Error('Browser storage is full. Remove a local project or use the GitHub preview.');
 
   if (createdProject && isSupabaseConfigured && supabase) {
     try {
@@ -695,28 +701,16 @@ export async function syncStudentShowcaseProjects(
  */
 export async function removeProjectFromShowcase(projectId: string, profileId?: string): Promise<boolean> {
   if (isSupabaseConfigured && supabase) {
-    try {
-      const { error } = await supabase
-        .from('showcased_projects')
-        .delete()
-        .eq('id', projectId);
-
-      if (!error) {
-        invalidateShowcaseCaches(profileId);
-        return true;
-      }
-      isSchemaError(error);
-      console.warn('Error deleting project in Supabase, removing locally:', error.message);
-    } catch (err) {
-      isSchemaError(err);
-      console.warn('Exception deleting project in Supabase:', err);
+    const {data: project, error: readError} = await supabase.from('showcased_projects').select('profile_id,screenshot_url').eq('id',projectId).maybeSingle();
+    if (readError) throw readError;
+    if (project) {
+      await deleteProjectScreenshot(project.profile_id,projectId,project.screenshot_url);
+      const {error} = await supabase.from('showcased_projects').delete().eq('id',projectId);
+      if (error) throw error;
     }
   }
-
-  const { profiles, projects } = getLocalData();
-  const filtered = projects.filter(p => p.id !== projectId);
-  saveLocalData(profiles, filtered);
-
+  const {profiles,projects} = getLocalData();
+  if (!saveLocalData(profiles,projects.filter(p => p.id !== projectId))) throw new Error('Browser storage is full. Free some space and retry.');
   invalidateShowcaseCaches(profileId);
   return true;
 }
@@ -743,10 +737,10 @@ export async function updateShowcaseProject(
         return data as ShowcasedProject;
       }
       isSchemaError(error);
-      console.warn('Error updating project in Supabase, updating locally:', error?.message);
+      throw new Error(error?.message || 'Could not save project.');
     } catch (err) {
       isSchemaError(err);
-      console.warn('Exception updating project in Supabase:', err);
+      throw err;
     }
   }
 
@@ -754,7 +748,7 @@ export async function updateShowcaseProject(
   const index = projects.findIndex(p => p.id === projectId);
   if (index >= 0) {
     projects[index] = { ...projects[index], ...updates };
-    saveLocalData(profiles, projects);
+    if (!saveLocalData(profiles, projects)) throw new Error('Browser storage is full. Remove a local project or use the GitHub preview.');
     invalidateShowcaseCaches(profileId);
     return projects[index];
   }
