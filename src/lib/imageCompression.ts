@@ -47,7 +47,7 @@ export async function uploadProjectScreenshot(file:Blob,userId:string,projectId:
   }
   const path=`${userId}/${projectId}/cover`;
   try {
-    const {data:{session}}=await supabase.auth.getSession();if(!session) throw new Error('Session expired');
+    const {data:{session}}=await supabase.auth.getSession();if(!session) throw new ImageProcessingError('UPLOAD_FAILED','Your sign-in expired. Sign in again, then retry uploading.','upload');
     const endpoint=new URL(supabase.storage.from(SCREENSHOT_BUCKET).getPublicUrl(path).data.publicUrl);
     endpoint.pathname=endpoint.pathname.replace('/object/public/','/object/');
     await new Promise<void>((resolve,reject)=>{
@@ -55,13 +55,25 @@ export async function uploadProjectScreenshot(file:Blob,userId:string,projectId:
       xhr.setRequestHeader('Authorization',`Bearer ${session.access_token}`);xhr.setRequestHeader('apikey',supabaseAnonKey);
       xhr.setRequestHeader('x-upsert','true');xhr.setRequestHeader('Content-Type',file.type);xhr.setRequestHeader('Cache-Control','max-age=31536000, immutable');xhr.timeout=60000;
       xhr.upload.onprogress=e=>{if(e.lengthComputable) onProgress?.(Math.min(99,Math.round(e.loaded/e.total*100)));};
-      xhr.onload=()=>xhr.status>=200 && xhr.status<300?resolve():reject(new Error(`Storage ${xhr.status}: ${xhr.responseText}`));
+      xhr.onload=()=>{
+        if(xhr.status>=200 && xhr.status<300) {resolve();return;}
+        let response:{code?:string;message?:string;error?:string;statusCode?:string}={};
+        try {response=JSON.parse(xhr.responseText);} catch { /* Non-JSON responses retain HTTP status. */ }
+        const status=Number(response.statusCode)||xhr.status;
+        const message=response.code==='NoSuchBucket' || /bucket.*not found/i.test(response.message||response.error||'')
+          ? 'Image storage is not set up yet. Ask the site owner to apply the latest Supabase migrations, then retry.'
+          : status===401 ? 'Your sign-in expired. Sign in again, then retry uploading.'
+          : status===403 || /row.level security/i.test(response.message||response.error||'') ? 'Image upload was denied. Ask the site owner to check Supabase storage policies, then retry.'
+          : status===413 ? 'Upload is too large (max 200KB). Select a smaller image.'
+          : 'Upload failed. Check your connection and sign-in, then retry.';
+        reject(new ImageProcessingError('UPLOAD_FAILED',message,'upload',{...dimensions,status:xhr.status,storageCode:response.code,storageMessage:response.message||response.error}));
+      };
       xhr.onerror=()=>reject(new Error('Network error'));xhr.ontimeout=()=>reject(new Error('Upload timed out'));xhr.send(file);
     });
     const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await file.arrayBuffer()))).map(b=>b.toString(16).padStart(2,'0')).join('');
     onProgress?.(100);return {url:`${supabase.storage.from(SCREENSHOT_BUCKET).getPublicUrl(path).data.publicUrl}?v=${hash}`,compressedSize:file.size,originalSize:file.size};
   } catch(cause) {
-    const error=new ImageProcessingError('UPLOAD_FAILED','Upload failed. Check your connection and sign-in, then retry.','upload',dimensions,cause);logImageError(error,file);throw error;
+    const error=cause instanceof ImageProcessingError ? cause : new ImageProcessingError('UPLOAD_FAILED','Upload failed. Check your connection and sign-in, then retry.','upload',dimensions,cause);logImageError(error,file);throw error;
   }
 }
 export async function deleteProjectScreenshot(userId:string,projectId:string,oldUrl?:string|null) {

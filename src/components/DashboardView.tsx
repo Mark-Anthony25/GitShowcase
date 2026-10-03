@@ -16,6 +16,7 @@ import {
   updateShowcaseProject,
   subscribeSchemaStatus,
   MAX_SHOWCASE_PROJECTS,
+  ShowcaseLoadError,
 } from '../lib/showcaseStore';
 import { 
   compressScreenshot, 
@@ -238,7 +239,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
         setAddError(`Showcase limit reached. You can publish at most ${MAX_SHOWCASE_PROJECTS} projects. Remove one to add another.`);
       } else {
         console.error('Failed to add project to showcase:', err);
-        setAddError(err instanceof ImageProcessingError ? err.message : 'Failed to publish project. Please retry.');
+        setAddError(err instanceof ImageProcessingError || err instanceof ShowcaseLoadError ? err.message : 'Failed to publish project. Please retry.');
       }
     } finally {
       setAddingInProgress(false); setUploadProgress(null);
@@ -329,10 +330,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             <AlertCircle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
             <div className="space-y-0.5">
               <p className="font-bold uppercase tracking-wider font-headline text-xs">
-                Supabase Tables Pending Creation
+                Supabase Database Setup Incomplete
               </p>
               <p className="font-serif-body text-stone-800 text-xs">
-                Database tables haven't been run yet in the Supabase SQL editor. The app is running smoothly using client-side offline storage.
+                A required database table is unavailable. Ask the site owner to apply the latest Supabase setup SQL. Cloud publishing cannot finish until setup is repaired.
               </p>
             </div>
           </div>

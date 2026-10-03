@@ -6,7 +6,8 @@ try {
 await db.exec(`
 create role authenticated;create role anon;create schema auth;create schema storage;
 create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
-create table public.showcased_projects(id uuid primary key default gen_random_uuid(),profile_id uuid not null,repo_key text,repo_full_name text not null,screenshot_url text);
+create table public.profiles(id uuid primary key);
+create table public.showcased_projects(id uuid primary key default gen_random_uuid(),profile_id uuid not null,repo_key text,repo_full_name text not null,repo_url text,custom_title text,custom_description text);
 create unique index on public.showcased_projects(profile_id,repo_key);
 create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
 create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text,metadata jsonb,unique(bucket_id,name));
@@ -23,9 +24,17 @@ grant select on storage.objects,public.showcased_projects to anon;
 `);
 await db.exec(readFileSync('supabase/migrations/20261003000000_project_cover_limits.sql','utf8'));
 await db.exec(readFileSync('supabase/migrations/20261003000001_fix_cover_upload_preflight.sql','utf8'));
+await db.exec(`delete from storage.buckets;insert into public.showcased_projects(profile_id,repo_full_name) values('99999999-9999-4999-8999-999999999999','legacy/preserved');`);
+const repair=readFileSync('supabase/migrations/20261004000000_repair_project_image_setup.sql','utf8');
+await db.exec(repair);await db.exec(repair);
+await db.query('select screenshot_url from public.showcased_projects limit 0');
+await db.query('select website_url from public.profiles limit 0');
+assert.equal((await db.query("select count(*)::int as n from public.showcased_projects where repo_full_name='legacy/preserved'")).rows[0].n,1,'repair preserves existing projects');
 const user='11111111-1111-4111-8111-111111111111',project='22222222-2222-4222-8222-222222222222';
 await db.exec(`insert into public.showcased_projects(id,profile_id,repo_full_name) values('${project}','${user}','validation/repo');set role authenticated;set request.jwt.claim.sub='${user}';`);
 const path=`${user}/${project}/cover`;
+const saved=await db.query("select (public.save_showcased_project('validation/repo','https://github.com/validation/repo','Updated',null,null)).id as id");
+assert.equal(saved.rows[0].id,project,'current five-argument RPC updates the existing project');
 const permitted=async (name,metadata)=>(await db.query('select public.valid_project_cover($1,$2::jsonb) as allowed',[name,JSON.stringify(metadata)])).rows[0].allowed;
 // Supabase preflights binary uploads with contentLength, not the persisted size field.
 assert.equal(await permitted(path,{mimetype:'image/webp',contentLength:2048}),true,'valid binary upload preflight must pass');

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Copy, Check, ExternalLink, X, Database, Key, ShieldCheck, Github, Sparkles, AlertTriangle, RefreshCw } from 'lucide-react';
 import { isSupabaseConfigured, updateSupabaseConfig, supabaseUrl, supabaseAnonKey, supabase } from '../lib/supabase';
 import { Skeleton } from './Skeleton';
+import projectImageRepairSql from '../../supabase/migrations/20261004000000_repair_project_image_setup.sql?raw';
 
 interface SupabaseGuideModalProps {
   isOpen: boolean;
@@ -36,19 +37,24 @@ export const SupabaseGuideModal: React.FC<SupabaseGuideModalProps> = ({ isOpen, 
         setTestStatus({ testing: false, success: false, message: 'Please save valid Supabase URL and Anon Key first.' });
         return;
       }
-      const { data, error } = await supabase.from('profiles').select('id').limit(1);
+      const checks = await Promise.all([
+        supabase.from('profiles').select('id,website_url').limit(0),
+        supabase.from('showcased_projects').select('id,screenshot_url').limit(0),
+        supabase.storage.from('project-screenshots').list('', {limit:1}),
+      ]);
+      const error = checks.find(check=>check.error)?.error;
       if (error) {
-        if (error.message.includes('relation') || error.message.includes('does not exist') || error.message.includes('schema cache')) {
+        if (error.message.includes('relation') || error.message.includes('does not exist') || error.message.includes('schema cache') || /bucket.*not found/i.test(error.message)) {
           setTestStatus({
             testing: false,
-            success: true,
-            message: 'Connected to Supabase! Note: Please run the SQL schema in Tab 2 to create the tables.'
+            success: false,
+            message: 'Supabase setup is incomplete. Run the SQL in Tab 2 to repair columns, image storage, and policies.'
           });
         } else {
           setTestStatus({ testing: false, success: false, message: `Connected with notice: ${error.message}` });
         }
       } else {
-        setTestStatus({ testing: false, success: true, message: 'Supabase connection & tables verified successfully!' });
+        setTestStatus({ testing: false, success: true, message: 'Supabase tables, preview columns, and image bucket are available. Verify uploading with a signed-in account.' });
       }
     } catch (err: any) {
       setTestStatus({ testing: false, success: false, message: err?.message || 'Failed to connect to Supabase.' });
@@ -118,7 +124,7 @@ alter table public.repo_stats_cache add column if not exists homepage text;
 alter table public.repo_stats_cache add column if not exists refresh_after timestamptz default now();
 
 -- 4. High-Performance Database Indexes
-delete from public.showcased_projects where ctid not in (select min(ctid) from public.showcased_projects group by profile_id, lower(repo_full_name));
+-- Duplicate repositories must be reviewed explicitly; never delete them during setup.
 create index if not exists idx_showcased_projects_profile_id on public.showcased_projects(profile_id);
 create unique index if not exists idx_showcased_projects_profile_repo_unique on public.showcased_projects(profile_id, lower(repo_full_name));
 create index if not exists idx_showcased_projects_display_order on public.showcased_projects(display_order asc, added_at desc);
@@ -217,7 +223,7 @@ end;
 $$;
 
 revoke all on function public.delete_user() from public;
-grant execute on function public.delete_user() to authenticated;`;
+grant execute on function public.delete_user() to authenticated;` + '\n' + projectImageRepairSql;
 
   const handleSaveCredentials = (e: React.FormEvent) => {
     e.preventDefault();
@@ -390,7 +396,7 @@ grant execute on function public.delete_user() to authenticated;`;
                     Database Schema &amp; Row Level Security
                   </h3>
                   <p className="text-xs font-serif-body text-stone-700">
-                    Run this in your Supabase SQL Editor to create tables, RLS policies, and the OAuth trigger.
+                    Run this in your Supabase SQL Editor to create or repair tables, preview columns, image storage, RLS policies, and the OAuth trigger.
                   </p>
                 </div>
                 <button

@@ -1,5 +1,15 @@
 # Project preview hardening
 
+## Production repair (2026-10-04)
+
+Read-only checks against the deployed project's public API confirmed that the main tables exist, but `showcased_projects.screenshot_url`, `profiles.website_url`, and the `project-screenshots` bucket were missing. These are server setup failures; retrying or recompressing an image cannot create them.
+
+For an existing installation, run `supabase/migrations/20261004000000_repair_project_image_setup.sql` in that project's SQL Editor. This self-contained transaction adds the missing columns, installs the current five-argument project-save RPC, creates the bucket and its MIME/200 KiB limits, restores owned-cover policies and cleanup/project-count guards, and reloads PostgREST's schema cache. It preserves project rows and stored files. Canonical duplicate repositories abort the transaction for explicit review rather than deleting data. The script is safe to re-run. The in-app SQL setup guide also includes this repair.
+
+The frontend now distinguishes bucket setup, expired sign-in, denied storage access, and oversized uploads. Missing functions/columns no longer claim that all database tables are absent. Failed cloud project writes never become fictitious local successes followed by an upload to a `local-proj-*` path; sandbox persistence remains available when Supabase is unconfigured. Browser regressions exercise the hosted Storage API's HTTP 400 / `NoSuchBucket` response shape and verify retained previews/retry, as well as incomplete-schema saves that issue no upload. PostgreSQL tests execute the repair twice against old tables missing both columns, preserve an existing project, and exercise the current save RPC and RLS.
+
+After applying SQL, verify both missing-column queries succeed, the bucket returns `Object not found` rather than `Bucket not found` for a missing object, and an authenticated dashboard publish/replace works. Successful schema/bucket probes do not prove authenticated upload permissions; that final upload needs a signed-in user.
+
 Apply `supabase/migrations/20261003000000_project_cover_limits.sql` followed by `supabase/migrations/20261003000001_fix_cover_upload_preflight.sql` (or the updated schema for a fresh installation), deploy the updated `delete-account` Edge Function, then deploy the frontend. No remote migration or deployment was executed by this change. Verify storage policies on a staging Supabase project before production; automated browser tests do not exercise live RLS.
 
 ## Behavior and limits

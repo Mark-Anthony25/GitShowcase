@@ -40,16 +40,15 @@ export function reportSchemaMissing() {
 export function isSchemaError(err: any): boolean {
   if (!err) return false;
   const msg = (typeof err === 'string' ? err : err.message || '').toLowerCase();
-  if (msg.includes('column') && msg.includes('does not exist')) {
+  if (['PGRST202','PGRST204','42703'].includes(err.code) || msg.includes('function') || msg.includes('column')) {
     return false;
   }
   const isErr = (
-    msg.includes('schema cache') ||
+    ['42P01','PGRST205'].includes(err.code) ||
     (msg.includes('relation') && msg.includes('does not exist')) ||
     (msg.includes('table') && msg.includes('does not exist')) ||
     msg.includes('could not find the table') ||
     msg.includes('42p01') ||
-    msg.includes('pgrst204') ||
     msg.includes('pgrst205')
   );
   if (isErr) {
@@ -509,6 +508,10 @@ export async function addProjectToShowcase(params: {
       if (error && error.message?.includes('PROJECT_LIMIT_REACHED')) {
         throw new Error('PROJECT_LIMIT_REACHED');
       }
+      if (error) {
+        isSchemaError(error);
+        console.warn('Project save RPC failed; trying direct table write:', {code:error.code,message:error.message});
+      }
     } catch (rpcErr: any) {
       if (rpcErr?.message === 'PROJECT_LIMIT_REACHED') throw rpcErr;
       console.warn('save_showcased_project RPC unavailable, falling back to direct table write:', rpcErr);
@@ -559,6 +562,9 @@ export async function addProjectToShowcase(params: {
 
         if (!updateErr && updated) {
           createdProject = updated as ShowcasedProject;
+        } else if (updateErr) {
+          isSchemaError(updateErr);
+          console.warn('Project update failed:', {code:updateErr.code,message:updateErr.message});
         }
       } else {
         const newRow = {
@@ -591,6 +597,9 @@ export async function addProjectToShowcase(params: {
 
           if (!insertError && insertData) {
             createdProject = insertData as ShowcasedProject;
+          } else if (insertError) {
+            isSchemaError(insertError);
+            console.warn('Project insert failed:', {code:insertError.code,message:insertError.message});
           }
         }
       }
@@ -598,6 +607,10 @@ export async function addProjectToShowcase(params: {
       isSchemaError(err);
       console.warn('Exception inserting project to Supabase:', err);
     }
+  }
+
+  if (isSupabaseConfigured && supabase && !createdProject) {
+    throw new ShowcaseLoadError('Could not save project to Supabase. Ask the site owner to check database setup, then retry.');
   }
 
   // Local storage synchronization and fallback
