@@ -10,6 +10,8 @@ The frontend now distinguishes bucket setup, expired sign-in, denied storage acc
 
 After applying SQL, verify both missing-column queries succeed, the bucket returns `Object not found` rather than `Bucket not found` for a missing object, and an authenticated dashboard publish/replace works. Successful schema/bucket probes do not prove authenticated upload permissions; that final upload needs a signed-in user.
 
+The repair was applied successfully to the deployed Supabase project on 2026-10-04. Both column probes now return HTTP 200 and the bucket probe returns `NoSuchKey` / `Object not found`. A hosted rollback-only transaction exercised the five-argument save RPC under the authenticated role and confirmed owned 2 KiB WebP upload preflight is allowed, another user's folder is rejected, and 204801 bytes is rejected; no test project was retained. The signed-in deployed dashboard opens without the setup warning. The updated frontend is deployed. A real authenticated Storage HTTP upload using the user's chosen repository/image has not yet been exercised.
+
 Apply `supabase/migrations/20261003000000_project_cover_limits.sql` followed by `supabase/migrations/20261003000001_fix_cover_upload_preflight.sql` (or the updated schema for a fresh installation), deploy the updated `delete-account` Edge Function, then deploy the frontend. No remote migration or deployment was executed by this change. Verify storage policies on a staging Supabase project before production; automated browser tests do not exercise live RLS.
 
 ## Behavior and limits
