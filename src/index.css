@@ -15,6 +15,11 @@
   --paper-warning: #7A5612;
   --paper-danger: #8C3028;
   --paper-danger-surface: #F0D3C7;
+  /* Set to none to switch the light surfaces back to flat paper. */
+  /* Paper 3 by Atle Mo, via Transparent Textures / Subtle Patterns. */
+  --paper-texture: url('./assets/paper-3.png');
+  /* Finer grain keeps cards distinct from the fibrous sheet. */
+  --paper-texture-quiet: url('./assets/cream-paper.png');
   --motion-fast: 120ms;
   --motion-panel: 180ms;
   --motion-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -506,6 +511,28 @@
 
   .skeleton {
     animation-duration: 1ms;
+  }
+}
+
+/* The sheet carries the visible fibers; content panels use quieter grain. */
+.paper-sheet {
+  background-image: var(--paper-texture);
+  background-repeat: repeat;
+  background-size: 276px 276px;
+  background-blend-mode: multiply;
+}
+
+.paper-card {
+  background-image: var(--paper-texture-quiet);
+  background-repeat: repeat;
+  background-size: 158px 144px;
+  background-blend-mode: soft-light;
+}
+
+@media print {
+  :root {
+    --paper-texture: none;
+    --paper-texture-quiet: none;
   }
 }
 
