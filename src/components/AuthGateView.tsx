@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Github, LockKeyhole } from 'lucide-react';
+import { Github } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Skeleton } from './Skeleton';
 
@@ -33,9 +33,7 @@ export const AuthGateView: React.FC<AuthGateViewProps> = ({ navigate, onOpenGuid
 
   return (
     <div className="max-w-xl mx-auto px-6 py-14 text-center space-y-4 paper-card bg-[#FEFCF6]">
-      <div className="w-12 h-12 paper-card bg-[#FAF6EC] flex items-center justify-center mx-auto text-stone-700">
-        <LockKeyhole className="w-6 h-6" />
-      </div>
+      <img src="/brand/gitshowcase-symbol.svg" alt="" width="48" height="48" className="w-12 h-12 mx-auto" />
       <div className="space-y-1">
         <h1 className="text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
           Sign In to GitShowcase

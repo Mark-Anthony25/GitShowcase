@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Github, User, Compass, FolderGit2, LogOut, Sparkles, Menu, X, Trash2, AlertTriangle } from 'lucide-react';
+import { User, Compass, FolderGit2, LogOut, Sparkles, Menu, X, Trash2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface HeaderProps {
@@ -132,12 +132,9 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
           onClick={() => navigate('/')}
           className="text-left group cursor-pointer flex items-center space-x-2 sm:space-x-3 shrink-0 focus:outline-none"
         >
-          <div className="w-8 h-8 sm:w-9 sm:h-9 border-2 border-black bg-[#FEFCF6] text-[#212121] flex items-center justify-center flex-shrink-0 rounded-[255px_15px_225px_15px/15px_225px_15px_255px] transition-colors">
-            <Github className="w-4 h-4 sm:w-5 sm:h-5 text-[#212121] stroke-[2]" />
-          </div>
           <div className="min-w-0">
-            <h1 className="text-base sm:text-xl font-[900] tracking-tight uppercase font-newspaper-title text-[#212121] leading-none transition-opacity truncate">
-              GITSHOWCASE
+            <h1 className="leading-none">
+              <img src="/brand/gitshowcase-logo.svg" alt="GitShowcase" width="512" height="128" className="block w-[148px] sm:w-[184px] h-auto" />
             </h1>
             <p className="text-[9px] sm:text-[11px] font-sketch text-stone-700 font-semibold truncate">
               Explore. Build. Collaborate.
@@ -288,9 +285,7 @@ export const Header: React.FC<HeaderProps> = ({ currentRoute, navigate, onOpenGu
             {/* Modal Top Masthead */}
             <div className="flex items-center justify-between border-b border-dashed border-[#212121] pb-2">
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 border-1.5 border-black bg-[#FEFCF6] text-[#212121] flex items-center justify-center rounded-[255px_15px_225px_15px/15px_225px_15px_255px]">
-                  <Github className="w-3.5 h-3.5 text-[#212121] stroke-[2]" />
-                </div>
+                <img src="/brand/gitshowcase-symbol.svg" alt="GitShowcase" width="24" height="24" className="w-[24px] h-[24px] shrink-0" />
                 <span className="font-newspaper-title font-[900] uppercase text-sm text-[#212121] tracking-tight">Navigation</span>
               </div>
               <button

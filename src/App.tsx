@@ -125,7 +125,12 @@ function AppContent() {
 
         {/* Main Content Article Body */}
         <main className="flex-1 w-full max-w-full">
-          <Suspense fallback={<div className="min-h-32" aria-label="Loading page" />}>{renderCurrentView()}</Suspense>
+          <Suspense fallback={
+            <div className="min-h-32 flex flex-col items-center justify-center gap-2" role="status">
+              <img src="/brand/gitshowcase-symbol.svg" alt="" width="40" height="40" className="w-10 h-10" />
+              <span className="text-xs font-sketch">Loading page</span>
+            </div>
+          }>{renderCurrentView()}</Suspense>
         </main>
 
         {/* Onboarding Setup Modal */}
