@@ -513,9 +513,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                     {/* Status Badges & Controls Header */}
                     <div className="flex items-start justify-between gap-2 border-b border-dashed border-[#212121] pb-2">
                       <div className="flex items-center space-x-1.5 flex-wrap gap-y-1 min-w-0">
-                        <span className="text-[10px] font-mono text-stone-700 truncate max-w-[170px]">
-                          {proj.repo_full_name}
-                        </span>
+
                       </div>
 
                       {/* Quick Action Icons */}

@@ -1,3 +1,4 @@
+import creatorTechStackSql from '../../supabase/migrations/20261006000001_creator_tech_stack.sql?raw';
 import React, { useState } from 'react';
 import { Copy, Check, ExternalLink, X, Database, Key, ShieldCheck, Github, Sparkles, AlertTriangle, RefreshCw } from 'lucide-react';
 import { isSupabaseConfigured, updateSupabaseConfig, supabaseUrl, supabaseAnonKey, supabase } from '../lib/supabase';
@@ -39,7 +40,7 @@ export const SupabaseGuideModal: React.FC<SupabaseGuideModalProps> = ({ isOpen, 
         return;
       }
       const checks = await Promise.all([
-        supabase.from('profiles').select('id,website_url,contact_url').limit(0),
+        supabase.from('profiles').select('id,website_url,contact_url,tech_stack').limit(0),
         supabase.from('showcased_projects').select('id,screenshot_url,show_repository_link').limit(0),
         supabase.storage.from('project-screenshots').list('', {limit:1}),
       ]);
@@ -224,7 +225,7 @@ end;
 $$;
 
 revoke all on function public.delete_user() from public;
-grant execute on function public.delete_user() to authenticated;` + '\n' + projectImageRepairSql + '\n' + projectContactSql;
+grant execute on function public.delete_user() to authenticated;` + '\n' + projectImageRepairSql + '\n' + projectContactSql + '\n' + creatorTechStackSql;
 
   const handleSaveCredentials = (e: React.FormEvent) => {
     e.preventDefault();

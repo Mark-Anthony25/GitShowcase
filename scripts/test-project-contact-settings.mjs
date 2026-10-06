@@ -17,6 +17,15 @@ try {
   `);
   const sql = readFileSync('supabase/migrations/20261006000000_project_links_and_contact.sql', 'utf8');
   await db.exec(sql);
+  await db.exec("insert into public.profiles(id) values('99999999-9999-4999-8999-999999999999')");
+  const techSql = readFileSync('supabase/migrations/20261006000001_creator_tech_stack.sql', 'utf8');
+  await db.exec(techSql);
+  assert.deepEqual((await db.query('select tech_stack from public.profiles')).rows[0].tech_stack, [], 'existing profiles start empty');
+  await db.exec("insert into public.profiles(id) values('88888888-8888-4888-8888-888888888888')");
+  assert.deepEqual((await db.query("select tech_stack from public.profiles where id='88888888-8888-4888-8888-888888888888'")).rows[0].tech_stack, []);
+  await db.exec("update public.profiles set tech_stack=array['React','C++']");
+  await db.exec(techSql);
+  assert.deepEqual((await db.query('select tech_stack from public.profiles limit 1')).rows[0].tech_stack, ['React', 'C++'], 'rerunning migration preserves chosen technologies');
   assert.equal((await db.query('select show_repository_link from public.showcased_projects')).rows[0].show_repository_link, true);
   const user = '11111111-1111-4111-8111-111111111111';
   await db.exec(`set role authenticated; set request.jwt.claim.sub='${user}'`);

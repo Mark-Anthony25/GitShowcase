@@ -7,6 +7,7 @@ export interface Profile {
   bio: string | null; // Max 299 characters for About Me
   website_url?: string | null;
   contact_url?: string | null;
+  tech_stack?: string[];
   program: string | null;
   year_level: string | null;
   is_onboarded?: boolean;

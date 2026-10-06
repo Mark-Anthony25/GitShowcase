@@ -1,3 +1,4 @@
+import { normalizeTechStack } from './techStack';
 import { normalizeContactLink } from './contactLink';
 import { deleteProjectScreenshot } from './imageCompression';
 import { supabase, isSupabaseConfigured } from './supabase';
@@ -85,7 +86,7 @@ function cachedStats(row: any): RepoLiveStats | undefined {
 
 function publicItem(row: any): StudentShowcaseData {
   const p = row.profiles;
-  return { profile: { id: p.id, github_username: p.github_username, full_name: p.full_name, headline: p.headline || null, avatar_url: p.avatar_url, bio: p.bio, website_url: p.website_url || null, contact_url: p.contact_url || null, program: p.program, year_level: p.year_level, is_onboarded: Boolean(p.is_onboarded), created_at: p.created_at, updated_at: p.updated_at }, projects: [{ id: row.id, profile_id: row.profile_id, repo_full_name: row.repo_full_name, repo_key: row.repo_key, repo_url: row.repo_url, show_repository_link: row.show_repository_link, custom_title: row.custom_title, custom_description: row.custom_description, screenshot_url: row.screenshot_url || null, display_order: row.display_order, added_at: row.added_at, live_stats: cachedStats(row) }] };
+  return { profile: { id: p.id, github_username: p.github_username, full_name: p.full_name, headline: p.headline || null, avatar_url: p.avatar_url, bio: p.bio, website_url: p.website_url || null, contact_url: p.contact_url || null, tech_stack: p.tech_stack || [], program: p.program, year_level: p.year_level, is_onboarded: Boolean(p.is_onboarded), created_at: p.created_at, updated_at: p.updated_at }, projects: [{ id: row.id, profile_id: row.profile_id, repo_full_name: row.repo_full_name, repo_key: row.repo_key, repo_url: row.repo_url, show_repository_link: row.show_repository_link, custom_title: row.custom_title, custom_description: row.custom_description, screenshot_url: row.screenshot_url || null, display_order: row.display_order, added_at: row.added_at, live_stats: cachedStats(row) }] };
 }
 
 export async function getPublicDirectoryPage({ query = '', program = 'all', offset = 0, limit = 24 }: { query?: string; program?: string; offset?: number; limit?: number }): Promise<PublicDirectoryPage> {
@@ -786,6 +787,7 @@ export async function updateStudentProfile(
   profileId: string,
   updates: Partial<Profile>
 ): Promise<Profile | null> {
+  if (updates.tech_stack !== undefined) updates = {...updates, tech_stack: normalizeTechStack(updates.tech_stack)};
   if (updates.contact_url !== undefined) updates = {...updates, contact_url: normalizeContactLink(updates.contact_url)};
   if (typeof updates.bio === 'string') updates = {...updates,bio:updates.bio.slice(0,299)};
   if (!profileId) {
@@ -814,6 +816,7 @@ export async function updateStudentProfile(
         headline: updates.headline !== undefined ? updates.headline : (existingProfile?.headline ?? null),
         avatar_url: updates.avatar_url !== undefined ? updates.avatar_url : (existingProfile?.avatar_url ?? null),
         bio: updates.bio !== undefined ? updates.bio : (existingProfile?.bio ?? null),
+        tech_stack: updates.tech_stack !== undefined ? updates.tech_stack : (existingProfile?.tech_stack ?? []),
         contact_url: updates.contact_url !== undefined ? updates.contact_url : (existingProfile?.contact_url ?? null),
         website_url: updates.website_url !== undefined ? updates.website_url : (existingProfile?.website_url ?? null),
         program: updates.program !== undefined ? updates.program : (existingProfile?.program ?? null),
@@ -911,6 +914,7 @@ export async function updateStudentProfile(
         headline: updates.headline || null,
         avatar_url: updates.avatar_url || null,
         bio: updates.bio || null,
+        tech_stack: updates.tech_stack ?? [],
         website_url: updates.website_url || null,
         program: updates.program || 'Software Development',
         year_level: updates.year_level || 'Getting Started',

@@ -1,3 +1,5 @@
+import { TechStackEditor } from './TechStackEditor';
+import { normalizeTechStack } from '../lib/techStack';
 import { normalizeContactLink } from '../lib/contactLink';
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
@@ -44,6 +46,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [aboutMe, setAboutMe] = useState(
     (profile.bio || '').slice(0, 299)
   );
+  const [techStack, setTechStack] = useState<string[]>(profile.tech_stack ?? []);
   const [contactUrl, setContactUrl] = useState(profile.contact_url || '');
   const [contactError, setContactError] = useState<string | null>(null);
   const [websiteUrl, setWebsiteUrl] = useState(profile.website_url || '');
@@ -81,6 +84,7 @@ interface SelectedRepoMeta {
         if (draft.fullName) setFullName(draft.fullName);
         if (draft.avatarUrl) setAvatarUrl(draft.avatarUrl);
         if (draft.aboutMe) setAboutMe(draft.aboutMe.slice(0,299));
+        if (Array.isArray(draft.techStack)) setTechStack(normalizeTechStack(draft.techStack));
         if (draft.contactUrl !== undefined) setContactUrl(draft.contactUrl);
         if (draft.websiteUrl) setWebsiteUrl(draft.websiteUrl);
         if (draft.selectedProgramOption) setSelectedProgramOption(draft.selectedProgramOption);
@@ -105,6 +109,7 @@ interface SelectedRepoMeta {
         aboutMe,
         websiteUrl,
         contactUrl,
+        techStack,
         selectedProgramOption,
         customProgramName,
         yearLevel,
@@ -124,6 +129,7 @@ interface SelectedRepoMeta {
     aboutMe,
     websiteUrl,
     contactUrl,
+    techStack,
     selectedProgramOption,
     customProgramName,
     yearLevel,
@@ -293,6 +299,7 @@ interface SelectedRepoMeta {
         full_name: fullName.trim() || profile.full_name || username.trim(),
         avatar_url: avatarUrl.trim() || profile.avatar_url,
         bio: aboutMe.trim().slice(0, 299) || profile.bio,
+        tech_stack: normalizeTechStack(techStack),
         contact_url: normalizedContact,
         website_url: websiteUrl.trim() || null,
         is_onboarded: true,
@@ -517,6 +524,8 @@ interface SelectedRepoMeta {
               <input id="onboarding-contact-input" type="text" value={contactUrl} onChange={(e) => { setContactUrl(e.target.value); setContactError(null); }} onBlur={() => { try { normalizeContactLink(contactUrl); setContactError(null); } catch (err) { setContactError((err as Error).message); } }} aria-invalid={Boolean(contactError)} aria-describedby={contactError ? 'onboarding-contact-error' : undefined} placeholder="LinkedIn, social profile URL, or email" className="w-full px-2.5 py-1.5 paper-input text-xs min-h-[34px]" />
               {contactError && <p id="onboarding-contact-error" role="alert" className="text-xs text-red-700">{contactError}</p>}
             </div>
+            <TechStackEditor value={techStack} onChange={setTechStack} />
+
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-3 border-t border-dashed border-[#212121]">

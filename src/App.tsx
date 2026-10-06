@@ -91,6 +91,7 @@ function AppContent() {
 
   const handleOnboardingComplete = async (updatedProfile: Profile) => {
     const savedProfile = await updateProfileData({
+      tech_stack: updatedProfile.tech_stack,
       contact_url: updatedProfile.contact_url,
       website_url: updatedProfile.website_url,
       github_username: updatedProfile.github_username,

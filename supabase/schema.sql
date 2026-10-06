@@ -25,6 +25,7 @@ alter table public.profiles add column if not exists is_onboarded boolean defaul
 alter table public.profiles add column if not exists program text;
 alter table public.profiles add column if not exists year_level text;
 alter table public.profiles add column if not exists website_url text;
+alter table public.profiles add column if not exists tech_stack text[] not null default '{}'::text[];
 
 -- 2. Create Showcased Projects Table
 create table if not exists public.showcased_projects (

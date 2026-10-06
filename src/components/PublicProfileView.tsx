@@ -1,5 +1,6 @@
+import { TechStackEditor } from './TechStackEditor';
 import { normalizeContactLink } from '../lib/contactLink';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Github, Star, ExternalLink, Share2, Check, ArrowLeft, ArrowRight,
   Code2, Globe, AlertCircle, RefreshCw, FolderGit2, Edit3, 
@@ -31,6 +32,8 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   const [editFullName, setEditFullName] = useState('');
   const [editContactUrl, setEditContactUrl] = useState('');
   const [editWebsiteUrl, setEditWebsiteUrl] = useState('');
+  const [editTechStack, setEditTechStack] = useState<string[]>([]);
+  const [techStackPaused, setTechStackPaused] = useState(false);
   const [editBio, setEditBio] = useState('');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
@@ -39,21 +42,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   let contactHref: string | null = null;
   try { contactHref = normalizeContactLink(data?.profile.contact_url); } catch {}
 
-  // Compute Tech Stack from showcased projects
-  const rawProjects = data?.projects;
-  const techStack = useMemo(() => {
-    const list = rawProjects ? deduplicateProjectsList(rawProjects) : [];
-    const set = new Set<string>();
-    list.forEach(p => {
-      if (p.live_stats?.language) set.add(p.live_stats.language);
-      if (Array.isArray(p.live_stats?.topics)) {
-        p.live_stats.topics.forEach(t => {
-          if (t && t.length <= 20) set.add(t);
-        });
-      }
-    });
-    return Array.from(set).slice(0, 10);
-  }, [rawProjects]);
+  const techStack = data?.profile.tech_stack ?? [];
 
   useEffect(() => {
     loadShowcase(true);
@@ -80,6 +69,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
         setEditFullName(res.profile.full_name || '');
         setEditWebsiteUrl(res.profile.website_url || '');
         setEditContactUrl(res.profile.contact_url || '');
+        setEditTechStack(res.profile.tech_stack ?? []);
         setEditBio((res.profile.bio || '').slice(0,299));
       }
     } catch (err: any) {
@@ -112,6 +102,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
       setEditFullName(data.profile.full_name || '');
       setEditWebsiteUrl(data.profile.website_url || '');
       setEditContactUrl(data.profile.contact_url || '');
+      setEditTechStack(data.profile.tech_stack ?? []);
       setEditBio((data.profile.bio || '').slice(0,299));
     }
     setIsEditProfileOpen(true);
@@ -125,6 +116,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
     try {
       const updated = await updateProfileData({
         full_name: editFullName.trim() || null,
+        tech_stack: editTechStack,
         contact_url: normalizeContactLink(editContactUrl),
         website_url: editWebsiteUrl.trim() || null,
         bio: editBio.trim().slice(0, 299) || null,
@@ -324,36 +316,33 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                   </p>
                 )}
 
-                {contactHref && (
-                  <a href={contactHref} target={contactHref.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer" className="paper-button paper-button-dark inline-flex items-center text-xs py-2 px-4 font-bold">Message me</a>
-                )}
-                {profile.website_url && (
-                  <div className="pt-0.5">
-                    <a
-                      href={profile.website_url.startsWith('http://') || profile.website_url.startsWith('https://') ? profile.website_url : `https://${profile.website_url}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center space-x-1.5 text-xs font-mono font-bold text-[#0071DE] hover:underline"
-                      title={profile.website_url}
-                    >
-                      <Globe className="w-3.5 h-3.5 flex-shrink-0 text-stone-700" />
-                      <span>Portfolio</span>
-                      <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 text-stone-500" />
-                    </a>
+                {(profile.website_url || contactHref) && (
+                  <div className="profile-contact-actions flex items-center flex-wrap gap-2">
+                    {profile.website_url && (
+                      <a href={profile.website_url.startsWith('http://') || profile.website_url.startsWith('https://') ? profile.website_url : `https://${profile.website_url}`} target="_blank" rel="noopener noreferrer" className="paper-button inline-flex items-center gap-1.5 text-xs py-2 px-3 font-bold">
+                        <Globe className="w-3.5 h-3.5" /><span>Portfolio</span><ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    )}
+                    {contactHref && (
+                      <a href={contactHref} target={contactHref.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer" className="paper-button paper-button-dark inline-flex items-center text-xs py-2 px-3 font-bold">Message me</a>
+                    )}
                   </div>
                 )}
 
                 {techStack.length > 0 && (
-                  <div className="pt-1.5 space-y-1">
-                    <span className="text-[10px] font-sketch uppercase font-bold text-stone-600 block">
-                      Tech Stack
-                    </span>
-                    <div className="flex items-center space-x-1.5 text-xs font-serif-body text-stone-700 flex-wrap gap-y-1">
-                      {techStack.map(tech => (
-                        <span key={tech} className="paper-badge font-mono text-[10px] font-bold bg-stone-200 text-stone-800">
-                          {tech}
-                        </span>
-                      ))}
+                  <div className="paper-tech-stack pt-1.5 space-y-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-sketch uppercase font-bold text-stone-600">Tech Stack</span>
+                      <button type="button" className="paper-button paper-tech-control text-[10px] py-1 px-2 min-h-[28px]" aria-label={`${techStackPaused ? 'Resume' : 'Pause'} tech stack animation`} aria-pressed={techStackPaused} onClick={() => setTechStackPaused(!techStackPaused)}>{techStackPaused ? 'Resume' : 'Pause'}</button>
+                    </div>
+                    <div className="paper-tech-viewport">
+                      <div className="paper-tech-track" style={{animationPlayState: techStackPaused ? 'paused' : undefined}}>
+                        {[false, true].map(duplicate => (
+                          <ul key={String(duplicate)} className="paper-tech-group" aria-label={duplicate ? undefined : 'Tech stack'} aria-hidden={duplicate || undefined}>
+                            {techStack.map(tech => <li key={tech} className="paper-badge font-mono text-[10px] font-bold bg-stone-200 text-stone-800">{tech}</li>)}
+                          </ul>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -521,6 +510,8 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                 <label htmlFor="profile-contact-input" className="block text-xs font-headline uppercase font-bold mb-1">Message me link or email (Optional)</label>
                 <input id="profile-contact-input" type="text" value={editContactUrl} onChange={(e) => { setEditContactUrl(e.target.value); setProfileError(null); }} aria-describedby={profileError ? 'profile-save-error' : undefined} placeholder="LinkedIn, social profile URL, or email" className="w-full px-2.5 py-1.5 paper-input text-xs min-h-[34px]" />
               </div>
+              <TechStackEditor value={editTechStack} onChange={setEditTechStack} />
+
 
               <div>
                 <div className="flex items-center justify-between mb-1">
@@ -756,9 +747,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
             <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] leading-snug truncate">
               {project.custom_title || project.repo_full_name.split('/')[1]}
             </h3>
-            <p className="text-[10px] font-mono text-stone-600 truncate">
-              {project.repo_full_name}
-            </p>
+
           </div>
         </div>
 
