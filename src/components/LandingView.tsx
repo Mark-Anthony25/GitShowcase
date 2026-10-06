@@ -23,6 +23,7 @@ interface ProjectPreviewItem {
   desc: string;
   stars: number;
   url: string;
+  show_repository_link?: boolean;
   screenshot_url?: string | null;
 }
 
@@ -64,6 +65,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
               desc: p.custom_description || p.live_stats?.description || 'No description provided.',
               stars: p.live_stats?.stars ?? 0,
               url: p.repo_url,
+              show_repository_link: p.show_repository_link,
               screenshot_url: p.screenshot_url,
             });
           }
@@ -255,7 +257,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                   >
                     <span>@{proj.author}</span>
                   </button>
-                  <a
+                  {proj.show_repository_link !== false && (<a
                     href={proj.url}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -264,7 +266,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                   >
                     <span>Repo</span>
                     <ArrowUpRight className="w-3 h-3 flex-shrink-0 stroke-[2]" />
-                  </a>
+                  </a>)}
                 </div>
               </div>
             ))}

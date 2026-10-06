@@ -90,9 +90,9 @@ function AppContent() {
   };
 
   const handleOnboardingComplete = async (updatedProfile: Profile) => {
-    setOnboardingDismissed(true);
-    setManualOnboardOpen(false);
-    await updateProfileData({
+    const savedProfile = await updateProfileData({
+      contact_url: updatedProfile.contact_url,
+      website_url: updatedProfile.website_url,
       github_username: updatedProfile.github_username,
       full_name: updatedProfile.full_name,
       bio: updatedProfile.bio,
@@ -100,6 +100,9 @@ function AppContent() {
       year_level: updatedProfile.year_level,
       is_onboarded: true,
     });
+    if (!savedProfile) throw new Error('Could not save your profile. Check database setup and retry.');
+    setOnboardingDismissed(true);
+    setManualOnboardOpen(false);
     navigate(`/u/${updatedProfile.github_username}`);
   };
 

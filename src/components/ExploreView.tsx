@@ -519,7 +519,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                     Visit site
                   </a>
                 )}
-                <a
+                {selectedModalItem.project.show_repository_link !== false && (<a
                   href={selectedModalItem.project.repo_url}
                   target="_blank"
                   rel="noreferrer"
@@ -527,7 +527,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                 >
                   <Github className="w-4 h-4 mr-1.5" />
                   View on GitHub
-                </a>
+                </a>)}
               </div>
               
               {/* More Projects by Developer */}

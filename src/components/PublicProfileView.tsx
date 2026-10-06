@@ -1,3 +1,4 @@
+import { normalizeContactLink } from '../lib/contactLink';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Github, Star, ExternalLink, Share2, Check, ArrowLeft, ArrowRight,
@@ -28,11 +29,15 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   // Profile Edit Modal State for Owner
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [editFullName, setEditFullName] = useState('');
+  const [editContactUrl, setEditContactUrl] = useState('');
   const [editWebsiteUrl, setEditWebsiteUrl] = useState('');
   const [editBio, setEditBio] = useState('');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+
+  let contactHref: string | null = null;
+  try { contactHref = normalizeContactLink(data?.profile.contact_url); } catch {}
 
   // Compute Tech Stack from showcased projects
   const rawProjects = data?.projects;
@@ -74,6 +79,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
       if (res?.profile) {
         setEditFullName(res.profile.full_name || '');
         setEditWebsiteUrl(res.profile.website_url || '');
+        setEditContactUrl(res.profile.contact_url || '');
         setEditBio((res.profile.bio || '').slice(0,299));
       }
     } catch (err: any) {
@@ -105,6 +111,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
     if (data?.profile) {
       setEditFullName(data.profile.full_name || '');
       setEditWebsiteUrl(data.profile.website_url || '');
+      setEditContactUrl(data.profile.contact_url || '');
       setEditBio((data.profile.bio || '').slice(0,299));
     }
     setIsEditProfileOpen(true);
@@ -118,6 +125,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
     try {
       const updated = await updateProfileData({
         full_name: editFullName.trim() || null,
+        contact_url: normalizeContactLink(editContactUrl),
         website_url: editWebsiteUrl.trim() || null,
         bio: editBio.trim().slice(0, 299) || null,
         is_onboarded: true,
@@ -316,6 +324,9 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                   </p>
                 )}
 
+                {contactHref && (
+                  <a href={contactHref} target={contactHref.startsWith('mailto:') ? undefined : '_blank'} rel="noopener noreferrer" className="paper-button paper-button-dark inline-flex items-center text-xs py-2 px-4 font-bold">Message me</a>
+                )}
                 {profile.website_url && (
                   <div className="pt-0.5">
                     <a
@@ -472,7 +483,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
 
             <form onSubmit={handleSaveProfile} className="space-y-3.5">
               {profileError && (
-                <div className="p-2.5 bg-red-100 border border-red-500 text-red-950 text-xs font-mono flex items-center space-x-1.5 rounded-xs">
+                <div id="profile-save-error" role="alert" className="p-2.5 bg-red-100 border border-red-500 text-red-950 text-xs font-mono flex items-center space-x-1.5 rounded-xs">
                   <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 text-red-600" />
                   <span>{profileError}</span>
                 </div>
@@ -505,6 +516,10 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                 <p className="text-[10px] font-serif-body italic text-stone-600 mt-1">
                   Link to your personal portfolio, blog, or resume site.
                 </p>
+              </div>
+              <div>
+                <label htmlFor="profile-contact-input" className="block text-xs font-headline uppercase font-bold mb-1">Message me link or email (Optional)</label>
+                <input id="profile-contact-input" type="text" value={editContactUrl} onChange={(e) => { setEditContactUrl(e.target.value); setProfileError(null); }} aria-describedby={profileError ? 'profile-save-error' : undefined} placeholder="LinkedIn, social profile URL, or email" className="w-full px-2.5 py-1.5 paper-input text-xs min-h-[34px]" />
               </div>
 
               <div>
@@ -657,7 +672,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                     <span>Visit site</span>
                   </a>
                 )}
-                <a
+                {selectedProject.show_repository_link !== false && (<a
                   href={selectedProject.repo_url}
                   target="_blank"
                   rel="noreferrer"
@@ -665,7 +680,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                 >
                   <Github className="w-4 h-4 mr-1" />
                   <span>View on GitHub</span>
-                </a>
+                </a>)}
               </div>
               
               {/* More Projects by Developer */}
@@ -802,14 +817,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
               <span>Live</span>
             </span>
           )}
-          <span
+          {project.show_repository_link !== false && (<span
             className="inline-flex items-center space-x-0.5 text-stone-800 underline font-bold min-h-[28px] py-0.5 px-1 text-xs"
             onClick={(e) => { e.stopPropagation(); window.open(project.repo_url, '_blank', 'noreferrer'); }}
           >
             <Github className="w-3.5 h-3.5 mr-0.5 flex-shrink-0" />
             <span>GitHub</span>
             <ExternalLink className="w-2.5 h-2.5 ml-0.5 flex-shrink-0" />
-          </span>
+          </span>)}
         </div>
       </div>
     </button>

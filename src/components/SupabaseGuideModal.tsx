@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Copy, Check, ExternalLink, X, Database, Key, ShieldCheck, Github, Sparkles, AlertTriangle, RefreshCw } from 'lucide-react';
 import { isSupabaseConfigured, updateSupabaseConfig, supabaseUrl, supabaseAnonKey, supabase } from '../lib/supabase';
 import { Skeleton } from './Skeleton';
+import projectContactSql from '../../supabase/migrations/20261006000000_project_links_and_contact.sql?raw';
 import projectImageRepairSql from '../../supabase/migrations/20261004000000_repair_project_image_setup.sql?raw';
 
 interface SupabaseGuideModalProps {
@@ -38,8 +39,8 @@ export const SupabaseGuideModal: React.FC<SupabaseGuideModalProps> = ({ isOpen, 
         return;
       }
       const checks = await Promise.all([
-        supabase.from('profiles').select('id,website_url').limit(0),
-        supabase.from('showcased_projects').select('id,screenshot_url').limit(0),
+        supabase.from('profiles').select('id,website_url,contact_url').limit(0),
+        supabase.from('showcased_projects').select('id,screenshot_url,show_repository_link').limit(0),
         supabase.storage.from('project-screenshots').list('', {limit:1}),
       ]);
       const error = checks.find(check=>check.error)?.error;
@@ -223,7 +224,7 @@ end;
 $$;
 
 revoke all on function public.delete_user() from public;
-grant execute on function public.delete_user() to authenticated;` + '\n' + projectImageRepairSql;
+grant execute on function public.delete_user() to authenticated;` + '\n' + projectImageRepairSql + '\n' + projectContactSql;
 
   const handleSaveCredentials = (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,3 +1,4 @@
+import { normalizeContactLink } from '../lib/contactLink';
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Check, ArrowRight, ArrowLeft, Github, User, Code2, Star, 
@@ -14,7 +15,7 @@ interface OnboardingModalProps {
   isOpen: boolean;
   profile: Profile;
   githubToken: string | null;
-  onComplete: (updatedProfile: Profile) => void;
+  onComplete: (updatedProfile: Profile) => Promise<void>;
   onCancel?: () => void;
 }
 
@@ -43,6 +44,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [aboutMe, setAboutMe] = useState(
     (profile.bio || '').slice(0, 299)
   );
+  const [contactUrl, setContactUrl] = useState(profile.contact_url || '');
+  const [contactError, setContactError] = useState<string | null>(null);
   const [websiteUrl, setWebsiteUrl] = useState(profile.website_url || '');
   const [selectedProgramOption, setSelectedProgramOption] = useState(initialProg.selectedOptionValue);
   const [customProgramName, setCustomProgramName] = useState(initialProg.customProgramName);
@@ -54,6 +57,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 interface SelectedRepoMeta {
   customTitle: string;
   customDescription: string;
+  showRepositoryLink?: boolean;
 }
 
   // Step 2: Repository selection
@@ -77,6 +81,7 @@ interface SelectedRepoMeta {
         if (draft.fullName) setFullName(draft.fullName);
         if (draft.avatarUrl) setAvatarUrl(draft.avatarUrl);
         if (draft.aboutMe) setAboutMe(draft.aboutMe.slice(0,299));
+        if (draft.contactUrl !== undefined) setContactUrl(draft.contactUrl);
         if (draft.websiteUrl) setWebsiteUrl(draft.websiteUrl);
         if (draft.selectedProgramOption) setSelectedProgramOption(draft.selectedProgramOption);
         if (draft.customProgramName) setCustomProgramName(draft.customProgramName);
@@ -99,6 +104,7 @@ interface SelectedRepoMeta {
         avatarUrl,
         aboutMe,
         websiteUrl,
+        contactUrl,
         selectedProgramOption,
         customProgramName,
         yearLevel,
@@ -117,6 +123,7 @@ interface SelectedRepoMeta {
     avatarUrl,
     aboutMe,
     websiteUrl,
+    contactUrl,
     selectedProgramOption,
     customProgramName,
     yearLevel,
@@ -164,14 +171,15 @@ interface SelectedRepoMeta {
       const fetched = await fetchUserRepos(githubToken, username || profile.github_username);
       setRepos(fetched);
 
+      const existing = await getStudentShowcasedProjects(profile.id);
       // Pre-select already showcased repos or first N if none selected yet
       if (Object.keys(selectedRepoMap).length === 0) {
-        const existing = await getStudentShowcasedProjects(profile.id);
         const preSelected: Record<string, any> = {};
         
         if (existing.length > 0) {
           existing.slice(0, MAX_SHOWCASE_PROJECTS).forEach(p => {
             preSelected[p.repo_full_name] = {
+              showRepositoryLink: p.show_repository_link !== false,
               customTitle: p.custom_title || '',
               customDescription: (p.custom_description || '').slice(0,99),
             };
@@ -185,6 +193,11 @@ interface SelectedRepoMeta {
           });
         }
         setSelectedRepoMap(preSelected);
+      } else {
+        setSelectedRepoMap(current => Object.fromEntries((Object.entries(current) as [string, SelectedRepoMeta][]).map(([name, meta]) => {
+          const project = existing.find(p => p.repo_full_name.toLowerCase() === name.toLowerCase());
+          return [name, {...meta, showRepositoryLink: meta.showRepositoryLink ?? (project ? project.show_repository_link !== false : false)}];
+        })));
       }
     } catch (err: any) {
       console.error('Error loading repos in onboarding:', err);
@@ -216,6 +229,7 @@ interface SelectedRepoMeta {
       return;
     }
 
+    try { normalizeContactLink(contactUrl); } catch (err) { setContactError((err as Error).message); return; }
     setCurrentStep(2);
   };
 
@@ -245,16 +259,19 @@ interface SelectedRepoMeta {
     setSavingShowcase(true);
     setSaveError(null);
     try {
+      const normalizedContact = normalizeContactLink(contactUrl);
       // 1. Prepare repository mappings with direct URLs
       const repoPayloadMap: Record<string, {
         customTitle?: string;
         customDescription?: string;
+        showRepositoryLink?: boolean;
         repoUrl?: string;
       }> = {};
 
       for (const [repoFullName, meta] of Object.entries(selectedRepoMap) as [string, SelectedRepoMeta][]) {
         const repoObj = repos.find(r => r.full_name.toLowerCase() === repoFullName.toLowerCase());
         repoPayloadMap[repoFullName] = {
+          showRepositoryLink: meta.showRepositoryLink,
           customTitle: meta.customTitle || undefined,
           customDescription: meta.customDescription || undefined,
           repoUrl: repoObj?.html_url || `https://github.com/${repoFullName}`,
@@ -276,20 +293,18 @@ interface SelectedRepoMeta {
         full_name: fullName.trim() || profile.full_name || username.trim(),
         avatar_url: avatarUrl.trim() || profile.avatar_url,
         bio: aboutMe.trim().slice(0, 299) || profile.bio,
+        contact_url: normalizedContact,
         website_url: websiteUrl.trim() || null,
         is_onboarded: true,
         updated_at: new Date().toISOString(),
       };
 
+      await onComplete(updatedProfile);
+
       // 4. Clear draft from localStorage
       try {
         localStorage.removeItem(draftKey);
       } catch {}
-
-      setCurrentStep(4);
-      setTimeout(() => {
-        onComplete(updatedProfile);
-      }, 1200);
     } catch (err: any) {
       console.error('Error saving onboarding data:', err);
       setSaveError(err?.message || 'Failed to publish showcase. Please try again.');
@@ -497,6 +512,12 @@ interface SelectedRepoMeta {
               </p>
             </div>
 
+            <div>
+              <label htmlFor="onboarding-contact-input" className="block text-xs font-headline uppercase font-bold mb-1">Message me link or email (Optional)</label>
+              <input id="onboarding-contact-input" type="text" value={contactUrl} onChange={(e) => { setContactUrl(e.target.value); setContactError(null); }} onBlur={() => { try { normalizeContactLink(contactUrl); setContactError(null); } catch (err) { setContactError((err as Error).message); } }} aria-invalid={Boolean(contactError)} aria-describedby={contactError ? 'onboarding-contact-error' : undefined} placeholder="LinkedIn, social profile URL, or email" className="w-full px-2.5 py-1.5 paper-input text-xs min-h-[34px]" />
+              {contactError && <p id="onboarding-contact-error" role="alert" className="text-xs text-red-700">{contactError}</p>}
+            </div>
+
             {/* Actions */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-3 border-t border-dashed border-[#212121]">
               <div>
@@ -675,6 +696,11 @@ interface SelectedRepoMeta {
                             placeholder="Custom summary description for portfolio..."
                             className="w-full px-2 py-1 paper-input text-[11px] font-serif-body min-h-[28px]"
                           />
+                          <label className="block text-xs font-serif-body">
+                            <input type="checkbox" className="mr-2" checked={meta?.showRepositoryLink ?? false} onChange={(e) => setSelectedRepoMap({...selectedRepoMap, [repo.full_name]: {...meta, showRepositoryLink: e.target.checked}})} /> Show repository link
+                            <span className="block text-[11px] text-stone-600">Let visitors open this project's GitHub repository.</span>
+                          </label>
+
                         </div>
                       )}
                     </div>

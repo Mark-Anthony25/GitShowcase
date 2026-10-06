@@ -54,13 +54,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
 
+  const [showRepositoryLink, setShowRepositoryLink] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const selection = useRef({add: 0, edit: 0});
   useEffect(() => () => { if (screenshotPreview?.startsWith('blob:')) URL.revokeObjectURL(screenshotPreview); }, [screenshotPreview]);
   useEffect(() => {
-    selection.current.add++; setIsCompressing(false);
+    selection.current.add++; setIsCompressing(false); setShowRepositoryLink(false);
     if (!selectedRepoToAdd) { setScreenshotFile(null); setScreenshotPreview(null); }
   }, [selectedRepoToAdd]);
 
@@ -200,7 +201,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
       let newProj = await addProjectToShowcase({
         profileId: user.id, repoFullName: selectedRepoToAdd.full_name,
         repoUrl: selectedRepoToAdd.html_url, customTitle: customTitle.trim() || null,
-        customDescription: customDescription.trim() || null, token: githubToken,
+        customDescription: customDescription.trim() || null, showRepositoryLink, token: githubToken,
       });
       if (!newProj) throw new Error('Could not save project.');
       // Create the owned project first, so uploads cannot be unattached objects.
@@ -272,6 +273,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
       }
 
       const updated = await updateShowcaseProject(editingProject.id, {
+        show_repository_link: editingProject.show_repository_link !== false,
         custom_title: editingProject.custom_title,
         custom_description: editingProject.custom_description,
         screenshot_url: finalScreenshotUrl,
@@ -619,7 +621,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                           <span>Live</span>
                         </a>
                       )}
-                      <a
+                      {proj.show_repository_link !== false && (<a
                         href={proj.repo_url}
                         target="_blank"
                         rel="noreferrer"
@@ -628,7 +630,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                       >
                         <Github className="w-3.5 h-3.5" />
                         <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
-                      </a>
+                      </a>)}
                     </div>
                   </div>
                 </div>
@@ -799,7 +801,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
                     {/* Publish Action Button */}
                     <div className="pt-2 border-t border-dashed border-[#212121] flex items-center justify-between text-xs">
-                      <a
+                      {!showcased.some(p => p.repo_full_name.toLowerCase() === repo.full_name.toLowerCase() && p.show_repository_link === false) && (<a
                         href={repo.html_url}
                         target="_blank"
                         rel="noreferrer"
@@ -807,7 +809,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                       >
                         <span>GitHub</span>
                         <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
-                      </a>
+                      </a>)}
 
                       {isAlreadyShowcased ? (
                         <span className="paper-badge text-[10px] font-bold bg-emerald-100 text-emerald-950 border-emerald-700 py-0.5 px-2 flex items-center space-x-1">
@@ -947,6 +949,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                 />
                 <p className="text-[11px] font-mono text-stone-600">{customDescription.length} / 99 characters</p>
               </div>
+              <label className="block text-xs font-serif-body">
+                <input type="checkbox" checked={showRepositoryLink} onChange={(e) => setShowRepositoryLink(e.target.checked)} className="mr-2" /> Show repository link
+                <span className="block text-[11px] text-stone-600 mt-1">Let visitors open this project's GitHub repository.</span>
+              </label>
+
 
               <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-dashed border-[#212121]">
                 <button
@@ -1080,6 +1087,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                 />
                 <p className="text-[11px] font-mono text-stone-600">{(editingProject.custom_description || '').length} / 99 characters</p>
               </div>
+              <label className="block text-xs font-serif-body">
+                <input type="checkbox" checked={editingProject.show_repository_link !== false} onChange={(e) => setEditingProject({...editingProject, show_repository_link: e.target.checked})} className="mr-2" /> Show repository link
+                <span className="block text-[11px] text-stone-600 mt-1">Let visitors open this project's GitHub repository.</span>
+              </label>
+
 
               <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-dashed border-[#212121]">
                 <button
@@ -1254,7 +1266,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                     <span>Visit site</span>
                   </a>
                 )}
-                <a
+                {previewProject.show_repository_link !== false && (<a
                   href={previewProject.repo_url}
                   target="_blank"
                   rel="noreferrer"
@@ -1262,7 +1274,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                 >
                   <Github className="w-3.5 h-3.5" />
                   <span>View on GitHub</span>
-                </a>
+                </a>)}
               </div>
             </div>
           </div>

@@ -1,3 +1,4 @@
+import { normalizeContactLink } from './contactLink';
 import { deleteProjectScreenshot } from './imageCompression';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { Profile, ShowcasedProject, StudentShowcaseData, PublicDirectoryPage, RepoLiveStats } from '../types';
@@ -84,7 +85,7 @@ function cachedStats(row: any): RepoLiveStats | undefined {
 
 function publicItem(row: any): StudentShowcaseData {
   const p = row.profiles;
-  return { profile: { id: p.id, github_username: p.github_username, full_name: p.full_name, headline: p.headline || null, avatar_url: p.avatar_url, bio: p.bio, website_url: p.website_url || null, program: p.program, year_level: p.year_level, is_onboarded: Boolean(p.is_onboarded), created_at: p.created_at, updated_at: p.updated_at }, projects: [{ id: row.id, profile_id: row.profile_id, repo_full_name: row.repo_full_name, repo_key: row.repo_key, repo_url: row.repo_url, custom_title: row.custom_title, custom_description: row.custom_description, screenshot_url: row.screenshot_url || null, display_order: row.display_order, added_at: row.added_at, live_stats: cachedStats(row) }] };
+  return { profile: { id: p.id, github_username: p.github_username, full_name: p.full_name, headline: p.headline || null, avatar_url: p.avatar_url, bio: p.bio, website_url: p.website_url || null, contact_url: p.contact_url || null, program: p.program, year_level: p.year_level, is_onboarded: Boolean(p.is_onboarded), created_at: p.created_at, updated_at: p.updated_at }, projects: [{ id: row.id, profile_id: row.profile_id, repo_full_name: row.repo_full_name, repo_key: row.repo_key, repo_url: row.repo_url, show_repository_link: row.show_repository_link, custom_title: row.custom_title, custom_description: row.custom_description, screenshot_url: row.screenshot_url || null, display_order: row.display_order, added_at: row.added_at, live_stats: cachedStats(row) }] };
 }
 
 export async function getPublicDirectoryPage({ query = '', program = 'all', offset = 0, limit = 24 }: { query?: string; program?: string; offset?: number; limit?: number }): Promise<PublicDirectoryPage> {
@@ -93,7 +94,7 @@ export async function getPublicDirectoryPage({ query = '', program = 'all', offs
     const projects = getDemoStudentsShowcase().flatMap(s => s.projects.map(project => ({ profile: s.profile, projects: [project] })));
     return { items: projects.slice(offset, offset + take), hasMore: projects.length > offset + take };
   }
-  let request: any = supabase.from('showcased_projects').select('id,profile_id,repo_full_name,repo_key,repo_url,custom_title,custom_description,screenshot_url,display_order,added_at,profiles!inner(*)').order('added_at', { ascending: false }).order('id', { ascending: false }).range(offset, offset + take);
+  let request: any = supabase.from('showcased_projects').select('id,profile_id,repo_full_name,repo_key,repo_url,show_repository_link,custom_title,custom_description,screenshot_url,display_order,added_at,profiles!inner(*)').order('added_at', { ascending: false }).order('id', { ascending: false }).range(offset, offset + take);
   if (program !== 'all') request = request.eq('profiles.program', program);
   if (query.trim()) request = request.or(`repo_full_name.ilike.%${query.trim()}%,custom_title.ilike.%${query.trim()}%,custom_description.ilike.%${query.trim()}%`);
   const { data, error } = await request;
@@ -479,6 +480,7 @@ export async function addProjectToShowcase(params: {
   profileId: string;
   repoFullName: string;
   repoUrl: string;
+  showRepositoryLink?: boolean;
   customTitle?: string | null;
   customDescription?: string | null;
   screenshotUrl?: string | null;
@@ -496,6 +498,7 @@ export async function addProjectToShowcase(params: {
         p_custom_title: params.customTitle ?? null,
         p_custom_description: params.customDescription ?? null,
         p_screenshot_url: params.screenshotUrl ?? null,
+        p_show_repository_link: params.showRepositoryLink ?? null,
       });
       if (!error && data) {
         createdProject = data as ShowcasedProject;
@@ -549,6 +552,7 @@ export async function addProjectToShowcase(params: {
 
         const updatePayload: Partial<ShowcasedProject> = {
           repo_url: params.repoUrl,
+          show_repository_link: params.showRepositoryLink ?? (primaryRow.show_repository_link !== false),
           custom_title: params.customTitle !== undefined ? (params.customTitle || null) : primaryRow.custom_title,
           custom_description: params.customDescription !== undefined ? (params.customDescription || null) : primaryRow.custom_description,
           screenshot_url: params.screenshotUrl !== undefined ? (params.screenshotUrl || null) : primaryRow.screenshot_url,
@@ -572,6 +576,7 @@ export async function addProjectToShowcase(params: {
           profile_id: params.profileId,
           repo_full_name: normalizedRepoName,
           repo_url: params.repoUrl,
+          show_repository_link: params.showRepositoryLink ?? false,
           custom_title: params.customTitle || null,
           custom_description: params.customDescription || null,
           screenshot_url: params.screenshotUrl || null,
@@ -625,6 +630,7 @@ export async function addProjectToShowcase(params: {
     projects[existingIdx] = {
       ...projects[existingIdx],
       repo_url: params.repoUrl,
+      show_repository_link: params.showRepositoryLink ?? (projects[existingIdx].show_repository_link !== false),
       custom_title: params.customTitle !== undefined ? (params.customTitle || null) : projects[existingIdx].custom_title,
       custom_description: params.customDescription !== undefined ? (params.customDescription || null) : projects[existingIdx].custom_description,
       screenshot_url: params.screenshotUrl !== undefined ? (params.screenshotUrl || null) : projects[existingIdx].screenshot_url,
@@ -638,6 +644,7 @@ export async function addProjectToShowcase(params: {
       profile_id: params.profileId,
       repo_full_name: normalizedRepoName,
       repo_url: params.repoUrl,
+      show_repository_link: params.showRepositoryLink ?? false,
       custom_title: params.customTitle || null,
       custom_description: params.customDescription || null,
       screenshot_url: params.screenshotUrl || null,
@@ -679,6 +686,7 @@ export async function syncStudentShowcaseProjects(
     customTitle?: string;
     customDescription?: string;
     repoUrl?: string;
+    showRepositoryLink?: boolean;
   }>
 ): Promise<ShowcasedProject[]> {
   const currentProjects = await getStudentShowcasedProjects(profileId, undefined, true);
@@ -698,6 +706,7 @@ export async function syncStudentShowcaseProjects(
       profileId,
       repoFullName: repoFullName.trim(),
       repoUrl: meta.repoUrl || `https://github.com/${repoFullName.trim()}`,
+      showRepositoryLink: meta.showRepositoryLink,
       customTitle: meta.customTitle || null,
       customDescription: meta.customDescription || null,
     });
@@ -777,6 +786,7 @@ export async function updateStudentProfile(
   profileId: string,
   updates: Partial<Profile>
 ): Promise<Profile | null> {
+  if (updates.contact_url !== undefined) updates = {...updates, contact_url: normalizeContactLink(updates.contact_url)};
   if (typeof updates.bio === 'string') updates = {...updates,bio:updates.bio.slice(0,299)};
   if (!profileId) {
     console.error('updateStudentProfile called without profileId');
@@ -804,6 +814,7 @@ export async function updateStudentProfile(
         headline: updates.headline !== undefined ? updates.headline : (existingProfile?.headline ?? null),
         avatar_url: updates.avatar_url !== undefined ? updates.avatar_url : (existingProfile?.avatar_url ?? null),
         bio: updates.bio !== undefined ? updates.bio : (existingProfile?.bio ?? null),
+        contact_url: updates.contact_url !== undefined ? updates.contact_url : (existingProfile?.contact_url ?? null),
         website_url: updates.website_url !== undefined ? updates.website_url : (existingProfile?.website_url ?? null),
         program: updates.program !== undefined ? updates.program : (existingProfile?.program ?? null),
         year_level: updates.year_level !== undefined ? updates.year_level : (existingProfile?.year_level ?? null),
@@ -914,7 +925,7 @@ export async function updateStudentProfile(
         profiles[profileId] = finalProfile;
       }
     }
-    saveLocalData(profiles, projects);
+    if (!saveLocalData(profiles, projects)) throw new Error('Could not save profile: browser storage is full or unavailable.');
   }
 
   // Invalidate all related caches with complete identifiers

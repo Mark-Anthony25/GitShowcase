@@ -6,6 +6,7 @@ export interface Profile {
   avatar_url: string | null;
   bio: string | null; // Max 299 characters for About Me
   website_url?: string | null;
+  contact_url?: string | null;
   program: string | null;
   year_level: string | null;
   is_onboarded?: boolean;
@@ -53,6 +54,7 @@ export interface ShowcasedProject {
   repo_full_name: string;
   repo_key?: string;
   repo_url: string;
+  show_repository_link?: boolean;
   custom_title: string | null;
   custom_description: string | null;
   screenshot_url?: string | null;

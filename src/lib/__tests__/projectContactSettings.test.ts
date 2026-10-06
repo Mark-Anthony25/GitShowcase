@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import { addProjectToShowcase, updateShowcaseProject, getStudentShowcasedProjects, syncStudentShowcaseProjects, updateStudentProfile } from '../showcaseStore';
+
+const profileId = `settings-${Date.now()}`;
+const project = await addProjectToShowcase({ profileId, repoFullName: 'test/settings', repoUrl: 'https://github.com/test/settings' });
+assert.equal(project?.show_repository_link, false);
+await updateShowcaseProject(project!.id, { show_repository_link: true }, profileId);
+await syncStudentShowcaseProjects(profileId, { 'test/settings': { customTitle: 'Edited' } });
+assert.equal((await getStudentShowcasedProjects(profileId))[0].show_repository_link, true);
+await syncStudentShowcaseProjects(profileId, { 'test/settings': { showRepositoryLink: false } });
+assert.equal((await getStudentShowcasedProjects(profileId))[0].show_repository_link, false);
+await updateShowcaseProject(project!.id, { show_repository_link: undefined }, profileId);
+await syncStudentShowcaseProjects(profileId, { 'test/settings': { customTitle: 'Legacy edit' } });
+assert.equal((await getStudentShowcasedProjects(profileId))[0].show_repository_link, true, 'legacy projects keep links on omitted updates');
+const profile = await updateStudentProfile(profileId, { github_username: profileId, contact_url: 'creator@example.com' });
+assert.equal(profile?.contact_url, 'mailto:creator@example.com');
+assert.equal((await updateStudentProfile(profileId, { full_name: 'Creator' }))?.contact_url, 'mailto:creator@example.com');
+assert.equal((await updateStudentProfile(profileId, { contact_url: '' }))?.contact_url, null);
+await assert.rejects(() => updateStudentProfile(profileId, { contact_url: 'javascript:alert(1)' }), /valid/);
+Object.defineProperty(globalThis, 'window', { value: {}, configurable: true });
+Object.defineProperty(globalThis, 'localStorage', { value: { getItem: () => null, setItem: () => { throw new Error('Storage full'); } }, configurable: true });
+await assert.rejects(() => updateStudentProfile(profileId, { contact_url: 'creator@example.com' }), /storage/i);
+console.log('Repository visibility and contact persistence passed');
