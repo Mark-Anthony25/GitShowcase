@@ -33,7 +33,6 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   const [editContactUrl, setEditContactUrl] = useState('');
   const [editWebsiteUrl, setEditWebsiteUrl] = useState('');
   const [editTechStack, setEditTechStack] = useState<string[]>([]);
-  const [techStackPaused, setTechStackPaused] = useState(false);
   const [techRepeatCount, setTechRepeatCount] = useState(1);
   const techViewport = useRef<HTMLDivElement>(null);
   const techGroup = useRef<HTMLUListElement>(null);
@@ -350,10 +349,9 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                   <div className="paper-tech-stack pt-1.5 space-y-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[10px] font-sketch uppercase font-bold text-stone-600">Tech Stack</span>
-                      <button type="button" className="paper-button paper-tech-control text-[10px] py-1 px-2 min-h-[28px]" aria-label={`${techStackPaused ? 'Resume' : 'Pause'} tech stack animation`} aria-pressed={techStackPaused} onClick={() => setTechStackPaused(!techStackPaused)}>{techStackPaused ? 'Resume' : 'Pause'}</button>
                     </div>
                     <div ref={techViewport} className="paper-tech-viewport">
-                      <div className="paper-tech-track" style={{animationPlayState: techStackPaused ? 'paused' : undefined}}>
+                      <div className="paper-tech-track">
                         {[false, true].map(duplicate => (
                           <ul ref={duplicate ? undefined : techGroup} key={String(duplicate)} className="paper-tech-group" aria-label={duplicate ? undefined : 'Tech stack'} aria-hidden={duplicate || undefined}>
                             {Array.from({length: techRepeatCount}, (_, repeat) => techStack.map(tech => <li key={`${repeat}-${tech}`} aria-hidden={repeat > 0 || undefined} className="paper-badge font-mono text-[10px] font-bold bg-stone-200 text-stone-800">{tech}</li>))}
