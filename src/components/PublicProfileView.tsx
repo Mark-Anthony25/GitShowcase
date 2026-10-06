@@ -1,6 +1,6 @@
 import { TechStackEditor } from './TechStackEditor';
 import { normalizeContactLink } from '../lib/contactLink';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Github, Star, ExternalLink, Share2, Check, ArrowLeft, ArrowRight,
   Code2, Globe, AlertCircle, RefreshCw, FolderGit2, Edit3, 
@@ -34,6 +34,9 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   const [editWebsiteUrl, setEditWebsiteUrl] = useState('');
   const [editTechStack, setEditTechStack] = useState<string[]>([]);
   const [techStackPaused, setTechStackPaused] = useState(false);
+  const [techRepeatCount, setTechRepeatCount] = useState(1);
+  const techViewport = useRef<HTMLDivElement>(null);
+  const techGroup = useRef<HTMLUListElement>(null);
   const [editBio, setEditBio] = useState('');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
@@ -43,6 +46,20 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
   try { contactHref = normalizeContactLink(data?.profile.contact_url); } catch {}
 
   const techStack = data?.profile.tech_stack ?? [];
+
+  useEffect(() => {
+    const viewport = techViewport.current;
+    const group = techGroup.current;
+    if (!viewport || !group || !techStack.length) return;
+    const resize = () => {
+      const width = Array.from<Element>(group.children).slice(0, techStack.length).reduce((sum, badge) => sum + badge.getBoundingClientRect().width, 0);
+      if (width) setTechRepeatCount(Math.max(1, Math.ceil(viewport.clientWidth / width)));
+    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(viewport); observer.observe(group);
+    resize();
+    return () => observer.disconnect();
+  }, [techStack, loading]);
 
   useEffect(() => {
     loadShowcase(true);
@@ -335,11 +352,11 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                       <span className="text-[10px] font-sketch uppercase font-bold text-stone-600">Tech Stack</span>
                       <button type="button" className="paper-button paper-tech-control text-[10px] py-1 px-2 min-h-[28px]" aria-label={`${techStackPaused ? 'Resume' : 'Pause'} tech stack animation`} aria-pressed={techStackPaused} onClick={() => setTechStackPaused(!techStackPaused)}>{techStackPaused ? 'Resume' : 'Pause'}</button>
                     </div>
-                    <div className="paper-tech-viewport">
+                    <div ref={techViewport} className="paper-tech-viewport">
                       <div className="paper-tech-track" style={{animationPlayState: techStackPaused ? 'paused' : undefined}}>
                         {[false, true].map(duplicate => (
-                          <ul key={String(duplicate)} className="paper-tech-group" aria-label={duplicate ? undefined : 'Tech stack'} aria-hidden={duplicate || undefined}>
-                            {techStack.map(tech => <li key={tech} className="paper-badge font-mono text-[10px] font-bold bg-stone-200 text-stone-800">{tech}</li>)}
+                          <ul ref={duplicate ? undefined : techGroup} key={String(duplicate)} className="paper-tech-group" aria-label={duplicate ? undefined : 'Tech stack'} aria-hidden={duplicate || undefined}>
+                            {Array.from({length: techRepeatCount}, (_, repeat) => techStack.map(tech => <li key={`${repeat}-${tech}`} aria-hidden={repeat > 0 || undefined} className="paper-badge font-mono text-[10px] font-bold bg-stone-200 text-stone-800">{tech}</li>))}
                           </ul>
                         ))}
                       </div>

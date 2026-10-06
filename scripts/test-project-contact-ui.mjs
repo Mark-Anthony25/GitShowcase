@@ -54,8 +54,14 @@ try {
     assert.deepEqual(actions.map(text => text.trim()), ['Portfolio', 'Message me']);
     assert.equal(await page.getByRole('link', { name: 'Portfolio', exact: true }).evaluate(el => el.classList.contains('paper-button')), true);
     const techList = page.getByRole('list', { name: 'Tech stack', exact: true });
-    assert.deepEqual(await techList.locator('li').allTextContents(), ['React', 'Custom tech']);
+    assert.deepEqual(await techList.getByRole('listitem').allTextContents(), ['React', 'Custom tech']);
     assert.equal(await page.locator('.paper-tech-track').evaluate(el => getComputedStyle(el).animationDuration), '24s');
+    await page.waitForFunction(() => {
+      const group = document.querySelector('.paper-tech-group');
+      return group.getBoundingClientRect().width >= document.querySelector('.paper-tech-viewport').clientWidth;
+    });
+    const blankSpace = await page.locator('.paper-tech-group').first().evaluate(el => el.getBoundingClientRect().width - [...el.children].reduce((sum, badge) => sum + badge.getBoundingClientRect().width, 0));
+    assert.ok(Math.abs(blankSpace) < 1, `Badge loop must have no gaps; found ${blankSpace}px`);
     await page.getByRole('button', { name: 'Pause tech stack animation' }).click();
     assert.equal(await page.locator('.paper-tech-track').evaluate(el => getComputedStyle(el).animationPlayState), 'paused');
     await page.getByRole('button', { name: 'Resume tech stack animation' }).click();
@@ -107,7 +113,11 @@ try {
   await open('view=PublicProfileView&owner=true');
   await page.getByRole('button', { name: /Edit Profile/i }).click();
   await page.getByRole('button', { name: 'Remove React', exact: true }).click();
-  assert.equal(await page.locator('datalist option').count(), 12);
+  assert.equal(await page.locator('datalist option').count(), 0, 'empty input must not suggest technologies');
+  await page.getByLabel('Tech Stack (Optional)', { exact: true }).fill('re');
+  assert.deepEqual(await page.locator('datalist option').evaluateAll(options => options.map(option => option.value)), ['React']);
+  await page.getByLabel('Tech Stack (Optional)', { exact: true }).fill('my-custom-tech');
+  assert.equal(await page.locator('datalist option').count(), 0);
   await page.getByLabel('Tech Stack (Optional)', { exact: true }).fill('x'.repeat(31));
   await page.getByLabel('Tech Stack (Optional)', { exact: true }).press('Enter');
   await page.getByText('Each technology must be 30 characters or fewer.').waitFor();
@@ -125,7 +135,7 @@ try {
   assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('gitshowcase_profiles')).creator.tech_stack), ['Custom tech', 'Rust']);
   await open('view=PublicProfileView&owner=true&persist=true');
   assert.equal(await page.getByRole('link', { name: 'Message me' }).getAttribute('href'), 'https://linkedin.com/in/creator');
-  assert.deepEqual(await page.getByRole('list', { name: 'Tech stack', exact: true }).locator('li').allTextContents(), ['Custom tech', 'Rust']);
+  assert.deepEqual(await page.getByRole('list', { name: 'Tech stack', exact: true }).getByRole('listitem').allTextContents(), ['Custom tech', 'Rust']);
   await page.getByRole('button', { name: 'Edit Profile' }).click();
   await page.getByRole('button', { name: 'Remove Rust', exact: true }).click();
   await page.getByRole('button', { name: 'Remove Custom tech', exact: true }).click();
