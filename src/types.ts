@@ -52,9 +52,11 @@ export interface GitHubUserData {
 export interface ShowcasedProject {
   id: string;
   profile_id: string;
-  repo_full_name: string;
+  source?: 'github' | 'manual'; // Older cached records default to GitHub.
+  deployed_url?: string | null;
+  repo_full_name: string | null;
   repo_key?: string;
-  repo_url: string;
+  repo_url: string | null;
   show_repository_link?: boolean;
   custom_title: string | null;
   custom_description: string | null;

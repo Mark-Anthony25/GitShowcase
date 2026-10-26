@@ -1,5 +1,6 @@
 import { normalizeTechStack } from './techStack';
 import { normalizeContactLink } from './contactLink';
+import { normalizeProjectUrl } from './projectUrl';
 import { deleteProjectScreenshot } from './imageCompression';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { Profile, ShowcasedProject, StudentShowcaseData, PublicDirectoryPage, RepoLiveStats } from '../types';
@@ -64,8 +65,8 @@ export function deduplicateProjectsList(projects: ShowcasedProject[]): Showcased
   const seen = new Set<string>();
   const deduped: ShowcasedProject[] = [];
   for (const p of projects) {
-    if (!p || !p.profile_id || !p.repo_full_name) continue;
-    const key = `${p.profile_id}::${p.repo_full_name.trim().toLowerCase()}`;
+    if (!p || !p.profile_id || (p.source === 'manual' ? !p.id : !p.repo_full_name)) continue;
+    const key = `${p.profile_id}::${p.source === 'manual' ? p.id : p.repo_full_name.trim().toLowerCase()}`;
     if (!seen.has(key)) {
       seen.add(key);
       deduped.push(p);
@@ -86,7 +87,7 @@ function cachedStats(row: any): RepoLiveStats | undefined {
 
 function publicItem(row: any): StudentShowcaseData {
   const p = row.profiles;
-  return { profile: { id: p.id, github_username: p.github_username, full_name: p.full_name, headline: p.headline || null, avatar_url: p.avatar_url, bio: p.bio, website_url: p.website_url || null, contact_url: p.contact_url || null, tech_stack: p.tech_stack || [], program: p.program, year_level: p.year_level, is_onboarded: Boolean(p.is_onboarded), created_at: p.created_at, updated_at: p.updated_at }, projects: [{ id: row.id, profile_id: row.profile_id, repo_full_name: row.repo_full_name, repo_key: row.repo_key, repo_url: row.repo_url, show_repository_link: row.show_repository_link, custom_title: row.custom_title, custom_description: row.custom_description, screenshot_url: row.screenshot_url || null, display_order: row.display_order, added_at: row.added_at, live_stats: cachedStats(row) }] };
+  return { profile: { id: p.id, github_username: p.github_username, full_name: p.full_name, headline: p.headline || null, avatar_url: p.avatar_url, bio: p.bio, website_url: p.website_url || null, contact_url: p.contact_url || null, tech_stack: p.tech_stack || [], program: p.program, year_level: p.year_level, is_onboarded: Boolean(p.is_onboarded), created_at: p.created_at, updated_at: p.updated_at }, projects: [{ id: row.id, profile_id: row.profile_id, source: row.source || 'github', deployed_url: row.deployed_url || null, repo_full_name: row.repo_full_name, repo_key: row.repo_key, repo_url: row.repo_url, show_repository_link: row.show_repository_link, custom_title: row.custom_title, custom_description: row.custom_description, screenshot_url: row.screenshot_url || null, display_order: row.display_order, added_at: row.added_at, live_stats: cachedStats(row) }] };
 }
 
 export async function getPublicDirectoryPage({ query = '', program = 'all', offset = 0, limit = 24 }: { query?: string; program?: string; offset?: number; limit?: number }): Promise<PublicDirectoryPage> {
@@ -95,16 +96,16 @@ export async function getPublicDirectoryPage({ query = '', program = 'all', offs
     const projects = getDemoStudentsShowcase().flatMap(s => s.projects.map(project => ({ profile: s.profile, projects: [project] })));
     return { items: projects.slice(offset, offset + take), hasMore: projects.length > offset + take };
   }
-  let request: any = supabase.from('showcased_projects').select('id,profile_id,repo_full_name,repo_key,repo_url,show_repository_link,custom_title,custom_description,screenshot_url,display_order,added_at,profiles!inner(*)').order('added_at', { ascending: false }).order('id', { ascending: false }).range(offset, offset + take);
+  let request: any = supabase.from('showcased_projects').select('id,profile_id,source,deployed_url,repo_full_name,repo_key,repo_url,show_repository_link,custom_title,custom_description,screenshot_url,display_order,added_at,profiles!inner(*)').order('added_at', { ascending: false }).order('id', { ascending: false }).range(offset, offset + take);
   if (program !== 'all') request = request.eq('profiles.program', program);
   if (query.trim()) request = request.or(`repo_full_name.ilike.%${query.trim()}%,custom_title.ilike.%${query.trim()}%,custom_description.ilike.%${query.trim()}%`);
   const { data, error } = await request;
   if (error) { isSchemaError(error); throw new ShowcaseLoadError('Unable to load projects. Please try again.'); }
   const rows = (data || []) as any[];
-  const keys = rows.map(row => normalizeRepoKey(row.repo_key || row.repo_full_name));
+  const keys = rows.filter(row => row.source !== 'manual').map(row => normalizeRepoKey(row.repo_key || row.repo_full_name));
   const { data: statsRows } = keys.length ? await supabase.from('repo_stats_cache').select('repo_full_name,stars,forks,language,topics,last_commit_at,description,homepage').in('repo_full_name', keys) : { data: [] };
   const stats = new Map((statsRows || []).map((row: any) => [normalizeRepoKey(row.repo_full_name), row]));
-  rows.forEach(row => { row.repo_stats_cache = stats.get(normalizeRepoKey(row.repo_key || row.repo_full_name)); });
+  rows.forEach(row => { if (row.source !== 'manual') row.repo_stats_cache = stats.get(normalizeRepoKey(row.repo_key || row.repo_full_name)); });
   const items = rows.slice(0, take).map(publicItem);
   const enrichedItems = await Promise.all(
     items.map(async (item) => {
@@ -224,11 +225,12 @@ export async function enrichProjectsWithLiveStats(
 
   return await Promise.all(
     projects.map(async (p) => {
+      if (p.source === 'manual') return p;
       if (p.live_stats && (p.live_stats.language || p.live_stats.stars > 0)) {
         return p;
       }
       const local = localProjects.find(
-        lp => normalizeRepoKey(lp.repo_full_name) === normalizeRepoKey(p.repo_full_name)
+        lp => lp.source !== 'manual' && normalizeRepoKey(lp.repo_full_name) === normalizeRepoKey(p.repo_full_name)
       );
       if (local?.live_stats && (local.live_stats.language || local.live_stats.stars > 0)) {
         return { ...p, live_stats: local.live_stats };
@@ -479,8 +481,11 @@ export const MAX_SHOWCASE_PROJECTS = 3;
 
 export async function addProjectToShowcase(params: {
   profileId: string;
-  repoFullName: string;
-  repoUrl: string;
+  source?: 'github' | 'manual';
+  projectId?: string;
+  deployedUrl?: string | null;
+  repoFullName?: string | null;
+  repoUrl?: string | null;
   showRepositoryLink?: boolean;
   customTitle?: string | null;
   customDescription?: string | null;
@@ -488,8 +493,45 @@ export async function addProjectToShowcase(params: {
   token?: string | null;
 }): Promise<ShowcasedProject | null> {
   if (typeof params.customDescription === 'string') params = {...params,customDescription:params.customDescription.slice(0,99)};
+  if (params.source === 'manual') {
+    const title = params.customTitle?.trim();
+    if (!title) throw new Error('Enter a project title.');
+    const deployedUrl = normalizeProjectUrl(params.deployedUrl);
+    const id = params.projectId || crypto.randomUUID();
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.rpc('save_showcased_project', {
+        p_repo_full_name: null, p_repo_url: null, p_source: 'manual', p_project_id: id,
+        p_deployed_url: deployedUrl, p_custom_title: title,
+        p_custom_description: params.customDescription ?? null, p_screenshot_url: params.screenshotUrl ?? null,
+        p_show_repository_link: false,
+      });
+      if (error) {
+        if (error.message?.includes('PROJECT_LIMIT_REACHED')) throw new Error('PROJECT_LIMIT_REACHED');
+        throw new ShowcaseLoadError('Could not save manual project. Check that the latest database migration is applied, then retry.');
+      }
+      if (!data) throw new ShowcaseLoadError('Could not save project. Please retry.');
+      invalidateShowcaseCaches(params.profileId);
+      return data as ShowcasedProject;
+    }
+    const { profiles, projects } = getLocalData();
+    const existing = projects.find(p => p.id === id);
+    if (existing && (existing.profile_id !== params.profileId || existing.source !== 'manual')) throw new Error('Project owner or source does not match.');
+    if (!existing && projects.filter(p => p.profile_id === params.profileId).length >= MAX_SHOWCASE_PROJECTS) throw new Error('PROJECT_LIMIT_REACHED');
+    const project: ShowcasedProject = {
+      ...existing, id, profile_id: params.profileId, source: 'manual', deployed_url: deployedUrl,
+      repo_full_name: null, repo_url: null, repo_key: `manual:${id}`, show_repository_link: false,
+      custom_title: title, custom_description: params.customDescription ?? existing?.custom_description ?? null,
+      screenshot_url: params.screenshotUrl ?? existing?.screenshot_url ?? null,
+      display_order: existing?.display_order ?? projects.filter(p => p.profile_id === params.profileId).length,
+      added_at: existing?.added_at ?? new Date().toISOString(),
+    };
+    if (!saveLocalData(profiles, [project, ...projects.filter(p => p.id !== id)])) throw new Error('Browser storage is full. Free some space and retry.');
+    invalidateShowcaseCaches(params.profileId);
+    return project;
+  }
   let createdProject: ShowcasedProject | null = null;
-  const normalizedRepoName = params.repoFullName.trim();
+  const normalizedRepoName = params.repoFullName?.trim() || '';
+  if (!normalizedRepoName.includes('/') || !params.repoUrl) throw new Error('INVALID_REPOSITORY');
 
   if (isSupabaseConfigured && supabase) {
     try {
@@ -527,7 +569,7 @@ export async function addProjectToShowcase(params: {
   // Count existing BEFORE writing. Allow if this repo is already showcased (it's an update).
   const existing = await getStudentShowcasedProjects(params.profileId);
   const alreadyIn = existing.some(
-    p => p.repo_full_name.trim().toLowerCase() === normalizedRepoName.toLowerCase()
+    p => p.source !== 'manual' && p.repo_full_name.trim().toLowerCase() === normalizedRepoName.toLowerCase()
   );
   if (!alreadyIn && existing.length >= MAX_SHOWCASE_PROJECTS) {
     throw new Error(`PROJECT_LIMIT_REACHED`);
@@ -624,7 +666,7 @@ export async function addProjectToShowcase(params: {
   const { profiles, projects } = getLocalData();
   const normalizedKey = `${params.profileId}::${normalizedRepoName.toLowerCase()}`;
   const existingIdx = projects.findIndex(
-    p => `${p.profile_id}::${p.repo_full_name.trim().toLowerCase()}` === normalizedKey
+    p => p.source !== 'manual' && `${p.profile_id}::${p.repo_full_name.trim().toLowerCase()}` === normalizedKey
   );
 
   if (existingIdx >= 0) {
@@ -641,6 +683,7 @@ export async function addProjectToShowcase(params: {
     }
   } else {
     const newProj: ShowcasedProject = {
+      source: 'github', deployed_url: null,
       id: createdProject?.id || `local-proj-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       profile_id: params.profileId,
       repo_full_name: normalizedRepoName,
@@ -692,16 +735,17 @@ export async function syncStudentShowcaseProjects(
 ): Promise<ShowcasedProject[]> {
   const currentProjects = await getStudentShowcasedProjects(profileId, undefined, true);
   const selectedKeys = new Set(Object.keys(selectedReposMap).map(k => k.trim().toLowerCase()));
+  if (selectedKeys.size + currentProjects.filter(p => p.source === 'manual').length > MAX_SHOWCASE_PROJECTS) throw new Error('PROJECT_LIMIT_REACHED');
 
   // 1. Remove projects that were unselected
   for (const existing of currentProjects) {
-    if (!selectedKeys.has(existing.repo_full_name.trim().toLowerCase())) {
+    if (existing.source !== 'manual' && !selectedKeys.has(existing.repo_full_name.trim().toLowerCase())) {
       await removeProjectFromShowcase(existing.id, profileId);
     }
   }
 
   // 2. Add or update currently selected projects
-  const result: ShowcasedProject[] = [];
+  const result: ShowcasedProject[] = currentProjects.filter(p => p.source === 'manual');
   for (const [repoFullName, meta] of Object.entries(selectedReposMap)) {
     const saved = await addProjectToShowcase({
       profileId,
@@ -748,6 +792,8 @@ export async function updateShowcaseProject(
   profileId?: string
 ): Promise<ShowcasedProject | null> {
   if (typeof updates.custom_description === 'string') updates = {...updates,custom_description:updates.custom_description.slice(0,99)};
+  if (updates.source !== undefined || updates.id !== undefined || updates.profile_id !== undefined || updates.repo_key !== undefined) throw new Error('Project identity and source cannot be changed.');
+  if (updates.deployed_url !== undefined) updates = { ...updates, deployed_url: normalizeProjectUrl(updates.deployed_url) };
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase
@@ -772,7 +818,16 @@ export async function updateShowcaseProject(
   const { profiles, projects } = getLocalData();
   const index = projects.findIndex(p => p.id === projectId);
   if (index >= 0) {
-    projects[index] = { ...projects[index], ...updates };
+    const current = projects[index];
+    if (profileId && current.profile_id !== profileId) throw new Error('Project owner does not match.');
+    const updated = { ...current, ...updates };
+    if (current.source === 'manual') {
+      if (!updated.custom_title?.trim()) throw new Error('Enter a project title.');
+      if (updated.repo_full_name || updated.repo_url || updated.show_repository_link) throw new Error('Manual projects cannot share a repository.');
+      updated.deployed_url = normalizeProjectUrl(updated.deployed_url);
+      updated.custom_title = updated.custom_title.trim();
+    }
+    projects[index] = updated;
     if (!saveLocalData(profiles, projects)) throw new Error('Browser storage is full. Remove a local project or use the GitHub preview.');
     invalidateShowcaseCaches(profileId);
     return projects[index];

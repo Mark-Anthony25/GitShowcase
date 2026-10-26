@@ -1,3 +1,4 @@
+import { ProjectCover } from './ProjectCover';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Github, Plus, Trash2, Edit3, Star, GitFork, ExternalLink, 
@@ -7,6 +8,7 @@ import {
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
 import { getStarCountLabel } from '../lib/projectStats';
+import { normalizeProjectUrl } from '../lib/projectUrl';
 import { GitHubRepoItem, ShowcasedProject } from '../types';
 import { fetchUserRepos, getValidToken } from '../lib/github';
 import { 
@@ -46,6 +48,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
   // Modal for adding repo with custom metadata
   const [selectedRepoToAdd, setSelectedRepoToAdd] = useState<GitHubRepoItem | null>(null);
+  const [showAddChoice, setShowAddChoice] = useState(false);
+  const [manualProjectId, setManualProjectId] = useState<string | null>(null);
+  const [deployedUrl, setDeployedUrl] = useState('');
   const [customTitle, setCustomTitle] = useState('');
   const [customDescription, setCustomDescription] = useState('');
   const [addingInProgress, setAddingInProgress] = useState(false);
@@ -63,7 +68,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   useEffect(() => {
     selection.current.add++; setIsCompressing(false); setShowRepositoryLink(false);
     if (!selectedRepoToAdd) { setScreenshotFile(null); setScreenshotPreview(null); }
-  }, [selectedRepoToAdd]);
+  }, [selectedRepoToAdd, manualProjectId]);
 
   // Editing existing showcase project
   const [editingProject, setEditingProject] = useState<ShowcasedProject | null>(null);
@@ -150,12 +155,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   };
 
   const handleOpenAddModal = (repo: GitHubRepoItem) => {
+    setManualProjectId(null);
     setSelectedRepoToAdd(repo);
     setCustomTitle(repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
     setCustomDescription((repo.description || '').slice(0,99));
     setAddError(null); setUploadProgress(null);
     setScreenshotFile(null);
     setScreenshotPreview(null);
+  };
+
+  const closeAddModal = () => { setSelectedRepoToAdd(null); setManualProjectId(null); };
+  const handleOpenManualProject = () => {
+    setShowAddChoice(false); setSelectedRepoToAdd(null); setManualProjectId(crypto.randomUUID());
+    setCustomTitle(''); setCustomDescription(''); setDeployedUrl('');
+    setAddError(null); setUploadProgress(null); setScreenshotFile(null); setScreenshotPreview(null);
   };
 
   const handleLocalPreviewError = (isEdit: boolean) => {
@@ -192,16 +205,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
   const handleConfirmAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !selectedRepoToAdd || addingInProgress || isCompressing) return;
+    if (!user || (!selectedRepoToAdd && !manualProjectId) || addingInProgress || isCompressing) return;
 
 
     setAddingInProgress(true);
     setAddError(null);
     try {
       let newProj = await addProjectToShowcase({
-        profileId: user.id, repoFullName: selectedRepoToAdd.full_name,
-        repoUrl: selectedRepoToAdd.html_url, customTitle: customTitle.trim() || null,
-        customDescription: customDescription.trim() || null, showRepositoryLink, token: githubToken,
+        profileId: user.id, source: manualProjectId ? 'manual' : 'github', projectId: manualProjectId || undefined,
+        deployedUrl: manualProjectId ? normalizeProjectUrl(deployedUrl) : null,
+        repoFullName: selectedRepoToAdd?.full_name, repoUrl: selectedRepoToAdd?.html_url,
+        customTitle: customTitle.trim() || null,
+        customDescription: customDescription.trim() || null, showRepositoryLink: manualProjectId ? false : showRepositoryLink, token: githubToken,
       });
       if (!newProj) throw new Error('Could not save project.');
       // Create the owned project first, so uploads cannot be unattached objects.
@@ -215,14 +230,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
       if (newProj) {
         setShowcased(prev => {
           const filtered = prev.filter(
-            p => p.repo_full_name.trim().toLowerCase() !== newProj.repo_full_name.trim().toLowerCase()
+            p => p.id !== newProj.id
           );
           return [newProj, ...filtered];
         });
-        setSelectedRepoToAdd(null);
+        closeAddModal();
         setScreenshotFile(null);
         setScreenshotPreview(null);
         setActiveTab('showcase');
+        setSearchQuery('');
         try {
           confetti({ particleCount: 40, spread: 45, origin: { y: 0.8 } });
         } catch {
@@ -234,7 +250,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
         setAddError(`Showcase limit reached. You can publish at most ${MAX_SHOWCASE_PROJECTS} projects. Remove one to add another.`);
       } else {
         console.error('Failed to add project to showcase:', err);
-        setAddError(err instanceof ImageProcessingError || err instanceof ShowcaseLoadError ? err.message : 'Failed to publish project. Please retry.');
+        setAddError(err instanceof ImageProcessingError || err instanceof ShowcaseLoadError || (manualProjectId && err instanceof Error) ? err.message : 'Failed to publish project. Please retry.');
       }
     } finally {
       setAddingInProgress(false); setUploadProgress(null);
@@ -260,6 +276,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     if (!editingProject || savingEdit || isEditCompressing) return;
     setSavingEdit(true); setEditError(null);
     try {
+      const validatedDeployment = editingProject.source === 'manual' ? normalizeProjectUrl(editingProject.deployed_url) : undefined;
+      if (editingProject.source === 'manual' && !editingProject.custom_title?.trim()) throw new Error('Enter a project title.');
       let finalScreenshotUrl = editingProject.screenshot_url;
       if (editScreenshotFile && user) {
         await deleteLegacyProjectScreenshot(user.id, editingProject.id, editingProject.screenshot_url);
@@ -273,7 +291,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
       }
 
       const updated = await updateShowcaseProject(editingProject.id, {
-        show_repository_link: editingProject.show_repository_link !== false,
+        show_repository_link: editingProject.source === 'manual' ? false : editingProject.show_repository_link !== false,
+        ...(editingProject.source === 'manual' ? { deployed_url: validatedDeployment } : {}),
         custom_title: editingProject.custom_title,
         custom_description: editingProject.custom_description,
         screenshot_url: finalScreenshotUrl,
@@ -287,18 +306,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
       }
     } catch (err) {
       console.error('Failed to update showcase project:', err);
-      setEditError(err instanceof ImageProcessingError ? err.message : 'Failed to save project. Please retry.');
+      setEditError(err instanceof ImageProcessingError || (editingProject.source === 'manual' && err instanceof Error) ? err.message : 'Failed to save project. Please retry.');
     } finally { setSavingEdit(false); setUploadProgress(null); }
   };
 
-  const showcasedRepoNames = new Set(showcased.map(p => p.repo_full_name.trim().toLowerCase()));
+  const showcasedRepoNames = new Set(showcased.filter(p => p.source !== 'manual').map(p => p.repo_full_name.trim().toLowerCase()));
 
   // Filtered showcased projects
   const filteredShowcased = showcased.filter(p => {
     const term = searchQuery.toLowerCase();
-    const title = (p.custom_title || p.repo_full_name).toLowerCase();
+    const title = (p.custom_title || p.repo_full_name || '').toLowerCase();
     const desc = (p.custom_description || '').toLowerCase();
-    const repo = p.repo_full_name.toLowerCase();
+    const repo = (p.repo_full_name || '').toLowerCase();
     return title.includes(term) || desc.includes(term) || repo.includes(term);
   });
 
@@ -353,6 +372,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               </span>
               <span>My Projects</span>
             </h1>
+            <button className="paper-button paper-button-dark text-xs font-bold px-3 py-2" onClick={() => setShowAddChoice(true)}>
+              <Plus className="w-3.5 h-3.5 inline mr-1" /> Add Project
+            </button>
             <p className="text-xs sm:text-sm font-serif-body text-stone-700 max-w-2xl leading-relaxed">
               Manage, publish, edit, and curate your projects and GitHub repositories displayed across GitShowcase.
             </p>
@@ -485,7 +507,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                   No projects published yet
                 </h3>
                 <p className="text-xs sm:text-sm font-serif-body text-stone-700 max-w-md mx-auto leading-relaxed">
-                  You haven't added any repositories to your public showcase yet. Select repositories from your GitHub account to publish them.
+                  Add a project from GitHub or showcase one manually with its deployed link.
                 </p>
               </div>
               <button
@@ -540,24 +562,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
                     {/* Repository Preview Banner / Project UI Screenshot */}
                     <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative mb-1.5 flex items-center justify-center">
-                      <img
-                        width={1280} height={720} loading="lazy" decoding="async"
-                        src={proj.screenshot_url || `https://opengraph.githubassets.com/1/${proj.repo_full_name}`}
-                        alt={proj.custom_title || proj.repo_full_name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${proj.repo_full_name}`) {
-                            e.currentTarget.src = `https://opengraph.githubassets.com/1/${proj.repo_full_name}`;
-                          } else {
-                            (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
-                          }
-                        }}
-                      />
+                      <ProjectCover screenshotUrl={proj.screenshot_url} repoFullName={proj.repo_full_name} source={proj.source} title={(proj.custom_title || proj.repo_full_name || 'Project')} />
                     </div>
 
                     {/* Title */}
                     <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] leading-snug">
-                      {proj.custom_title || proj.repo_full_name.split('/')[1]}
+                      {proj.custom_title || proj.repo_full_name?.split('/')[1]}
                     </h3>
 
                     {/* Description */}
@@ -566,7 +576,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                     </p>
 
                     {/* Live GitHub Telemetry (Stars, Forks, Language) */}
-                    <div className="flex items-center space-x-2 font-mono text-[10px] text-stone-700 font-bold pt-0.5">
+                    {proj.source !== 'manual' && (<div className="flex items-center space-x-2 font-mono text-[10px] text-stone-700 font-bold pt-0.5">
                       {proj.live_stats?.language && (
                         <span className="paper-badge text-[9px] bg-stone-200">
                           {proj.live_stats.language}
@@ -582,14 +592,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                           <span>{proj.live_stats.forks}</span>
                         </span>
                       )}
-                    </div>
+                    </div>)}
 
                     {/* Live Tags if available */}
                     {proj.live_stats?.topics && proj.live_stats.topics.length > 0 && (
                       <div className="flex flex-wrap gap-1 pt-0.5">
                         {proj.live_stats.topics.slice(0, 3).map((topic, i) => (
                           <span key={i} className="paper-badge text-[9px] font-mono">
-                            #{topic}
+                            {topic}
                           </span>
                         ))}
                       </div>
@@ -607,19 +617,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                     </button>
 
                     <div className="flex items-center space-x-2">
-                      {proj.live_stats?.homepage && (
+                      {(proj.source === 'manual' ? proj.deployed_url : proj.live_stats?.homepage) && (
                         <a
-                          href={proj.live_stats.homepage}
+                          href={proj.source === 'manual' ? proj.deployed_url : proj.live_stats.homepage}
                           target="_blank"
                           rel="noreferrer"
                           className="text-stone-800 underline flex items-center space-x-0.5 font-bold"
                           title="Visit site"
                         >
                           <Globe className="w-3 h-3" />
-                          <span>Live</span>
+                          <span>{proj.source === 'manual' ? 'Visit Project' : 'Live'}</span>
                         </a>
                       )}
-                      {proj.show_repository_link !== false && (<a
+                      {proj.source !== 'manual' && proj.repo_url && proj.show_repository_link !== false && (<a
                         href={proj.repo_url}
                         target="_blank"
                         rel="noreferrer"
@@ -799,7 +809,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
                     {/* Publish Action Button */}
                     <div className="pt-2 border-t border-dashed border-[#212121] flex items-center justify-between text-xs">
-                      {!showcased.some(p => p.repo_full_name.toLowerCase() === repo.full_name.toLowerCase() && p.show_repository_link === false) && (<a
+                      {!showcased.some(p => p.source !== 'manual' && p.repo_full_name.toLowerCase() === repo.full_name.toLowerCase() && p.show_repository_link === false) && (<a
                         href={repo.html_url}
                         target="_blank"
                         rel="noreferrer"
@@ -836,24 +846,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
         </div>
       )}
 
+      {showAddChoice && (
+        <dialog ref={node => { if (node && !node.open) node.showModal(); }} onCancel={() => setShowAddChoice(false)} aria-labelledby="add-project-choice-title" className="m-auto paper-card bg-[#FEFCF6] p-5 w-[calc(100%-2rem)] max-w-md backdrop:bg-[#57534E]/45">
+          <h2 id="add-project-choice-title" className="font-newspaper-title font-bold uppercase">Add Project</h2>
+          <div className="grid gap-3 mt-4">
+            <button className="paper-button font-bold py-3" onClick={() => { setShowAddChoice(false); setActiveTab('repos'); setSearchQuery(''); }}>Add from GitHub</button>
+            <button className="paper-button font-bold py-3" onClick={handleOpenManualProject}>Add project manually</button>
+            <button className="paper-button text-xs py-2" onClick={() => setShowAddChoice(false)}>Cancel</button>
+          </div>
+        </dialog>
+      )}
+
       {/* MODAL 1: Add/Publish Project to Showcase */}
-      {selectedRepoToAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-[#57534E]/45 paper-motion-overlay">
+      {(selectedRepoToAdd || manualProjectId) && (
+        <dialog ref={node => { if (node && !node.open) node.showModal(); }} onCancel={e => { if (addingInProgress) e.preventDefault(); else closeAddModal(); }} aria-labelledby="publish-project-title" className="fixed inset-0 m-auto w-full h-full max-w-none max-h-none z-50 flex items-center justify-center p-2.5 sm:p-4 bg-transparent backdrop:bg-[#57534E]/45 paper-motion-overlay">
           <div className="bg-[#FEFCF6] paper-card paper-motion-panel max-w-md w-full p-3.5 sm:p-5 space-y-3.5 max-h-[90dvh] overflow-y-auto">
             <div className="flex items-start justify-between border-b border-dashed border-[#212121] pb-2 gap-2">
               <div className="min-w-0 flex-1">
-                <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
+                <h3 id="publish-project-title" className="text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
                   Publish
                 </h3>
                 <p className="text-[10px] text-stone-700 font-mono truncate">
-                  {selectedRepoToAdd.full_name}
+                  {manualProjectId ? 'Showcase your project without sharing a repository.' : selectedRepoToAdd.full_name}
                 </p>
               </div>
               <button
                 id="close-add-modal-btn"
                 aria-label="Close dialog"
                 disabled={addingInProgress}
-                onClick={() => setSelectedRepoToAdd(null)}
+                onClick={closeAddModal}
                 className="paper-button-icon min-w-[32px] min-h-[32px] p-1 flex items-center justify-center text-stone-800 cursor-pointer flex-shrink-0"
               >
                 <X className="w-4 h-4" />
@@ -905,25 +926,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
-                      className="hidden"
+                      className="sr-only"
                       onChange={(e) => handleScreenshotSelect(e, false)}
                     />
                     <Upload className="w-5 h-5 text-stone-700 stroke-[2]" />
                     <span className="text-xs font-headline uppercase font-bold text-[#212121]">
-                      {isCompressing ? 'Compressing Image...' : 'Upload Screenshot or Use GitHub Preview'}
+                      {isCompressing ? 'Compressing Image...' : manualProjectId ? 'Upload Screenshot' : 'Upload Screenshot or Use GitHub Preview'}
                     </span>
                     <span className="text-[10px] font-serif-body text-stone-600">
-                      JPG, PNG, WebP. Max 10MB; minimum 64px per side. GitHub preview is used if no image is uploaded.
+                      JPG, PNG, WebP. Max 10MB; minimum 64px per side. {manualProjectId ? 'A placeholder is used if no image is uploaded.' : 'GitHub preview is used if no image is uploaded.'}
                     </span>
                   </label>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
+                <label htmlFor="publish-project-title-input" className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
                   Project Title
                 </label>
                 <input
+                  id="publish-project-title-input"
                   type="text"
                   required
                   value={customTitle}
@@ -934,10 +956,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               </div>
 
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
+                <label htmlFor="publish-project-description" className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
                   Description
                 </label>
                 <textarea
+                  id="publish-project-description"
                   rows={3}
                   value={customDescription}
                   maxLength={99}
@@ -947,17 +970,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                 />
                 <p className="text-[11px] font-mono text-stone-600">{customDescription.length} / 99 characters</p>
               </div>
-              <label className="block text-xs font-serif-body">
+              {manualProjectId && (
+                <label className="block text-xs font-headline font-bold">
+                  Deployed project URL
+                  <input type="url" required value={deployedUrl} onChange={e => setDeployedUrl(e.target.value)} placeholder="https://your-project.example" className="w-full px-2.5 py-1.5 mt-1 paper-input text-xs font-serif-body min-h-[34px]" />
+                </label>
+              )}
+              {!manualProjectId && <label className="block text-xs font-serif-body">
                 <input type="checkbox" checked={showRepositoryLink} onChange={(e) => setShowRepositoryLink(e.target.checked)} className="mr-2" /> Show repository link
                 <span className="block text-[11px] text-stone-600 mt-1">Let visitors open this project's GitHub repository.</span>
-              </label>
+              </label>}
 
 
               <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-dashed border-[#212121]">
                 <button
                   type="button"
                   disabled={addingInProgress}
-                onClick={() => setSelectedRepoToAdd(null)}
+                onClick={closeAddModal}
                   className="paper-button text-xs py-1.5 px-3 min-h-[34px] font-bold"
                 >
                   Cancel
@@ -972,16 +1001,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               </div>
             </form>
           </div>
-        </div>
+        </dialog>
       )}
 
       {/* MODAL 2: Edit Existing Project */}
       {editingProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-[#57534E]/45 paper-motion-overlay">
+        <dialog ref={node => { if (node && !node.open) node.showModal(); }} onCancel={e => { if (savingEdit) e.preventDefault(); else setEditingProject(null); }} aria-labelledby="edit-project-title" className="fixed inset-0 m-auto w-full h-full max-w-none max-h-none z-50 flex items-center justify-center p-2.5 sm:p-4 bg-transparent backdrop:bg-[#57534E]/45 paper-motion-overlay">
           <div className="bg-[#FEFCF6] paper-card paper-motion-panel max-w-md w-full p-3.5 sm:p-5 space-y-3.5 max-h-[90dvh] overflow-y-auto">
             <div className="flex items-start justify-between border-b border-dashed border-[#212121] pb-2 gap-2">
               <div className="min-w-0 flex-1">
-                <h3 className="text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
+                <h3 id="edit-project-title" className="text-base font-[900] uppercase font-newspaper-title text-[#212121] truncate">
                   Edit Project Details
                 </h3>
                 <p className="text-[10px] text-stone-700 font-mono truncate">
@@ -1018,8 +1047,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                         onError={(event) => {
                           if (editScreenshotPreview) handleLocalPreviewError(true);
                           else {
-                            const fallback = `https://opengraph.githubassets.com/1/${editingProject.repo_full_name}`;
-                            if (event.currentTarget.src !== fallback) event.currentTarget.src = fallback;
+                            const fallback = editingProject.source !== 'manual' ? `https://opengraph.githubassets.com/1/${editingProject.repo_full_name}` : null;
+                            if (fallback && event.currentTarget.src !== fallback) event.currentTarget.src = fallback;
                             else event.currentTarget.style.display = 'none';
                           }
                         }}
@@ -1032,7 +1061,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                         <input
                           type="file"
                           accept="image/jpeg,image/png,image/webp"
-                          className="hidden"
+                          className="sr-only"
                           onChange={(e) => handleScreenshotSelect(e, true)}
                         />
                         Replace Image
@@ -1044,7 +1073,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
-                      className="hidden"
+                      className="sr-only"
                       onChange={(e) => handleScreenshotSelect(e, true)}
                     />
                     <Upload className="w-4 h-4 text-stone-700 stroke-[2]" />
@@ -1056,12 +1085,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               </div>
 
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
+                <label htmlFor="edit-project-title-input" className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
                   Project Title
                 </label>
                 <input
                   type="text"
                   required
+                  id="edit-project-title-input"
                   value={editingProject.custom_title || ''}
                   onChange={(e) =>
                     setEditingProject({ ...editingProject, custom_title: e.target.value })
@@ -1071,11 +1101,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               </div>
 
               <div>
-                <label className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
+                <label htmlFor="edit-project-description" className="block text-xs font-headline uppercase tracking-wider text-[#212121] mb-0.5 font-bold">
                   Description
                 </label>
                 <textarea
                   rows={3}
+                  id="edit-project-description"
                   value={editingProject.custom_description || ''}
                   maxLength={99}
                   onChange={(e) =>
@@ -1085,10 +1116,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                 />
                 <p className="text-[11px] font-mono text-stone-600">{(editingProject.custom_description || '').length} / 99 characters</p>
               </div>
-              <label className="block text-xs font-serif-body">
+              {editingProject.source === 'manual' && (
+                <label className="block text-xs font-headline font-bold">
+                  Deployed project URL
+                  <input type="url" required value={editingProject.deployed_url || ''} onChange={e => setEditingProject({ ...editingProject, deployed_url: e.target.value })} placeholder="https://your-project.example" className="w-full px-2.5 py-1.5 mt-1 paper-input text-xs font-serif-body min-h-[34px]" />
+                </label>
+              )}
+              {editingProject.source !== 'manual' && <label className="block text-xs font-serif-body">
                 <input type="checkbox" checked={editingProject.show_repository_link !== false} onChange={(e) => setEditingProject({...editingProject, show_repository_link: e.target.checked})} className="mr-2" /> Show repository link
                 <span className="block text-[11px] text-stone-600 mt-1">Let visitors open this project's GitHub repository.</span>
-              </label>
+              </label>}
 
 
               <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-dashed border-[#212121]">
@@ -1110,7 +1147,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               </div>
             </form>
           </div>
-        </div>
+        </dialog>
       )}
 
       {/* MODAL 3: Unpublish Confirmation */}
@@ -1190,7 +1227,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             <div className="flex justify-between items-start border-b border-dashed border-[#212121] pb-3">
               <div>
                 <h2 className="text-lg sm:text-xl font-[900] uppercase font-newspaper-title text-[#212121]">
-                  {previewProject.custom_title || previewProject.repo_full_name.split('/')[1]}
+                  {previewProject.custom_title || previewProject.repo_full_name?.split('/')[1]}
                 </h2>
                 <p className="text-xs font-mono text-stone-700">
                   {previewProject.repo_full_name}
@@ -1208,23 +1245,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             <div className="space-y-3">
               {/* Repository Preview Banner / Project UI Screenshot */}
               <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
-                <img
-                        width={1280} height={720} loading="lazy" decoding="async"
-                  src={previewProject.screenshot_url || `https://opengraph.githubassets.com/1/${previewProject.repo_full_name}`}
-                  alt={previewProject.custom_title || previewProject.repo_full_name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${previewProject.repo_full_name}`) {
-                      e.currentTarget.src = `https://opengraph.githubassets.com/1/${previewProject.repo_full_name}`;
-                    } else {
-                      (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
-                    }
-                  }}
-                />
+                <ProjectCover screenshotUrl={previewProject.screenshot_url} repoFullName={previewProject.repo_full_name} source={previewProject.source} title={(previewProject.custom_title || previewProject.repo_full_name || 'Project')} />
               </div>
 
               {/* Live GitHub Telemetry */}
-              <div className="flex items-center space-x-3 text-xs font-mono text-stone-800 font-bold py-1 border-b border-dashed border-[#212121]/50 pb-2">
+              {previewProject.source !== 'manual' && (<div className="flex items-center space-x-3 text-xs font-mono text-stone-800 font-bold py-1 border-b border-dashed border-[#212121]/50 pb-2">
                 <span className="flex items-center space-x-1" title="Actual GitHub Stars">
                   <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-700" />
                   <span>{previewProject.live_stats?.stars ?? 0} stars</span>
@@ -1238,7 +1263,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
                     {previewProject.live_stats.language}
                   </span>
                 )}
-              </div>
+              </div>)}
 
               <p className="text-xs sm:text-sm font-serif-body text-stone-800 leading-relaxed">
                 {previewProject.custom_description || previewProject.live_stats?.description || 'No description provided.'}
@@ -1247,24 +1272,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               {previewProject.live_stats?.topics && previewProject.live_stats.topics.length > 0 && (
                 <div className="flex flex-wrap gap-1 pt-1">
                   {previewProject.live_stats.topics.map((topic, i) => (
-                    <span key={i} className="paper-badge text-[9px] font-mono">#{topic}</span>
+                    <span key={i} className="paper-badge text-[9px] font-mono">{topic}</span>
                   ))}
                 </div>
               )}
 
               <div className="flex items-center space-x-3 pt-3 border-t border-dashed border-[#212121]">
-                {previewProject.live_stats?.homepage && (
+                {(previewProject.source === 'manual' ? previewProject.deployed_url : previewProject.live_stats?.homepage) && (
                   <a
-                    href={previewProject.live_stats.homepage}
+                    href={previewProject.source === 'manual' ? previewProject.deployed_url : previewProject.live_stats.homepage}
                     target="_blank"
                     rel="noreferrer"
                     className="paper-button text-xs py-2 px-3 font-bold inline-flex items-center space-x-1"
                   >
                     <Globe className="w-3.5 h-3.5" />
-                    <span>Visit site</span>
+                    <span>{previewProject.source === 'manual' ? 'Visit Project' : 'Visit site'}</span>
                   </a>
                 )}
-                {previewProject.show_repository_link !== false && (<a
+                {previewProject.source !== 'manual' && previewProject.repo_url && previewProject.show_repository_link !== false && (<a
                   href={previewProject.repo_url}
                   target="_blank"
                   rel="noreferrer"

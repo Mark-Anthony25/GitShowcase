@@ -1,3 +1,4 @@
+import { ProjectCover } from './ProjectCover';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Github, ArrowRight, Star, Globe, X, User, GitFork } from 'lucide-react';
 import { StudentShowcaseData, ShowcasedProject } from '../types';
@@ -19,7 +20,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
   const [filterLanguage, setFilterLanguage] = useState('all');
   const [sortBy, setSortBy] = useState<'recent' | 'stars' | 'forks' | 'name'>('recent');
   const [currentPage, setCurrentPage] = useState(1);
-  const PAGE_SIZE = 8;
+  const PAGE_SIZE = 9;
   const [selectedModalItem, setSelectedModalItem] = useState<{
     project: ShowcasedProject;
     student: StudentShowcaseData;
@@ -247,25 +248,12 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                       <div className="space-y-2">
                         {/* Repository Preview Banner / Project UI Screenshot */}
                         <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
-                          <img width={1280} height={720}
-                            src={project.screenshot_url || `https://opengraph.githubassets.com/1/${project.repo_full_name}`}
-                            alt={project.custom_title || project.repo_full_name}
-                            loading="lazy"
-                            decoding="async"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${project.repo_full_name}`) {
-                                e.currentTarget.src = `https://opengraph.githubassets.com/1/${project.repo_full_name}`;
-                              } else {
-                                (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
-                              }
-                            }}
-                          />
+                          <ProjectCover screenshotUrl={project.screenshot_url} repoFullName={project.repo_full_name} source={project.source} title={(project.custom_title || project.repo_full_name || 'Project')} />
                         </div>
 
                         <div className="flex justify-between items-start">
                           <h3 className="text-sm sm:text-base font-[900] font-newspaper-title text-[#212121] uppercase">
-                            {project.custom_title || project.repo_full_name.split('/')[1]}
+                            {project.custom_title || project.repo_full_name?.split('/')[1]}
                           </h3>
                         </div>
                         
@@ -274,7 +262,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                         </p>
 
                         {/* Live GitHub Telemetry (Stars, Forks, Language) */}
-                        <div className="flex items-center space-x-2 font-mono text-[10px] text-stone-700 font-bold pt-0.5">
+                        {project.source !== 'manual' && (<div className="flex items-center space-x-2 font-mono text-[10px] text-stone-700 font-bold pt-0.5">
                           {project.live_stats?.language && (
                             <span className="paper-badge text-[9px] bg-stone-200">
                               {project.live_stats.language}
@@ -290,13 +278,13 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                               <span>{project.live_stats.forks}</span>
                             </span>
                           )}
-                        </div>
+                        </div>)}
 
                         {project.live_stats?.topics && project.live_stats.topics.length > 0 && (
                           <div className="flex flex-wrap gap-1 pt-0.5">
                             {project.live_stats.topics.slice(0, 3).map((topic, i) => (
                               <span key={i} className="paper-badge text-[9px] font-mono">
-                                #{topic}
+                                {topic}
                               </span>
                             ))}
                           </div>
@@ -397,7 +385,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             <div className="flex justify-between items-start border-b border-dashed border-[#212121] p-4 sm:p-6">
               <div>
                 <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
-                  {selectedModalItem.project.custom_title || selectedModalItem.project.repo_full_name.split('/')[1]}
+                  {selectedModalItem.project.custom_title || selectedModalItem.project.repo_full_name?.split('/')[1]}
                 </h2>
                 <p className="text-xs font-mono text-stone-700 mt-0.5">
                   {selectedModalItem.project.repo_full_name}
@@ -416,20 +404,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
             <div className="p-4 sm:p-6 space-y-4">
               {/* Repository Preview Banner / Project UI Screenshot */}
               <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
-                <img width={1280} height={720}
-                  src={selectedModalItem.project.screenshot_url || `https://opengraph.githubassets.com/1/${selectedModalItem.project.repo_full_name}`}
-                  alt={selectedModalItem.project.custom_title || selectedModalItem.project.repo_full_name}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${selectedModalItem.project.repo_full_name}`) {
-                      e.currentTarget.src = `https://opengraph.githubassets.com/1/${selectedModalItem.project.repo_full_name}`;
-                    } else {
-                      (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
-                    }
-                  }}
-                />
+                <ProjectCover screenshotUrl={selectedModalItem.project.screenshot_url} repoFullName={selectedModalItem.project.repo_full_name} source={selectedModalItem.project.source} title={(selectedModalItem.project.custom_title || selectedModalItem.project.repo_full_name || 'Project')} />
               </div>
 
               {/* Creator Card */}
@@ -471,7 +446,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
               </div>
 
               {/* Live GitHub Telemetry Bar */}
-              <div className="flex items-center space-x-3 text-xs font-mono text-stone-800 font-bold py-1 border-b border-dashed border-[#212121]/50 pb-2">
+              {selectedModalItem.project.source !== 'manual' && (<div className="flex items-center space-x-3 text-xs font-mono text-stone-800 font-bold py-1 border-b border-dashed border-[#212121]/50 pb-2">
                 <span className="flex items-center space-x-1" title="Actual GitHub Stars">
                   <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-700" />
                   <span>{selectedModalItem.project.live_stats?.stars ?? 0} stars</span>
@@ -485,7 +460,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                     {selectedModalItem.project.live_stats.language}
                   </span>
                 )}
-              </div>
+              </div>)}
 
               {/* Description */}
               <div>
@@ -501,25 +476,25 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
               {selectedModalItem.project.live_stats?.topics && selectedModalItem.project.live_stats.topics.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {selectedModalItem.project.live_stats.topics.map((topic, i) => (
-                    <span key={i} className="paper-badge text-[10px] font-mono">#{topic}</span>
+                    <span key={i} className="paper-badge text-[10px] font-mono">{topic}</span>
                   ))}
                 </div>
               )}
               
               {/* Action Links */}
               <div className="flex items-center space-x-3 pt-2">
-                {selectedModalItem.project.live_stats?.homepage && (
+                {(selectedModalItem.project.source === 'manual' ? selectedModalItem.project.deployed_url : selectedModalItem.project.live_stats?.homepage) && (
                   <a
-                    href={selectedModalItem.project.live_stats.homepage}
+                    href={selectedModalItem.project.source === 'manual' ? selectedModalItem.project.deployed_url : selectedModalItem.project.live_stats.homepage}
                     target="_blank"
                     rel="noreferrer"
                     className="paper-button text-xs py-2 px-4 font-bold inline-flex items-center"
                   >
                     <Globe className="w-4 h-4 mr-1.5" />
-                    Visit site
+                    {selectedModalItem.project.source === 'manual' ? 'Visit Project' : 'Visit site'}
                   </a>
                 )}
-                {selectedModalItem.project.show_repository_link !== false && (<a
+                {selectedModalItem.project.source !== 'manual' && selectedModalItem.project.repo_url && selectedModalItem.project.show_repository_link !== false && (<a
                   href={selectedModalItem.project.repo_url}
                   target="_blank"
                   rel="noreferrer"
@@ -547,7 +522,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({ navigate }) => {
                         >
                           <div>
                             <div className="font-bold font-newspaper-title uppercase text-sm">
-                              {p.custom_title || p.repo_full_name.split('/')[1]}
+                              {p.custom_title || p.repo_full_name?.split('/')[1]}
                             </div>
                             <div className="text-xs font-serif-body text-stone-600 truncate max-w-[200px] sm:max-w-sm mt-1">
                               {p.custom_description || p.live_stats?.description || 'No description provided.'}

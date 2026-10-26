@@ -1,3 +1,4 @@
+import { ProjectCover } from './ProjectCover';
 import { TechStackEditor } from './TechStackEditor';
 import { normalizeContactLink } from '../lib/contactLink';
 import React, { useState, useEffect, useRef } from 'react';
@@ -598,7 +599,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             <div className="flex justify-between items-start border-b border-dashed border-[#212121] p-4 sm:p-6">
               <div>
                 <h2 className="text-xl sm:text-2xl font-[900] uppercase font-newspaper-title text-[#212121]">
-                  {selectedProject.custom_title || selectedProject.repo_full_name.split('/')[1]}
+                  {selectedProject.custom_title || selectedProject.repo_full_name?.split('/')[1]}
                 </h2>
                 <p className="text-xs font-mono text-stone-700 mt-0.5">
                   {selectedProject.repo_full_name}
@@ -616,24 +617,11 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
             <div className="p-4 sm:p-6 space-y-4">
               {/* Repository Preview Banner / Project UI Screenshot */}
               <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
-                <img width={1280} height={720}
-                  src={selectedProject.screenshot_url || `https://opengraph.githubassets.com/1/${selectedProject.repo_full_name}`}
-                  alt={selectedProject.custom_title || selectedProject.repo_full_name}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${selectedProject.repo_full_name}`) {
-                      e.currentTarget.src = `https://opengraph.githubassets.com/1/${selectedProject.repo_full_name}`;
-                    } else {
-                      (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
-                    }
-                  }}
-                />
+                <ProjectCover screenshotUrl={selectedProject.screenshot_url} repoFullName={selectedProject.repo_full_name} source={selectedProject.source} title={(selectedProject.custom_title || selectedProject.repo_full_name || 'Project')} />
               </div>
 
               {/* Live GitHub Telemetry Bar */}
-              <div className="flex items-center space-x-3 text-xs font-mono text-stone-800 font-bold py-1 border-b border-dashed border-[#212121]/50 pb-2">
+              {selectedProject.source !== 'manual' && (<div className="flex items-center space-x-3 text-xs font-mono text-stone-800 font-bold py-1 border-b border-dashed border-[#212121]/50 pb-2">
                 <span className="flex items-center space-x-1" title="Actual GitHub Stars">
                   <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-700" />
                   <span>{selectedProject.live_stats?.stars ?? 0} stars</span>
@@ -652,7 +640,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                     ({selectedProject.live_stats.open_issues} open issues)
                   </span>
                 )}
-              </div>
+              </div>)}
 
               <p className="text-sm font-serif-body text-stone-800 leading-relaxed">
                 {selectedProject.custom_description || selectedProject.live_stats?.description || 'No description provided.'}
@@ -661,24 +649,24 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
               {selectedProject.live_stats?.topics && selectedProject.live_stats.topics.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {selectedProject.live_stats.topics.map((topic, i) => (
-                    <span key={i} className="paper-badge text-[10px] font-mono">#{topic}</span>
+                    <span key={i} className="paper-badge text-[10px] font-mono">{topic}</span>
                   ))}
                 </div>
               )}
               
               <div className="flex items-center space-x-3 pt-3 border-t border-dashed border-[#212121]">
-                {selectedProject.live_stats?.homepage && (
+                {(selectedProject.source === 'manual' ? selectedProject.deployed_url : selectedProject.live_stats?.homepage) && (
                   <a
-                    href={selectedProject.live_stats.homepage}
+                    href={selectedProject.source === 'manual' ? selectedProject.deployed_url : selectedProject.live_stats.homepage}
                     target="_blank"
                     rel="noreferrer"
                     className="paper-button text-xs py-2 px-4 font-bold inline-flex items-center space-x-1"
                   >
                     <Globe className="w-4 h-4 mr-1" />
-                    <span>Visit site</span>
+                    <span>{selectedProject.source === 'manual' ? 'Visit Project' : 'Visit site'}</span>
                   </a>
                 )}
-                {selectedProject.show_repository_link !== false && (<a
+                {selectedProject.source !== 'manual' && selectedProject.repo_url && selectedProject.show_repository_link !== false && (<a
                   href={selectedProject.repo_url}
                   target="_blank"
                   rel="noreferrer"
@@ -704,7 +692,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({ username, 
                       >
                         <div className="min-w-0 flex-1">
                           <div className="font-bold font-newspaper-title uppercase text-sm truncate">
-                            {p.custom_title || p.repo_full_name.split('/')[1]}
+                            {p.custom_title || p.repo_full_name?.split('/')[1]}
                           </div>
                           <div className="text-xs font-serif-body text-stone-600 mt-0.5">
                             {p.custom_description || p.live_stats?.description || 'No description provided.'}
@@ -733,34 +721,20 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
   const stats = project.live_stats;
 
   return (
-    <button
-      onClick={onClick}
+    <div
       className="w-full text-left p-3.5 sm:p-4 paper-card bg-[#FEFCF6] transition-all flex flex-col justify-between space-y-3 cursor-pointer"
     >
-      <div className="space-y-2 w-full">
+      <button type="button" onClick={onClick} className="text-left space-y-2 w-full cursor-pointer">
         {/* Repository Preview Banner / Project UI Screenshot */}
         <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative mb-1.5 flex items-center justify-center">
-          <img width={1280} height={720}
-            src={project.screenshot_url || `https://opengraph.githubassets.com/1/${project.repo_full_name}`}
-            alt={project.custom_title || project.repo_full_name}
-            loading="lazy"
-            decoding="async"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${project.repo_full_name}`) {
-                e.currentTarget.src = `https://opengraph.githubassets.com/1/${project.repo_full_name}`;
-              } else {
-                (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
-              }
-            }}
-          />
+          <ProjectCover screenshotUrl={project.screenshot_url} repoFullName={project.repo_full_name} source={project.source} title={(project.custom_title || project.repo_full_name || 'Project')} />
         </div>
 
         {/* Header Badge */}
         <div className="flex items-start justify-between gap-2 border-b border-dashed border-[#212121] pb-2">
           <div className="space-y-0.5 w-full min-w-0">
             <h3 className="text-sm sm:text-base font-[900] uppercase font-newspaper-title text-[#212121] leading-snug truncate">
-              {project.custom_title || project.repo_full_name.split('/')[1]}
+              {project.custom_title || project.repo_full_name?.split('/')[1]}
             </h3>
 
           </div>
@@ -772,7 +746,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
         </p>
 
         {/* Live GitHub Telemetry (Stars, Forks, Language) */}
-        <div className="flex items-center space-x-2 font-mono text-[10px] text-stone-700 font-bold pt-0.5">
+        {project.source !== 'manual' && (<div className="flex items-center space-x-2 font-mono text-[10px] text-stone-700 font-bold pt-0.5">
           {stats?.language && (
             <span className="paper-badge text-[9px] bg-stone-200">
               {stats.language}
@@ -788,7 +762,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
               <span>{stats.forks}</span>
             </span>
           )}
-        </div>
+        </div>)}
 
         {/* Topics / Tags */}
         {stats && stats.topics && stats.topics.length > 0 && (
@@ -798,39 +772,39 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
                 key={i}
                 className="paper-badge text-[9px] font-mono"
               >
-                #{topic}
+                {topic}
               </span>
             ))}
           </div>
         )}
-      </div>
+      </button>
 
       {/* Footer / Links */}
       <div className="pt-2 border-t border-dashed border-[#212121] flex items-center justify-between text-xs font-mono">
-        <span className="text-[10px] font-headline uppercase font-bold text-stone-600">
+        <button type="button" onClick={onClick} className="text-[10px] font-headline uppercase font-bold text-stone-600">
           View Details &rarr;
-        </span>
+        </button>
 
         <div className="flex items-center space-x-2">
-          {stats?.homepage && (
-            <span
+          {(project.source === 'manual' ? project.deployed_url : stats?.homepage) && (
+            <a
+              href={project.source === 'manual' ? project.deployed_url : stats.homepage} target="_blank" rel="noopener noreferrer"
               className="text-stone-800 underline flex items-center space-x-0.5 font-bold min-h-[28px] py-0.5 px-1 text-xs"
-              onClick={(e) => { e.stopPropagation(); window.open(stats.homepage, '_blank', 'noreferrer'); }}
             >
               <Globe className="w-3 h-3 mr-0.5 flex-shrink-0" />
-              <span>Live</span>
-            </span>
+              <span>{project.source === 'manual' ? 'Visit Project' : 'Live'}</span>
+            </a>
           )}
-          {project.show_repository_link !== false && (<span
+          {project.source !== 'manual' && project.repo_url && project.show_repository_link !== false && (<a
+            href={project.repo_url} target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center space-x-0.5 text-stone-800 underline font-bold min-h-[28px] py-0.5 px-1 text-xs"
-            onClick={(e) => { e.stopPropagation(); window.open(project.repo_url, '_blank', 'noreferrer'); }}
           >
             <Github className="w-3.5 h-3.5 mr-0.5 flex-shrink-0" />
             <span>GitHub</span>
             <ExternalLink className="w-2.5 h-2.5 ml-0.5 flex-shrink-0" />
-          </span>)}
+          </a>)}
         </div>
       </div>
-    </button>
+    </div>
   );
 };

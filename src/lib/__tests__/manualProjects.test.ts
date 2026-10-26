@@ -1,0 +1,42 @@
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { addProjectToShowcase, deduplicateProjectsList, enrichProjectsWithLiveStats, getStudentShowcasedProjects, removeProjectFromShowcase, syncStudentShowcaseProjects, updateShowcaseProject } from '../showcaseStore';
+
+const profileId = randomUUID();
+const projectId = randomUUID();
+const input = { profileId, projectId, source: 'manual' as const, repoFullName: null, repoUrl: null, customTitle: 'Private work', deployedUrl: 'https://demo.example/app' };
+const fixture = { id: projectId, profile_id: profileId, source: 'manual', repo_full_name: null, repo_url: null, custom_title: 'Private work', custom_description: null, display_order: 0 } as any;
+assert.equal(deduplicateProjectsList([fixture, fixture, { ...fixture, id: randomUUID() }]).length, 2, 'manual projects use ID, not repository or title');
+const first = await addProjectToShowcase(input);
+assert.equal(first?.id, projectId);
+assert.equal(first?.repo_full_name, null);
+assert.equal(first?.repo_url, null);
+assert.equal(first?.show_repository_link, false);
+assert.equal(first?.deployed_url, 'https://demo.example/app');
+assert.deepEqual(await enrichProjectsWithLiveStats([first!]), [first], 'manual projects need no GitHub enrichment');
+await addProjectToShowcase(input);
+assert.equal((await getStudentShowcasedProjects(profileId, null, true)).length, 1, 'retry must not create another project');
+const second = await addProjectToShowcase({ ...input, projectId: randomUUID() });
+assert.notEqual(second?.id, first?.id, 'same titles remain separate projects');
+await updateShowcaseProject(projectId, { custom_title: 'Updated', deployed_url: 'https://demo.example/new' }, profileId);
+assert.equal((await getStudentShowcasedProjects(profileId, null, true)).find(p => p.id === projectId)?.deployed_url, 'https://demo.example/new');
+for (const deployedUrl of ['', 'demo.example', 'javascript:alert(1)', 'mailto:me@example.com', 'https://user:password@demo.example', 'https://demo.example/a b', 'https://demo.example:99999', 'http://[::::]']) {
+  await assert.rejects(() => addProjectToShowcase({ ...input, deployedUrl }), /valid.*HTTP|deployed.*URL/i);
+  await assert.rejects(() => updateShowcaseProject(projectId, { deployed_url: deployedUrl }, profileId), /valid.*HTTP|deployed.*URL/i);
+}
+await assert.rejects(() => updateShowcaseProject(projectId, { custom_title: ' ' }, profileId), /title/i);
+await assert.rejects(() => updateShowcaseProject(projectId, { source: 'github' }, profileId), /source/i);
+await assert.rejects(() => updateShowcaseProject(projectId, { repo_url: 'https://github.com/test/repo' }, profileId), /repository/i);
+await assert.rejects(() => updateShowcaseProject(projectId, { show_repository_link: true }, profileId), /repository/i);
+await assert.rejects(() => updateShowcaseProject(projectId, { custom_title: 'Intruder' }, randomUUID()), /owner|permission/i);
+await syncStudentShowcaseProjects(profileId, { 'creator/repo': { repoUrl: 'https://github.com/creator/repo' } });
+assert.equal((await getStudentShowcasedProjects(profileId, null, true)).length, 3, 'GitHub sync preserves manual projects');
+await addProjectToShowcase({ profileId, repoFullName: 'CREATOR/REPO', repoUrl: 'https://github.com/creator/repo' });
+assert.equal((await getStudentShowcasedProjects(profileId, null, true)).length, 3, 'GitHub dedup stays case insensitive');
+await assert.rejects(() => addProjectToShowcase({ ...input, projectId: randomUUID() }), /PROJECT_LIMIT_REACHED/);
+const beforeSync = await getStudentShowcasedProjects(profileId, null, true);
+await assert.rejects(() => syncStudentShowcaseProjects(profileId, { 'creator/other': {}, 'creator/extra': {} }), /PROJECT_LIMIT_REACHED/);
+assert.deepEqual((await getStudentShowcasedProjects(profileId, null, true)).map(({ live_stats, ...project }) => project), beforeSync.map(({ live_stats, ...project }) => project), 'over-capacity GitHub selection must not remove or partially replace projects');
+await removeProjectFromShowcase(second!.id, profileId);
+assert.equal((await getStudentShowcasedProjects(profileId, null, true)).length, 2);
+console.log('Manual project storage checks passed');

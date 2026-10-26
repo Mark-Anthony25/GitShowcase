@@ -69,6 +69,7 @@ interface SelectedRepoMeta {
   const [repoError, setRepoError] = useState<string | null>(null);
   const [repoSearch, setRepoSearch] = useState('');
   const [selectedRepoMap, setSelectedRepoMap] = useState<Record<string, SelectedRepoMeta>>({});
+  const [manualProjectCount, setManualProjectCount] = useState(0);
   const [savingShowcase, setSavingShowcase] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -178,12 +179,14 @@ interface SelectedRepoMeta {
       setRepos(fetched);
 
       const existing = await getStudentShowcasedProjects(profile.id);
+      setManualProjectCount(existing.filter(p => p.source === 'manual').length);
       // Pre-select already showcased repos or first N if none selected yet
       if (Object.keys(selectedRepoMap).length === 0) {
         const preSelected: Record<string, any> = {};
         
         if (existing.length > 0) {
           existing.slice(0, MAX_SHOWCASE_PROJECTS).forEach(p => {
+            if (p.source === 'manual') return;
             preSelected[p.repo_full_name] = {
               showRepositoryLink: p.show_repository_link !== false,
               customTitle: p.custom_title || '',
@@ -201,7 +204,7 @@ interface SelectedRepoMeta {
         setSelectedRepoMap(preSelected);
       } else {
         setSelectedRepoMap(current => Object.fromEntries((Object.entries(current) as [string, SelectedRepoMeta][]).map(([name, meta]) => {
-          const project = existing.find(p => p.repo_full_name.toLowerCase() === name.toLowerCase());
+          const project = existing.find(p => p.source !== 'manual' && p.repo_full_name.toLowerCase() === name.toLowerCase());
           return [name, {...meta, showRepositoryLink: meta.showRepositoryLink ?? (project ? project.show_repository_link !== false : false)}];
         })));
       }
@@ -246,7 +249,7 @@ interface SelectedRepoMeta {
       delete updated[existingKey];
     } else {
       // Enforce 3-project limit during onboarding selection
-      if (Object.keys(updated).length >= MAX_SHOWCASE_PROJECTS) return;
+      if (Object.keys(updated).length + manualProjectCount >= MAX_SHOWCASE_PROJECTS) return;
       updated[repo.full_name] = {
         customTitle: repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
         customDescription: (repo.description || '').slice(0,99),
@@ -597,7 +600,7 @@ interface SelectedRepoMeta {
                   <span>Refresh</span>
                 </button>
                 <span className="paper-badge bg-stone-200 text-[#212121] font-bold">
-                  {selectedCount} / {MAX_SHOWCASE_PROJECTS} Selected
+                  {selectedCount} / {MAX_SHOWCASE_PROJECTS - manualProjectCount} GitHub slots selected
                 </span>
               </div>
             </div>
@@ -646,6 +649,7 @@ interface SelectedRepoMeta {
                           <input
                             type="checkbox"
                             checked={isSelected}
+                            disabled={!isSelected && selectedCount + manualProjectCount >= MAX_SHOWCASE_PROJECTS}
                             onChange={() => toggleRepoSelection(repo)}
                             className="w-3.5 h-3.5 mt-0.5 border-1.5 border-[#212121] rounded-xs accent-black cursor-pointer"
                           />

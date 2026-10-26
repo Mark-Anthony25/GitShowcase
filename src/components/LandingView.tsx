@@ -1,3 +1,4 @@
+import { ProjectCover } from './ProjectCover';
 import React, { useState, useEffect } from 'react';
 import { 
   Github, Sparkles, ArrowRight, Star, 
@@ -17,7 +18,9 @@ interface LandingViewProps {
 interface ProjectPreviewItem {
   id: string;
   title: string;
-  repo: string;
+  repo: string | null;
+  source?: 'github' | 'manual';
+  deployed_url?: string | null;
   author: string;
   badge: string;
   desc: string;
@@ -58,8 +61,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
           for (const p of s.projects) {
             collected.push({
               id: p.id,
-              title: p.custom_title || p.repo_full_name.split('/')[1] || p.repo_full_name,
-              repo: p.repo_full_name,
+              title: p.custom_title || p.repo_full_name?.split('/')[1] || p.repo_full_name,
+              repo: p.repo_full_name, source: p.source, deployed_url: p.deployed_url,
               author: s.profile.github_username,
               badge: 'PROJECT',
               desc: p.custom_description || p.live_stats?.description || 'No description provided.',
@@ -217,28 +220,15 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                 <div className="space-y-2">
                   {/* Repository Preview Banner / Project UI Screenshot */}
                   <div className="w-full aspect-[16/9] overflow-hidden rounded-xs border border-[#212121] bg-[#FAF6EC] relative flex items-center justify-center">
-                    <img width={1280} height={720}
-                      src={proj.screenshot_url || `https://opengraph.githubassets.com/1/${proj.repo}`}
-                      alt={proj.title}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        if (e.currentTarget.src !== `https://opengraph.githubassets.com/1/${proj.repo}`) {
-                          e.currentTarget.src = `https://opengraph.githubassets.com/1/${proj.repo}`;
-                        } else {
-                          (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
-                        }
-                      }}
-                    />
+                    <ProjectCover screenshotUrl={proj.screenshot_url} repoFullName={proj.repo} source={proj.source} title={proj.title} />
                   </div>
 
                   <div className="space-y-1">
                     <div className="flex items-center justify-end gap-1 text-[9px]">
-                      <div className="flex items-center space-x-1 text-stone-800 font-mono text-[10px] font-bold flex-shrink-0 ml-auto">
+                      {proj.source !== 'manual' && (<div className="flex items-center space-x-1 text-stone-800 font-mono text-[10px] font-bold flex-shrink-0 ml-auto">
                         <Star className="w-3 h-3 text-[#212121] stroke-[2]" />
                         <span>{proj.stars}</span>
-                      </div>
+                      </div>)}
                     </div>
 
                     <h4 className="text-xs sm:text-sm font-[900] uppercase font-newspaper-title text-[#212121] leading-snug">
@@ -257,7 +247,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ navigate, onOpenGuide 
                   >
                     <span>@{proj.author}</span>
                   </button>
-                  {proj.show_repository_link !== false && (<a
+                  {proj.source === 'manual' && proj.deployed_url && <a href={proj.deployed_url} target="_blank" rel="noopener noreferrer" className="text-stone-700 underline font-mono text-[10px] font-bold">Visit Project</a>}
+                  {proj.source !== 'manual' && proj.url && proj.show_repository_link !== false && (<a
                     href={proj.url}
                     target="_blank"
                     rel="noopener noreferrer"
