@@ -48,7 +48,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
   // Modal for adding repo with custom metadata
   const [selectedRepoToAdd, setSelectedRepoToAdd] = useState<GitHubRepoItem | null>(null);
-  const [showAddChoice, setShowAddChoice] = useState(false);
   const [manualProjectId, setManualProjectId] = useState<string | null>(null);
   const [deployedUrl, setDeployedUrl] = useState('');
   const [customTitle, setCustomTitle] = useState('');
@@ -166,7 +165,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
   const closeAddModal = () => { setSelectedRepoToAdd(null); setManualProjectId(null); };
   const handleOpenManualProject = () => {
-    setShowAddChoice(false); setSelectedRepoToAdd(null); setManualProjectId(crypto.randomUUID());
+    setSelectedRepoToAdd(null); setManualProjectId(crypto.randomUUID());
     setCustomTitle(''); setCustomDescription(''); setDeployedUrl('');
     setAddError(null); setUploadProgress(null); setScreenshotFile(null); setScreenshotPreview(null);
   };
@@ -372,9 +371,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
               </span>
               <span>My Projects</span>
             </h1>
-            <button className="paper-button paper-button-dark text-xs font-bold px-3 py-2" onClick={() => setShowAddChoice(true)}>
-              <Plus className="w-3.5 h-3.5 inline mr-1" /> Add Project
-            </button>
             <p className="text-xs sm:text-sm font-serif-body text-stone-700 max-w-2xl leading-relaxed">
               Manage, publish, edit, and curate your projects and GitHub repositories displayed across GitShowcase.
             </p>
@@ -454,6 +450,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
           >
             <Plus className="w-3.5 h-3.5 flex-shrink-0" />
             <span>Add from GitHub ({availableRepos.length})</span>
+          </button>
+
+          <button
+            id="add-manual-project-btn"
+            onClick={handleOpenManualProject}
+            className="paper-button text-xs py-1.5 px-3.5 font-bold min-h-[36px] flex items-center space-x-1.5 cursor-pointer bg-[#FEFCF6]"
+          >
+            <Plus className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Add manually</span>
           </button>
         </div>
 
@@ -844,17 +849,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             </div>
           )}
         </div>
-      )}
-
-      {showAddChoice && (
-        <dialog ref={node => { if (node && !node.open) node.showModal(); }} onCancel={() => setShowAddChoice(false)} aria-labelledby="add-project-choice-title" className="m-auto paper-card bg-[#FEFCF6] p-5 w-[calc(100%-2rem)] max-w-md backdrop:bg-[#57534E]/45">
-          <h2 id="add-project-choice-title" className="font-newspaper-title font-bold uppercase">Add Project</h2>
-          <div className="grid gap-3 mt-4">
-            <button className="paper-button font-bold py-3" onClick={() => { setShowAddChoice(false); setActiveTab('repos'); setSearchQuery(''); }}>Add from GitHub</button>
-            <button className="paper-button font-bold py-3" onClick={handleOpenManualProject}>Add project manually</button>
-            <button className="paper-button text-xs py-2" onClick={() => setShowAddChoice(false)}>Cancel</button>
-          </div>
-        </dialog>
       )}
 
       {/* MODAL 1: Add/Publish Project to Showcase */}
