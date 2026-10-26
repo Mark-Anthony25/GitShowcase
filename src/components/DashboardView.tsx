@@ -53,6 +53,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   const [customTitle, setCustomTitle] = useState('');
   const [customDescription, setCustomDescription] = useState('');
   const [addingInProgress, setAddingInProgress] = useState(false);
+  const [canRetryUpload, setCanRetryUpload] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [screenshotFile, setScreenshotFile] = useState<Blob | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
@@ -158,7 +159,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
     setSelectedRepoToAdd(repo);
     setCustomTitle(repo.name.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
     setCustomDescription((repo.description || '').slice(0,99));
-    setAddError(null); setUploadProgress(null);
+    setAddError(null); setUploadProgress(null); setCanRetryUpload(false);
     setScreenshotFile(null);
     setScreenshotPreview(null);
   };
@@ -167,7 +168,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
   const handleOpenManualProject = () => {
     setSelectedRepoToAdd(null); setManualProjectId(crypto.randomUUID());
     setCustomTitle(''); setCustomDescription(''); setDeployedUrl('');
-    setAddError(null); setUploadProgress(null); setScreenshotFile(null); setScreenshotPreview(null);
+    setAddError(null); setUploadProgress(null); setCanRetryUpload(false); setScreenshotFile(null); setScreenshotPreview(null);
   };
 
   const handleLocalPreviewError = (isEdit: boolean) => {
@@ -208,7 +209,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
 
 
     setAddingInProgress(true);
-    setAddError(null);
+    setAddError(null); setCanRetryUpload(false);
     try {
       let newProj = await addProjectToShowcase({
         profileId: user.id, source: manualProjectId ? 'manual' : 'github', projectId: manualProjectId || undefined,
@@ -220,10 +221,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
       if (!newProj) throw new Error('Could not save project.');
       // Create the owned project first, so uploads cannot be unattached objects.
       if (screenshotFile) {
-        const {url} = await uploadProjectScreenshot(screenshotFile, user.id, newProj.id, setUploadProgress);
-        const updated = await updateShowcaseProject(newProj.id, {screenshot_url:url}, user.id);
-        if (!updated) throw new Error('Could not save the preview. Retry publishing.');
-        newProj = updated;
+        try {
+          const {url} = await uploadProjectScreenshot(screenshotFile, user.id, newProj.id, setUploadProgress);
+          const updated = await updateShowcaseProject(newProj.id, {screenshot_url:url}, user.id);
+          if (!updated) throw new Error('Could not save the preview. Retry publishing.');
+          newProj = updated;
+        } catch (uploadError) {
+          setCanRetryUpload(true);
+          throw uploadError;
+        }
       }
 
       if (newProj) {
@@ -234,6 +240,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
           return [newProj, ...filtered];
         });
         closeAddModal();
+        setCanRetryUpload(false);
         setScreenshotFile(null);
         setScreenshotPreview(null);
         setActiveTab('showcase');
@@ -878,7 +885,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ navigate, onOpenGu
             <form onSubmit={handleConfirmAdd} className="space-y-3">
               {isCompressing && <p role="status">Preparing preview...</p>}
               {uploadProgress !== null && <div role="status">Uploading {uploadProgress}%<progress max={100} value={uploadProgress} /></div>}
-              {addError && screenshotFile && <button type="submit" disabled={addingInProgress || isCompressing}>Retry upload</button>}
+              {addError && canRetryUpload && screenshotFile && <button type="submit" disabled={addingInProgress || isCompressing}>Retry upload</button>}
               {addError && (
                 <div className="p-2.5 bg-red-50 border border-red-500 text-red-950 text-xs font-mono flex items-start space-x-1.5 rounded-xs">
                   <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-red-600" />
