@@ -499,17 +499,59 @@ export async function addProjectToShowcase(params: {
     const deployedUrl = normalizeProjectUrl(params.deployedUrl);
     const id = params.projectId || crypto.randomUUID();
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.rpc('save_showcased_project', {
-        p_repo_full_name: null, p_repo_url: null, p_source: 'manual', p_project_id: id,
-        p_deployed_url: deployedUrl, p_custom_title: title,
-        p_custom_description: params.customDescription ?? null, p_screenshot_url: params.screenshotUrl ?? null,
-        p_show_repository_link: false,
-      });
-      if (error) {
-        if (error.message?.includes('PROJECT_LIMIT_REACHED')) throw new Error('PROJECT_LIMIT_REACHED');
-        throw new ShowcaseLoadError('Could not save manual project. Check that the latest database migration is applied, then retry.');
+      try {
+        const { data, error } = await supabase.rpc('save_showcased_project', {
+          p_repo_full_name: null, p_repo_url: null, p_source: 'manual', p_project_id: id,
+          p_deployed_url: deployedUrl, p_custom_title: title,
+          p_custom_description: params.customDescription ?? null, p_screenshot_url: params.screenshotUrl ?? null,
+          p_show_repository_link: false,
+        });
+        if (!error && data) {
+          invalidateShowcaseCaches(params.profileId);
+          return data as ShowcasedProject;
+        }
+        if (error?.message?.includes('PROJECT_LIMIT_REACHED')) throw new Error('PROJECT_LIMIT_REACHED');
+        console.warn('Manual project save RPC unavailable; trying direct table write:', error?.message || error);
+      } catch (rpcError: any) {
+        if (rpcError?.message === 'PROJECT_LIMIT_REACHED') throw rpcError;
+        console.warn('Manual project save RPC unavailable; trying direct table write:', rpcError);
       }
-      if (!data) throw new ShowcaseLoadError('Could not save project. Please retry.');
+
+      const { data: existing, error: readError } = await supabase
+        .from('showcased_projects')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (readError) throw new ShowcaseLoadError('Could not save manual project. Check that the latest database migration is applied, then retry.');
+      if (existing && (existing.profile_id !== params.profileId || existing.source !== 'manual')) {
+        throw new Error('Project owner or source does not match.');
+      }
+      if (!existing) {
+        const { count, error: countError } = await supabase
+          .from('showcased_projects')
+          .select('id', { count: 'exact', head: true })
+          .eq('profile_id', params.profileId);
+        if (countError) throw new ShowcaseLoadError('Could not save manual project. Check that the latest database migration is applied, then retry.');
+        if ((count ?? 0) >= MAX_SHOWCASE_PROJECTS) throw new Error('PROJECT_LIMIT_REACHED');
+      }
+      const { data, error } = await supabase
+        .from('showcased_projects')
+        .upsert({
+          id,
+          profile_id: params.profileId,
+          source: 'manual',
+          deployed_url: deployedUrl,
+          repo_full_name: null,
+          repo_key: `manual:${id}`,
+          repo_url: null,
+          custom_title: title,
+          custom_description: params.customDescription ?? null,
+          screenshot_url: params.screenshotUrl ?? existing?.screenshot_url ?? null,
+          show_repository_link: false,
+        }, { onConflict: 'id' })
+        .select()
+        .single();
+      if (error || !data) throw new ShowcaseLoadError('Could not save manual project. Check that the latest database migration is applied, then retry.');
       invalidateShowcaseCaches(params.profileId);
       return data as ShowcasedProject;
     }
